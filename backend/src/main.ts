@@ -1,0 +1,52 @@
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module';
+import { join } from 'path';
+import { NestExpressApplication } from '@nestjs/platform-express';
+
+async function bootstrap() {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
+  // Включение CORS с правильными настройками
+  app.enableCors({
+    origin: [
+      'http://localhost:5173',      // Vite dev server
+      'http://127.0.0.1:5173',      // Альтернативный адрес Vite
+      'http://localhost:3000',      // Ваш бэкенд (для Swagger)
+    ],
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+    allowedHeaders: 'Content-Type, Authorization, Accept',
+  });
+
+    // Настраиваем доступ к папке uploads
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads',
+  });
+  
+  // Глобальная валидация
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    transform: true,
+  }));
+
+  
+  // Swagger документация
+  const config = new DocumentBuilder()
+    .setTitle('Online Store API')
+    .setDescription('API для интернет-магазина')
+    .setVersion('1.0')
+    .addTag('products')
+    .addTag('categories')
+    .build();
+    
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
+  
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  console.log(`Application is running on: http://localhost:${port}`);
+  console.log(`Swagger documentation: http://localhost:${port}/api`);
+}
+bootstrap();

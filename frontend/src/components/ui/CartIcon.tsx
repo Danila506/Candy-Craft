@@ -1,0 +1,28 @@
+export default function Cart(props: { size: number }) {
+    return (
+        <svg
+            width={`${props.size}`}
+            height={`${props.size}`}
+            viewBox="0 0 15 21"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            <path
+                d="M13.991 5.0708H0.699951V19.6999H13.991V5.0708Z"
+                stroke="black"
+                strokeWidth="1.4"
+                strokeMiterlimit="10"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M3.82202 6.85488V3.1084C3.82202 1.77037 4.80324 0.699951 5.96287 0.699951H8.72813C9.88775 0.699951 10.869 1.77037 10.869 3.1084V6.85488"
+                stroke="black"
+                strokeWidth="1.4"
+                strokeMiterlimit="10"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
