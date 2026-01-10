@@ -1,119 +1,116 @@
-import Cart from "./ui/CartIcon";
+// components/Product.tsx
 import { useCart } from "../contexts/CartContext";
-import { useCallback, useState, useEffect } from "react";
+import Cart from "./ui/CartIcon";
 import type { ProductType } from "../types/ProductType";
+import { useState, useEffect } from "react";
 
-export function Product({ ...product }: ProductType) {
-    const { incrementCart } = useCart();
-    const [isLoading, setIsLoading] = useState(false);
-    const [isProductInCart, setIsProductInCart] = useState(false);
+export function Product(product: ProductType) {
+    const { isItemInCart, refreshCart } = useCart();
+    const { className, imageUrl, name, description, price, id } = product;
+    const [isMobile, setIsMobile] = useState(false);
+    const isInCart = isItemInCart(id);
     
-    // Проверяем наличие товара при загрузке компонента
+    // Определение мобильного устройства
     useEffect(() => {
-        const checkIfProductInCart = async () => {
-            try {
-                const res = await fetch("http://localhost:3000/cart/1");
-                const data: ProductType[] = await res.json();
-                const exists = data.some((item: ProductType) => item.id === product.id);
-                setIsProductInCart(exists);
-            } catch (error) {
-                console.error("Ошибка проверки корзины:", error);
-            }
-        };
-        
-        checkIfProductInCart();
-    }, [product.id]); // Перепроверяем при смене ID
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
-    const handleAddToCart = useCallback(async () => {
-        // Проверяем ДО отправки запроса
-        if (isProductInCart) {
-            console.log("Товар уже в корзине, повторное добавление отменено");
-            return; // Просто выходим, не показывая ошибку
-        }
-        
-        if (isLoading) return;
-        
-        setIsLoading(true);
+    const handleAddToCart = async () => {
+        if (isInCart) return;
+
         try {
             const response = await fetch(`http://localhost:3000/cart/1/items`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ productId: product.id }),
+                body: JSON.stringify({ productId: id }),
             });
 
             if (!response.ok) {
                 const errorText = await response.text().catch(() => "Ошибка сервера");
                 throw new Error(`Ошибка ${response.status}: ${errorText}`);
             }
-            
-            // Обновляем состояние после успешного добавления
-            const result = await response.json();
-            console.log("Товар добавлен:", result);
-            incrementCart();
-            setIsProductInCart(true); // Помечаем как добавленный
-            
+
+            refreshCart();
         } catch (error) {
             console.error("Не удалось добавить товар:", error);
-        } finally {
-            setIsLoading(false);
         }
-    }, [isLoading, product.id, incrementCart, isProductInCart]); // Добавили isProductInCart в зависимости
+    };
+
     return (
-        <li
-            className={`${product.className} max-w-92.5 list-none flex flex-col h-full`}
-        >
-            <div className="w-full flex flex-col h-full">
-                {/* Изображение с фиксированной высотой */}
-                <div className="">
-                    {" "}
-                    {/* Фиксированная высота для изображения */}
-                    <img
-                        className="w-full h-full object-cover rounded-t-sm"
-                        src={`${product.imageUrl}`}
-                        alt={`${product.name}`}
-                    />
+        <li className={`
+            ${className} 
+            w-full max-w-xs sm:max-w-sm md:max-w-none
+            list-none flex flex-col h-full
+            transition-transform duration-300 hover:scale-[1.02]
+        `}>
+            <div className="w-full flex flex-col h-full shadow-sm hover:shadow-md rounded-lg overflow-hidden">
+                {/* Изображение с адаптивной высотой */}
+                <div className="relative overflow-hidden bg-gray-100">
+                    <div className="pt-[75%] md:pt-[100%] relative"> {/* 4:3 на мобильных, 1:1 на десктопе */}
+                        <img
+                            className="absolute top-0 left-0 w-full h-full object-cover"
+                            src={imageUrl}
+                            alt={name}
+                            loading="lazy"
+                        />
+                    </div>
+                    {/* Бейдж для товара в корзине */}
+                    {isInCart && (
+                        <div className="absolute top-2 right-2 bg-[#ff398b] text-white text-xs px-2 py-1 rounded-full">
+                            В корзине
+                        </div>
+                    )}
                 </div>
 
-                {/* Контентная часть - растягивается */}
-                <div className="bg-white rounded-b-lg flex flex-col flex-1 border border-gray-200">
-                    {/* Текстовая часть - ограниченная высота с прокруткой */}
-                    <div className="flex flex-col gap-y-3 pb-4 border-b border-b-gray-200 pl-5 py-5  flex-1 min-h-0">
-                        <span className="text-xl font-medium line-clamp-1">
-                            {product.name}
+                {/* Контентная часть */}
+                <div className="bg-white flex flex-col flex-1">
+                    <div className="flex flex-col gap-y-2 md:gap-y-3 p-3 md:p-4 md:pl-5 flex-1">
+                        <span className="text-base md:text-xl font-medium line-clamp-1 md:line-clamp-2">
+                            {name}
                         </span>
-                        <span className="text-gray-600 text-sm line-clamp-2 overflow-hidden">
-                            {product.description}
+                        <span className="text-gray-600 text-xs md:text-sm line-clamp-2 md:line-clamp-3">
+                            {description}
                         </span>
                     </div>
-                    <div
-                        className="flex justify-between items-center pl-5 py-3 h-14 relative before:absolute before:left-3/5 
-                    before:top-0 before:bottom-0 before:w-px before:border before:border-gray-200 before:-translate-x-1/2"
-                    >
-                        <div className="md:max-w-55">
-                            <span className="text-[#ff6163] text-xl font-bold">
-                                {product.price}₽
-                            </span>
-                        </div>
-                        <div>
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={isLoading || isProductInCart} // Блокируем если уже в корзине
-                                className={`flex justify-center items-center font-bold gap-x-2 mx-6 cursor-pointer 
-                        ${
-                            isProductInCart
-                                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                                : "hover:bg-gray-50"
-                        }
-                        ${isLoading ? "opacity-50 cursor-wait" : ""}
-                    `}
-                            >
-                                <Cart size={20} />
-                                {isProductInCart
-                                    ? "✓ В корзине"
-                                    : isLoading
-                                    ? "Добавление..."
-                                    : "В корзину"}
-                            </button>
+
+                    {/* Нижняя часть с ценой и кнопкой */}
+                    <div className="border-t border-gray-200 px-3 md:px-0">
+                        <div className="flex justify-between items-center py-2 md:py-3">
+                            <div className="md:max-w-55 pl-1 md:pl-5">
+                                <span className="text-[#ff6163] text-lg md:text-xl font-bold">
+                                    {price}₽
+                                </span>
+                            </div>
+                            <div className="pr-1 md:pr-0">
+                                <button
+                                    onClick={handleAddToCart}
+                                    disabled={isInCart}
+                                    className={`
+                                        flex justify-center items-center 
+                                        font-semibold md:font-bold 
+                                        gap-x-1 md:gap-x-2 
+                                        px-3 md:px-6 py-1.5 md:py-2
+                                        rounded-lg md:rounded-none
+                                        text-sm md:text-base
+                                        transition-all duration-200
+                                        ${isInCart 
+                                            ? "bg-gray-100 text-gray-500 cursor-not-allowed" 
+                                            : "bg-[#ff398b] text-white hover:bg-[#e0327a] active:scale-95"}
+                                    `}
+                                    aria-label={isInCart ? "Товар уже в корзине" : `Добавить ${name} в корзину`}
+                                >
+                                    <Cart size={isMobile ? 16 : 20} />
+                                    <span className="hidden xs:inline">
+                                        {isInCart ? "✓ В корзине" : "В корзину"}
+                                    </span>
+                                    <span className="xs:hidden">
+                                        {isInCart ? "✓" : "Купить"}
+                                    </span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>

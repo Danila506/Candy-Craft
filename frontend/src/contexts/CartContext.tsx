@@ -5,12 +5,13 @@ import {
     useState,
     type ReactNode,
 } from "react";
+import type { ProductType } from "../types/ProductType"; // Импортируем тип
 
 interface CartContextType {
     cartCount: number;
+    cartItems: ProductType[]; // Добавляем массив товаров
     refreshCart: () => void;
-    incrementCart: () => void;
-    decrementCart: () => void;
+    isItemInCart: (productId: number) => boolean; // Функция проверки
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -18,38 +19,37 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: ReactNode }> = ({
     children,
 }) => {
-    const [cartCount, setCartCount] = useState<number>(0);
+    const [cartItems, setCartItems] = useState<ProductType[]>([]); // Сохраняем товары
+    const cartCount = cartItems.length; // Считаем автоматически
 
-    const fetchCartCount = async () => {
+    const fetchCartItems = async () => {
         try {
             const response = await fetch("http://localhost:3000/cart/1");
-            const data = await response.json();
-            setCartCount(data.length);
+            const data: ProductType[] = await response.json();
+            setCartItems(data); // Сохраняем ВЕСЬ массив товаров
         } catch (error) {
-            console.log("Ошибка загрузки корзины: ", error);
+            console.error("Ошибка загрузки корзины: ", error);
         }
     };
 
     useEffect(() => {
-        fetchCartCount();
+        fetchCartItems();
     }, []);
 
     const refreshCart = () => {
-        fetchCartCount();
+        fetchCartItems();
     };
 
-    const incrementCart = () => {
-        setCartCount((prev) => prev + 1);
-    };
-    const decrementCart = () => {
-        setCartCount((prev) => prev - 1);
+    // Функция проверки товара в корзине
+    const isItemInCart = (productId: number): boolean => {
+        return cartItems.some((item) => item.id === productId);
     };
 
     const value = {
         cartCount,
+        cartItems, // Экспортируем товары
         refreshCart,
-        incrementCart,
-        decrementCart,
+        isItemInCart, // Экспортируем функцию проверки
     };
 
     return (
@@ -62,6 +62,5 @@ export const useCart = () => {
     if (!context) {
         throw new Error("useCart должен использоваться внутри CartProvider");
     }
-
     return context;
 };
