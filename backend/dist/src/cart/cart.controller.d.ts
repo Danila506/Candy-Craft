@@ -5,25 +5,25 @@ export declare class CartController {
     constructor(cartService: CartService);
     getCart(userId: number): Promise<{
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         name: string;
         description: string;
+        imageUrl: string;
+        createdAt: Date;
+        updatedAt: Date;
         price: number;
         inStock: number;
-        imageUrl: string;
         categoryId: number;
     }[]>;
     addToCart(userId: number, createCartDto: CreateCartItemDto): Promise<{
         product: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
             name: string;
             description: string;
+            imageUrl: string;
+            createdAt: Date;
+            updatedAt: Date;
             price: number;
             inStock: number;
-            imageUrl: string;
             categoryId: number;
         };
     } & {

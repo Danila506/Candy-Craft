@@ -1,0 +1,175 @@
+// pages/ProductPage.tsx - Адаптивная версия
+import { useParams, useNavigate } from "react-router-dom";
+import { useProducts } from "../contexts/ProductContext";
+import { useCart } from "../contexts/CartContext";
+import { Breadcrumb } from "../components/ui/Breadcrumb";
+import { ProductGallery } from "../components/ProductGallery";
+import { ProductInfo } from "../components/ProductInfo";
+import { useState, useEffect } from "react";
+
+export function ProductPage() {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
+    const { getProductById, loading } = useProducts();
+    const { isItemInCart, refreshCart } = useCart();
+    const [isMobile, setIsMobile] = useState(false);
+
+    // Определение мобильного устройства
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 768);
+        checkMobile();
+        window.addEventListener("resize", checkMobile);
+        return () => window.removeEventListener("resize", checkMobile);
+    }, []);
+
+    const product = getProductById(Number(id));
+
+    // Адаптивный лоадер
+    if (loading) {
+        return (
+            <div className="container py-10 md:py-20">
+                <div className="flex flex-col items-center justify-center min-h-[50vh]">
+                    <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-t-2 border-b-2 border-[#ff398b]"></div>
+                    <p className="mt-4 text-gray-600 text-sm md:text-base">Загрузка товара...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!product) {
+        return (
+            <div className="container py-10 md:py-20 px-4">
+                <div className="text-center max-w-md mx-auto">
+                    <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">Товар не найден</h2>
+                    <p className="text-gray-600 text-sm md:text-base mb-6 md:mb-8">
+                        Извините, запрашиваемый товар не существует или был удалён
+                    </p>
+                    <button
+                        onClick={() => navigate("/")}
+                        className="bg-[#ff398b] text-white px-5 py-2.5 md:px-6 md:py-3 rounded-lg hover:bg-[#e0327a] transition-colors text-sm md:text-base w-full md:w-auto"
+                    >
+                        Вернуться в каталог
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const isInCart = isItemInCart(product.id);
+
+    const handleAddToCart = async () => {
+        if (isInCart) return;
+
+        try {
+            await fetch(`http://localhost:3000/cart/1/items`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ productId: product.id }),
+            });
+            refreshCart();
+        } catch (error) {
+            console.error("Ошибка добавления в корзину:", error);
+        }
+    };
+
+    return (
+        <main className="container py-4 md:py-8 px-4 sm:px-6">
+            {/* Хлебные крошки - адаптивные */}
+            <div className="mb-4 md:mb-6">
+                <Breadcrumb
+                    items={[
+                        { text: "Главная", path: "/" },
+                        { text: "Каталог", path: "/" },
+                        { text: product.name, path: `/product/${product.id}` },
+                    ]}
+                    isMobile={isMobile}
+                />
+            </div>
+
+            {/* Основной контент - адаптивная сетка */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8 lg:gap-12 mb-10 md:mb-16">
+                <div className="lg:sticky lg:top-4">
+                    <ProductGallery
+                        mainImage={product.imageUrl}
+                        alt={product.name}
+                        isMobile={isMobile}
+                    />
+                </div>
+
+                <div className="lg:pl-0">
+                    <ProductInfo
+                        product={product}
+                        isInCart={isInCart}
+                        onAddToCart={handleAddToCart}
+                        isMobile={isMobile}
+                    />
+                </div>
+            </div>
+
+            {/* Описание товара - адаптивные отступы */}
+            <div className="mb-10 md:mb-16">
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Подробное описание</h2>
+                <div className="bg-white rounded-lg p-4 md:p-6 border border-gray-200">
+                    <div className="space-y-4">
+                        <p className="text-gray-700 leading-relaxed text-sm md:text-base">
+                            {product.description}
+                        </p>
+                        
+                        {/* Пример дополнительной информации */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                            <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
+                                <h3 className="font-medium text-sm md:text-base mb-2">Состав</h3>
+                                <p className="text-gray-600 text-xs md:text-sm">Бисквит, крем, ягоды, шоколад</p>
+                            </div>
+                            <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
+                                <h3 className="font-medium text-sm md:text-base mb-2">Вес</h3>
+                                <p className="text-gray-600 text-xs md:text-sm">1.5 кг</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* Адаптивная таблица характеристик (опционально) */}
+            <div className="mb-10 md:mb-16">
+                <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Характеристики</h2>
+                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="divide-y divide-gray-200">
+                        {[
+                            { name: "Срок годности", value: "72 часа" },
+                            { name: "Условия хранения", value: "+2°C до +6°C" },
+                            { name: "Размер", value: "Ø 20 см" },
+                            { name: "Калорийность", value: "350 ккал/100г" },
+                        ].map((spec, index) => (
+                            <div 
+                                key={index} 
+                                className={`p-3 md:p-4 ${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
+                            >
+                                <div className="flex flex-col sm:flex-row sm:items-center">
+                                    <div className="font-medium text-gray-700 text-sm md:text-base mb-1 sm:mb-0 sm:w-1/3">
+                                        {spec.name}
+                                    </div>
+                                    <div className="text-gray-600 text-sm md:text-base sm:w-2/3">
+                                        {spec.value}
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Кнопка "Назад" для мобильных */}
+            {isMobile && (
+                <div className="sticky bottom-0 bg-white border-t border-gray-200 py-3 px-4 -mx-4">
+                    <button
+                        onClick={() => navigate(-1)}
+                        className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+                    >
+                        ← Назад
+                    </button>
+                </div>
+            )}
+        </main>
+    );
+}
