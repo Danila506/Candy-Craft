@@ -1,5 +1,4 @@
 import { ProductsProvider } from "../contexts/ProductContext";
-import { Footer } from "./Footer";
 import { ProductList } from "./ProductList";
 
 export function Main() {
@@ -10,7 +9,6 @@ export function Main() {
                     <ProductList />
                 </ProductsProvider>
             </main>
-            <Footer />
         </>
     );
 }

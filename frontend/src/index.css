@@ -17,3 +17,23 @@ body{
 .active {
     border-bottom: 1px solid #123;
 }
+
+
+/* В глобальный CSS добавить анимацию */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { transform: translateY(-10px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.fixed.inset-0 {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.relative.bg-white {
+  animation: slideIn 0.3s ease-out;
+}
