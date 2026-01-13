@@ -75,21 +75,28 @@ async create(dto: CreateProductDto): Promise<Product> {
   }
 
 //todo Удаление товара по id
-  async removeById(id: number): Promise<{
-    message: string
-    deletedProduct: Product}>{
-    const product = await this.prisma.product.findFirst({where: {id}})
-
-      if (!product)   throw new NotFoundException(`Товар с ID ${id} не найден`);
-
-    const deletedProduct = {...product}
-    await this.prisma.product.delete({where: {id}});
-
-    return {
-      message: `Товар с ID = ${id} успешно удален`,
-      deletedProduct: deletedProduct
-    }
+async removeById(id: number): Promise<{ message: string }> {
+  // 1. ПРОВЕРЯЕМ существует ли товар
+  const product = await this.prisma.product.findUnique({
+    where: { id }
+  });
+  
+  if (!product) {
+    throw new NotFoundException(`Товар с ID ${id} не найден`);
   }
+
+  // 2. УДАЛЯЕМ все элементы корзины с этим товаром
+  await this.prisma.cartItem.deleteMany({
+    where: { productId: id }
+  });
+
+  // 3. УДАЛЯЕМ сам товар
+  await this.prisma.product.delete({
+    where: { id }
+  });
+
+  return { message: 'Товар успешно удален вместе со связанными записями' };
+}
 
 //todo Обновление товара
   async update(id: number, dto: CreateProductDto): Promise<{message: string, changedProduct: Product}>{

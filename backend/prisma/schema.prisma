@@ -45,7 +45,7 @@ model CartItem {
   
   // Связи
   cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id]) // было products
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade) 
 
   @@unique([cartId, productId])
   @@index([cartId])
@@ -66,7 +66,7 @@ model Product {
   updatedAt   DateTime   @updatedAt
   
   // Связи
-  cartItems   CartItem[]  // было cart_items
+  cartItems   CartItem[] 
   category    Category    @relation(fields: [categoryId], references: [id]) // было categories
 
   @@index([categoryId])

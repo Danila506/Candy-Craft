@@ -1,263 +1,363 @@
-// admin/components/ProductModal.tsx
-import React, { useState, useEffect } from "react";
-import { X } from "lucide-react";
-import { useProducts } from "../../contexts/ProductContext";
-
-export interface Product {
-    id: number;
-    name: string;
-    description: string;
-    price: number;
-    inStock: number;
-    imageUrl: string;
-    categoryId: number;
-}
+// components/ProductModal.tsx
+import { useState, useEffect } from "react";
+import { X, Upload } from "lucide-react";
+import type { CreateProductDto } from "../../types/ProductType";
 
 interface ProductModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    product: Product | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (data: CreateProductDto) => Promise<void>;
+  onUpdate?: (id: number, data: CreateProductDto) => Promise<void>;
+  product?: { id: number } & CreateProductDto | null; // Для редактирования
 }
 
-export const ProductModal: React.FC<ProductModalProps> = ({
-    isOpen,
-    onClose,
-    product,
-}) => {
-    const { updateProduct } = useProducts();
+export function ProductModal({ 
+  isOpen, 
+  onClose, 
+  onCreate, 
+  onUpdate, 
+  product 
+}: ProductModalProps) {
+  const [formData, setFormData] = useState<CreateProductDto & { id?: number }>({
+    name: "",
+    price: 0,
+    inStock: 1,
+    categoryId: 1,
+    description: "",
+    imageUrl: "",
+  });
 
-    // Состояние для данных формы
-    const [formData, setFormData] = useState({
-        name: "",
-        description: "",
-        price: 0,
-        inStock: 0,
-        imageUrl: "",
-        categoryId: 1,
-    });
+  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-    // Загружаем данные товара в форму при открытии модалки
-    useEffect(() => {
-        if (product) {
-            setFormData({
-                name: product.name,
-                description: product.description,
-                price: product.price,
-                inStock: product.inStock,
-                imageUrl: product.imageUrl,
-                categoryId: product.categoryId,
-            });
-        }
-    }, [product]);
+  // Загружаем категории и заполняем форму при открытии
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories();
+      
+      if (product) {
+        // Режим редактирования
+        setFormData({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          inStock: product.inStock,
+          categoryId: product.categoryId,
+          description: product.description,
+          imageUrl: product.imageUrl,
+        });
+      } else {
+        // Режим создания
+        setFormData({
+          name: "",
+          price: 0,
+          inStock: 1,
+          categoryId: 1,
+          description: "",
+          imageUrl: "",
+        });
+      }
+      
+      setErrors({});
+    }
+  }, [isOpen, product]);
 
-    // Обработчик изменения полей
-    const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-    ) => {
-        const { name, value } = e.target;
-        setFormData((prev) => ({
-            ...prev,
-            [name]:
-                name === "price" || name === "inStock" || name === "categoryId"
-                    ? Number(value)
-                    : value,
-        }));
-    };
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch("http://localhost:3000/categories");
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Ошибка загрузки категорий:", error);
+    }
+  };
 
-    // Обработчик сохранения
-    const handleSave = async () => {
-        if (!product) return;
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
-        try {
-            await updateProduct(product.id, formData);
-            onClose();
-        } catch (error) {
-            console.error("Ошибка при обновлении товара:", error);
-        }
-    };
+    if (!formData.name.trim()) newErrors.name = "Введите название товара";
+    if (formData.price <= 0) newErrors.price = "Цена должна быть больше 0";
+    if (formData.inStock <= 0) newErrors.inStock = "Количество должно быть больше 0";
+    if (!formData.imageUrl.trim()) newErrors.imageUrl = "Добавьте ссылку на изображение";
+    if (!formData.description.trim()) newErrors.description = "Введите описание";
 
-    if (!isOpen || !product) return null;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                {/* Заголовок */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-900">
-                        Редактировать товар
-                    </h2>
-                    <button
-                        onClick={onClose}
-                        className="text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                        <X size={24} />
-                    </button>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      // Убираем id из данных для отправки
+      const { id, ...submitData } = formData;
+      
+      if (product && onUpdate) {
+        // Режим редактирования
+        await onUpdate(product.id, submitData);
+      } else {
+        // Режим создания
+        await onCreate(submitData);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error("Ошибка сохранения:", error);
+      setErrors({ submit: "Ошибка при сохранении товара" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChange = (
+    field: keyof CreateProductDto, 
+    value: string | number
+  ) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Очищаем ошибку при изменении поля
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: "" }));
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
+
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+          {/* Заголовок */}
+          <div className="flex items-center justify-between p-6 border-b">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {product ? "Редактировать товар" : "Создать новый товар"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              disabled={loading}
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          {/* Форма */}
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Левая колонка */}
+              <div className="space-y-4">
+                {/* Название */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Название товара *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                      errors.name ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="Например: Торт 'Медовик'"
+                    disabled={loading}
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                  )}
                 </div>
 
-                {/* Контент */}
-                <div className="p-6">
-                    <div className="space-y-4">
-                        {/* Название */}
-                        <div>
-                            <label
-                                htmlFor="name"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Название товара{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="text"
-                                id="name"
-                                name="name"
-                                value={formData.name}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff398b]"
-                                placeholder="Введите название товара"
-                            />
-                        </div>
+                {/* Цена и количество */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Цена (₽) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={(e) => handleChange("price", parseFloat(e.target.value) || 0)}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                        errors.price ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="999.99"
+                      disabled={loading}
+                    />
+                    {errors.price && (
+                      <p className="mt-1 text-sm text-red-600">{errors.price}</p>
+                    )}
+                  </div>
 
-                        {/* Описание */}
-                        <div>
-                            <label
-                                htmlFor="description"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                Описание <span className="text-red-500">*</span>
-                            </label>
-                            <textarea
-                                id="description"
-                                name="description"
-                                rows={4}
-                                value={formData.description}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff398b]"
-                                placeholder="Введите описание товара"
-                            />
-                        </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Количество *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.inStock}
+                      onChange={(e) => handleChange("inStock", parseInt(e.target.value) || 1)}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                        errors.inStock ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="10"
+                      disabled={loading}
+                    />
+                    {errors.inStock && (
+                      <p className="mt-1 text-sm text-red-600">{errors.inStock}</p>
+                    )}
+                  </div>
+                </div>
 
-                        {/* Цена и Количество */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label
-                                    htmlFor="price"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    Цена (₽){" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    id="price"
-                                    name="price"
-                                    min="0"
-                                    step="1"
-                                    value={formData.price}
-                                    onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff398b]"
-                                    placeholder="0"
-                                />
-                            </div>
+                {/* Категория */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Категория *
+                  </label>
+                  <select
+                    value={formData.categoryId}
+                    onChange={(e) => handleChange("categoryId", parseInt(e.target.value))}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
+                    disabled={loading || categories.length === 0}
+                  >
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-                            <div>
-                                <label
-                                    htmlFor="inStock"
-                                    className="block text-sm font-medium text-gray-700 mb-1"
-                                >
-                                    В наличии (шт){" "}
-                                    <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    id="inStock"
-                                    name="inStock"
-                                    min="0"
-                                    step="1"
-                                    value={formData.inStock}
-                                    onChange={handleChange}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff398b]"
-                                    placeholder="0"
-                                />
-                            </div>
-                        </div>
+                {/* Остаток на складе */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Остаток на складе
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.inStock}
+                    onChange={(e) => handleChange("inStock", parseInt(e.target.value) || 0)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
+                    placeholder="0"
+                    disabled={loading}
+                  />
+                </div>
+              </div>
 
-                        {/* ID категории */}
-                        <div>
-                            <label
-                                htmlFor="categoryId"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                ID категории{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="number"
-                                id="categoryId"
-                                name="categoryId"
-                                min="1"
-                                step="1"
-                                value={formData.categoryId}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff398b]"
-                                placeholder="1"
-                            />
-                        </div>
-
-                        {/* URL изображения */}
-                        <div>
-                            <label
-                                htmlFor="imageUrl"
-                                className="block text-sm font-medium text-gray-700 mb-1"
-                            >
-                                URL изображения{" "}
-                                <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                type="url"
-                                id="imageUrl"
-                                name="imageUrl"
-                                value={formData.imageUrl}
-                                onChange={handleChange}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff398b]"
-                                placeholder="https://example.com/image.jpg"
-                            />
-
-                            {/* Превью изображения */}
-                            {formData.imageUrl && (
-                                <div className="mt-2">
-                                    <img
-                                        src={formData.imageUrl}
-                                        alt="Превью"
-                                        className="w-32 h-32 object-cover rounded-lg border border-gray-300"
-                                        onError={(e) => {
-                                            e.currentTarget.src =
-                                                "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Crect fill='%23e5e7eb' width='128' height='128'/%3E%3C/svg%3E";
-                                        }}
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Кнопки */}
-                        <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-                            >
-                                Отменить
-                            </button>
-                            <button
-                                onClick={handleSave}
-                                type="button"
-                                className="px-4 py-2 text-white bg-[#ff398b] rounded-lg hover:bg-[#e0327a] transition-colors"
-                            >
-                                Сохранить
-                            </button>
-                        </div>
+              {/* Правая колонка */}
+              <div className="space-y-4">
+                {/* Изображение */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Изображение *
+                  </label>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <input
+                        type="url"
+                        value={formData.imageUrl}
+                        onChange={(e) => handleChange("imageUrl", e.target.value)}
+                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                          errors.imageUrl ? "border-red-500" : "border-gray-300"
+                        }`}
+                        placeholder="https://example.com/image.jpg"
+                        disabled={loading}
+                      />
                     </div>
+                    <button
+                      type="button"
+                      className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      onClick={() => {
+                        // Можно добавить загрузку файла
+                        const url = prompt("Введите URL изображения:");
+                        if (url) handleChange("imageUrl", url);
+                      }}
+                      disabled={loading}
+                    >
+                      <Upload size={20} />
+                    </button>
+                  </div>
+                  {errors.imageUrl && (
+                    <p className="mt-1 text-sm text-red-600">{errors.imageUrl}</p>
+                  )}
+                  
+                  {/* Предпросмотр изображения */}
+                  {formData.imageUrl && (
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-600 mb-2">Предпросмотр:</p>
+                      <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden border">
+                        <img
+                          src={formData.imageUrl}
+                          alt="Предпросмотр"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%23f3f4f6'/%3E%3Ctext x='200' y='110' text-anchor='middle' fill='%239ca3af' font-family='Arial' font-size='14'%3EИзображение не загружено%3C/text%3E%3C/svg%3E";
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
+
+                {/* Описание */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Описание *
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => handleChange("description", e.target.value)}
+                    rows={4}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                      errors.description ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="Опишите ваш товар..."
+                    disabled={loading}
+                  />
+                  {errors.description && (
+                    <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* Кнопки */}
+            <div className="flex justify-end gap-3 pt-6 mt-6 border-t">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                disabled={loading}
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a] transition-colors font-medium disabled:opacity-50"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Сохранение...
+                  </span>
+                ) : product ? "Сохранить изменения" : "Создать товар"}
+              </button>
+            </div>
+          </form>
         </div>
-    );
-};
+      </div>
+    </div>
+  );
+}

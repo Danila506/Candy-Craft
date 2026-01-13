@@ -11,7 +11,6 @@ export declare class ProductsController {
     findById(id: number): Promise<Product>;
     removeById(id: number): Promise<{
         message: string;
-        deletedProduct: Product;
     }>;
     update(id: number, dto: CreateProductDto): Promise<{
         message: string;

@@ -62,15 +62,19 @@ let ProductsService = class ProductsService {
         return productId;
     }
     async removeById(id) {
-        const product = await this.prisma.product.findFirst({ where: { id } });
-        if (!product)
+        const product = await this.prisma.product.findUnique({
+            where: { id }
+        });
+        if (!product) {
             throw new common_1.NotFoundException(`Товар с ID ${id} не найден`);
-        const deletedProduct = { ...product };
-        await this.prisma.product.delete({ where: { id } });
-        return {
-            message: `Товар с ID = ${id} успешно удален`,
-            deletedProduct: deletedProduct
-        };
+        }
+        await this.prisma.cartItem.deleteMany({
+            where: { productId: id }
+        });
+        await this.prisma.product.delete({
+            where: { id }
+        });
+        return { message: 'Товар успешно удален вместе со связанными записями' };
     }
     async update(id, dto) {
         const product = await this.prisma.product.findFirst({ where: { id } });

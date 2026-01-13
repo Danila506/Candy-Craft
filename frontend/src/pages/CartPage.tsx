@@ -42,7 +42,7 @@ export function Cart() {
             await fetch(`http://localhost:3000/cart/1/items/${itemId}`, {
                 method: "DELETE",
             });
-            refreshCart(); // Это обновит cartItems в контексте
+            refreshCart();
         } catch (error) {
             console.error("Ошибка удаления:", error);
         }
@@ -70,12 +70,12 @@ export function Cart() {
     return (
         <main className="container mb-30">
             <div className="text-center mb-9">
-                            <Breadcrumb
-                items={[
-                    { text: "Главная", path: "/" },
-                    { text: "Корзина", path: "/cart" },
-                ]}
-            />
+                <Breadcrumb
+                    items={[
+                        { text: "Главная", path: "/" },
+                        { text: "Корзина", path: "/cart" },
+                    ]}
+                />
                 <H2 text="Ваша корзина" />
             </div>
 
