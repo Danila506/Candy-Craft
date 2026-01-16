@@ -59,17 +59,27 @@ export function ProductList() {
     }, [selectedCategory, isMobile]);
 
     return (
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            {/* Фильтр по категориям */}
-            <div className="mb-6 md:mb-8">
+        <div className="px-4 sm:px-6 lg:px-8">
+            {/* Заголовок секции */}
+            <div className="mb-8 md:mb-12 text-center">
+                <h1 className="text-3xl md:text-4xl font-light text-gray-800 mb-2">
+                    Каталог товаров
+                </h1>
+                <p className="text-gray-500 text-sm md:text-base">
+                    Выберите категорию или просмотрите все товары
+                </p>
+            </div>
+
+            {/* Фильтр по категориям - минималистичный стиль */}
+            <div className="mb-8 md:mb-12">
                 <div className="overflow-x-auto pb-2 md:pb-0">
-                    <div className="flex gap-2 min-w-max md:min-w-0 md:flex-wrap">
+                    <div className="flex gap-2 md:gap-3 min-w-max md:min-w-0 md:flex-wrap md:justify-center">
                         <button
                             onClick={() => setSelectedCategory(null)}
-                            className={`px-4 py-2 rounded-lg text-sm md:text-base whitespace-nowrap transition-colors ${
+                            className={`px-5 py-2.5 rounded-full text-sm md:text-base whitespace-nowrap transition-all duration-200 ${
                                 !selectedCategory
-                                    ? "bg-[#ff398b] text-white"
-                                    : "bg-gray-200 hover:bg-gray-300"
+                                    ? "bg-rose-200/60 text-rose-800 border border-rose-300/50 shadow-sm"
+                                    : "bg-white/80 text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                             }`}
                         >
                             Все товары
@@ -79,10 +89,10 @@ export function ProductList() {
                             <button
                                 key={cat.id}
                                 onClick={() => setSelectedCategory(cat.id)}
-                                className={`px-4 py-2 rounded-lg text-sm md:text-base whitespace-nowrap transition-colors ${
+                                className={`px-5 py-2.5 rounded-full text-sm md:text-base whitespace-nowrap transition-all duration-200 ${
                                     selectedCategory === cat.id
-                                        ? "bg-[#ff398b] text-white"
-                                        : "bg-gray-200 hover:bg-gray-300"
+                                        ? "bg-rose-200/60 text-rose-800 border border-rose-300/50 shadow-sm"
+                                        : "bg-white/80 text-gray-600 border border-gray-200 hover:bg-gray-50 hover:border-gray-300"
                                 }`}
                             >
                                 {cat.name}
@@ -95,30 +105,28 @@ export function ProductList() {
             {/* Лоадер */}
             {isLoading ? (
                 <div className="flex justify-center items-center h-64">
-                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#ff398b]"></div>
+                    <div className="animate-spin rounded-full h-10 w-10 border-2 border-rose-200 border-t-rose-400"></div>
                 </div>
             ) : (
                 <>
                     {/* Список товаров */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-10">
-                        {visibleProducts.map((product:ProductType) => (
-
-                                <Product key={product.id} {...product} />
-
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6 lg:gap-8 mb-8 md:mb-12">
+                        {visibleProducts.map((product: ProductType) => (
+                            <Product key={product.id} {...product} />
                         ))}
                     </div>
 
-                    {/* Кнопка "Показать еще" */}
+                    {/* Кнопка "Показать еще" - минималистичная */}
                     {visibleProducts.length < filteredProducts.length && (
                         <div className="flex justify-center mb-8">
                             <button
                                 onClick={loadMore}
-                                className="font-semibold py-3 px-8 md:py-4 md:px-24 cursor-pointer border border-[#ff398b] rounded-sm 
-                                           hover:bg-[#ff398b] hover:text-white transition-all duration-300 text-sm md:text-base"
+                                className="px-8 py-3 md:px-12 md:py-3.5 text-sm md:text-base font-medium text-gray-700 bg-white/80 border border-gray-200 rounded-full hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow"
                             >
                                 Показать еще{" "}
                                 {Math.min(
-                                    filteredProducts.length - visibleProducts.length,
+                                    filteredProducts.length -
+                                        visibleProducts.length,
                                     isMobile ? 3 : 6
                                 )}
                             </button>
@@ -126,19 +134,21 @@ export function ProductList() {
                     )}
 
                     {/* Сообщение о конце списка */}
-                    {visibleProducts.length === filteredProducts.length && filteredProducts.length > 0 && (
-                        <div className="text-center text-gray-500 py-4 text-sm md:text-base">
-                            Все товары загружены
-                        </div>
-                    )}
+                    {visibleProducts.length ===
+                        filteredProducts.length &&
+                        filteredProducts.length > 0 && (
+                            <div className="text-center text-gray-400 py-6 text-sm md:text-base">
+                                Все товары загружены
+                            </div>
+                        )}
                 </>
             )}
 
             {/* Сообщение если товаров нет */}
             {!isLoading && filteredProducts.length === 0 && (
-                <div className="text-center text-gray-500 py-12 text-sm md:text-base">
-                    {selectedCategory 
-                        ? "Товары в этой категории отсутствуют" 
+                <div className="text-center text-gray-400 py-16 text-sm md:text-base">
+                    {selectedCategory
+                        ? "Товары в этой категории отсутствуют"
                         : "Товары временно отсутствуют"}
                 </div>
             )}

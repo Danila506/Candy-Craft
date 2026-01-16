@@ -1,23 +1,13 @@
 // components/Product.tsx
 import { useCart } from "../contexts/CartContext";
-import Cart from "./ui/CartIcon";
 import type { ProductType } from "../types/ProductType";
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { ShoppingCart, CheckCircle } from "lucide-react";
 
 export function Product(product: ProductType) {
     const { isItemInCart, refreshCart } = useCart();
     const { className, imageUrl, name, description, price, id } = product;
-    const [isMobile, setIsMobile] = useState(false);
     const isInCart = isItemInCart(id);
-
-    // Определение мобильного устройства
-    useEffect(() => {
-        const checkMobile = () => setIsMobile(window.innerWidth < 768);
-        checkMobile();
-        window.addEventListener("resize", checkMobile);
-        return () => window.removeEventListener("resize", checkMobile);
-    }, []);
 
     const handleAddToCart = async () => {
         if (isInCart) return;
@@ -48,23 +38,19 @@ export function Product(product: ProductType) {
             ${className} 
             w-full max-w-xs sm:max-w-sm md:max-w-none
             list-none flex flex-col h-full
-            transition-transform duration-300 hover:scale-[1.02]
         `}
         >
-            <div className="w-full flex flex-col h-full shadow-sm hover:shadow-md rounded-lg overflow-hidden">
+            <div className="group w-full flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300">
                 {/* Изображение с адаптивной высотой */}
-
                 <Link
                     key={product.id}
                     to={`/product/${product.id}`}
-                    className="block hover:scale-[1.02] transition-transform duration-300"
+                    className="block relative overflow-hidden"
                 >
-                    <div className="relative overflow-hidden bg-gray-100">
+                    <div className="relative overflow-hidden bg-rose-50/50">
                         <div className="pt-[75%] md:pt-[100%] relative">
-                            {" "}
-                            {/* 4:3 на мобильных, 1:1 на десктопе */}
                             <img
-                                className="absolute top-0 left-0 w-full h-full object-cover"
+                                className="absolute top-0 left-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 src={imageUrl}
                                 alt={name}
                                 loading="lazy"
@@ -73,65 +59,79 @@ export function Product(product: ProductType) {
 
                         {/* Бейдж для товара в корзине */}
                         {isInCart && (
-                            <div className="absolute top-2 right-2 bg-[#ff398b] text-white text-xs px-2 py-1 rounded-full">
-                                В корзине
+                            <div className="absolute top-3 right-3 bg-rose-200/90 backdrop-blur-sm text-rose-800 text-xs font-medium px-3 py-1.5 rounded-full border border-rose-300/50 flex items-center gap-1.5 z-10 shadow-sm">
+                                <CheckCircle className="w-3.5 h-3.5" />
+                                <span>В корзине</span>
                             </div>
                         )}
                     </div>
+
                     {/* Контентная часть */}
-                    <div className="bg-white flex flex-col flex-1">
-                        <div className="flex flex-col gap-y-2 md:gap-y-3 p-3 md:p-4 md:pl-5 flex-1">
-                            <span className="text-base md:text-xl font-medium line-clamp-1 md:line-clamp-2">
+                    <div className="bg-white flex flex-col flex-1 p-4 md:p-5">
+                        <div className="flex flex-col gap-y-2 md:gap-y-3 flex-1">
+                            <h3 className="text-base md:text-lg font-medium text-gray-800 line-clamp-2 group-hover:text-rose-700 transition-colors duration-200">
                                 {name}
-                            </span>
-                            <span className="text-gray-600 text-xs md:text-sm line-clamp-2 md:line-clamp-3">
+                            </h3>
+                            <p className="text-gray-500 text-xs md:text-sm line-clamp-2 md:line-clamp-3 leading-relaxed">
                                 {description}
-                            </span>
+                            </p>
                         </div>
                     </div>
                 </Link>
 
                 {/* Нижняя часть с ценой и кнопкой */}
-                <div className="border-t border-gray-200 px-3 md:px-0">
-                    <div className="flex justify-between items-center py-2 md:py-3">
-                        <div className="md:max-w-55 pl-1 md:pl-5">
-                            <span className="text-[#ff6163] text-lg md:text-xl font-bold">
+                <div className="border-t border-gray-100 bg-gray-50/30 px-4 md:px-5 py-4">
+                    <div className="flex justify-between items-center gap-3">
+                        <div className="flex flex-col">
+                            <span className="text-xl md:text-2xl font-semibold text-gray-800">
                                 {price}₽
                             </span>
+                            <span className="text-xs text-gray-400 hidden md:block">
+                                за единицу
+                            </span>
                         </div>
-                        <div className="pr-1 md:pr-0">
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={isInCart}
-                                className={`
-                                        flex justify-center items-center 
-                                        font-semibold md:font-bold 
-                                        gap-x-1 md:gap-x-2 
-                                        px-3 md:px-6 py-1.5 md:py-2
-                                        rounded-lg md:rounded-none
-                                        text-sm md:text-base
-                                        transition-all duration-200
-                                        ${
-                                            isInCart
-                                                ? "bg-gray-100 text-gray-500 cursor-not-allowed"
-                                                : "bg-[#ff398b] text-white hover:bg-[#e0327a] active:scale-95"
-                                        }
-                                    `}
-                                aria-label={
+                        <button
+                            onClick={handleAddToCart}
+                            disabled={isInCart}
+                            className={`
+                                group/btn
+                                flex justify-center items-center 
+                                font-medium
+                                gap-2
+                                px-4 md:px-5 py-2 md:py-2.5
+                                rounded-lg
+                                text-sm md:text-base
+                                transition-all duration-200
+                                ${
                                     isInCart
-                                        ? "Товар уже в корзине"
-                                        : `Добавить ${name} в корзину`
+                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                        : "bg-rose-200/60 text-rose-800 border border-rose-300/50 hover:bg-rose-300/60 hover:border-rose-400/60 active:scale-95 shadow-sm hover:shadow"
                                 }
-                            >
-                                <Cart size={isMobile ? 16 : 20} />
-                                <span className="hidden xs:inline">
-                                    {isInCart ? "✓ В корзине" : "В корзину"}
-                                </span>
-                                <span className="xs:hidden">
-                                    {isInCart ? "✓" : "Купить"}
-                                </span>
-                            </button>
-                        </div>
+                            `}
+                            aria-label={
+                                isInCart
+                                    ? "Товар уже в корзине"
+                                    : `Добавить ${name} в корзину`
+                            }
+                        >
+                            {isInCart ? (
+                                <>
+                                    <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
+                                    <span className="hidden sm:inline">
+                                        В корзине
+                                    </span>
+                                    <span className="sm:hidden">✓</span>
+                                </>
+                            ) : (
+                                <>
+                                    <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
+                                    <span className="hidden sm:inline">
+                                        В корзину
+                                    </span>
+                                    <span className="sm:hidden">Купить</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </div>

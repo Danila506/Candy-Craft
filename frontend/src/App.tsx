@@ -13,6 +13,7 @@ import { ProductsAdmin } from "./admin/pages/ProductsAdmin";
 import { AdminRoute } from "./admin/components/AdminRoute";
 import { AdminProvider } from "./admin/context/AdminContext";
 import { Footer } from "./components/Footer"; // Если есть Footer
+import { CheckoutPage } from "./pages/CheckoutPage";
 
 function App() {
     return (
@@ -22,31 +23,63 @@ function App() {
                     <BrowserRouter>
                         <Routes>
                             {/* === ПУБЛИЧНЫЕ СТРАНИЦЫ (с Header) === */}
-                            <Route path="/*" element={
-                                <>
-                                    <Header /> {/* Header ТОЛЬКО для публичных страниц */}
-                                    <Routes location={location}>
-                                        <Route path="/" element={<Main />} />
-                                        <Route path="/cart" element={<Cart />} />
-                                        <Route path="/product/:id" element={<ProductPage />} />
-                                        {/* Добавьте другие публичные страницы */}
-                                    </Routes>
-                                    <Footer /> {/* Footer ТОЛЬКО для публичных страниц */}
-                                </>
-                            } />
+                            <Route
+                                path="/*"
+                                element={
+                                    <>
+                                        <Header />
+                                        {/* Header ТОЛЬКО для публичных страниц */}
+                                        <Routes location={location}>
+                                            <Route
+                                                path="/"
+                                                element={<Main />}
+                                            />
+                                        </Routes>
+                                        <Footer />
+                                    </>
+                                }
+                            />
+
+                            <Route
+                                path="/product/:id"
+                                element={<ProductPage />}
+                            />
+
+                            <Route
+                                path="/cart"
+                                element={
+                                    <>
+                                        <Cart />
+                                    </>
+                                }
+                            />
+
+                            <Route
+                                path="/checkout"
+                                element={<CheckoutPage />}
+                            />
 
                             {/* === АДМИН-СТРАНИЦЫ (БЕЗ Header и Footer) === */}
-                            <Route path="/admin/login" element={<LoginPage />} />
-                            <Route path="/admin" element={
-                                <AdminRoute>
-                                    <Dashboard />
-                                </AdminRoute>
-                            } />
-                            <Route path="/admin/products" element={
-                                <AdminRoute>
-                                    <ProductsAdmin />
-                                </AdminRoute>
-                            } />
+                            <Route
+                                path="/admin/login"
+                                element={<LoginPage />}
+                            />
+                            <Route
+                                path="/admin"
+                                element={
+                                    <AdminRoute>
+                                        <Dashboard />
+                                    </AdminRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/products"
+                                element={
+                                    <AdminRoute>
+                                        <ProductsAdmin />
+                                    </AdminRoute>
+                                }
+                            />
                         </Routes>
                     </BrowserRouter>
                 </AdminProvider>

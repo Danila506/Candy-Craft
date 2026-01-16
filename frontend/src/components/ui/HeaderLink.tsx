@@ -2,7 +2,13 @@ function HeaderLink(props: {text: string, className?:string, href?: string; onCl
 
     return (
         <li className="text-center">
-            <a className={`${props.className}`} href={`${props.href}`}>{props.text}</a>
+            <a 
+                className={`transition-colors ${props.className || "text-gray-700 hover:text-rose-600"}`} 
+                href={props.href || "#"}
+                onClick={props.onClick}
+            >
+                {props.text}
+            </a>
         </li>
     );
 }
