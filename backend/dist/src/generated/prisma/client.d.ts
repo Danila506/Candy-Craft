@@ -11,3 +11,5 @@ export type Cart = Prisma.CartModel;
 export type CartItem = Prisma.CartItemModel;
 export type Product = Prisma.ProductModel;
 export type Category = Prisma.CategoryModel;
+export type Order = Prisma.OrderModel;
+export type OrderItem = Prisma.OrderItemModel;

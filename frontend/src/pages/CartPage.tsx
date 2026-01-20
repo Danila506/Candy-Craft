@@ -2,7 +2,7 @@ import { Breadcrumb } from "../components/ui/Breadcrumb";
 import { useEffect, useMemo, useState } from "react";
 import { H2 } from "../components/ui/H2";
 import { useCart } from "../contexts/CartContext";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
     ShoppingCart,
     Plus,
@@ -13,13 +13,9 @@ import {
     ArrowRight,
     Sparkles,
     Tag,
-    ShieldCheck,
 } from "lucide-react";
 
 export function Cart() {
-    useEffect(() => {
-        console.log('render')
-    }, [])
     const { cartItems, refreshCart } = useCart();
 
     const [loading, setLoading] = useState(true);
@@ -61,6 +57,18 @@ export function Cart() {
             console.error("Ошибка удаления:", error);
         }
     };
+    const navigate = useNavigate(); // <-- вот здесь
+    const handleCheckout = () => {
+        // Формируем товары с правильными количествами
+        const orderItems = cartItems.map((item) => ({
+            productId: item.id,
+            quantity: itemQuantities[item.id] || 1,
+            price: item.price,
+        }));
+
+        // Переходим на CheckoutPage и передаем state
+        navigate("/checkout", { state: { orderItems } });
+    };
 
     const totalPrice = useMemo(() => {
         return cartItems.reduce((sum, item) => {
@@ -75,7 +83,7 @@ export function Cart() {
 
     if (loading)
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-purple-50/20 flex items-center justify-center">
+            <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/20 to-purple-50/20 flex items-center justify-center">
                 <div className="text-center">
                     <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-300 rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="text-slate-600 font-medium">Загрузка...</p>
@@ -84,7 +92,7 @@ export function Cart() {
         );
 
     return (
-        <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-purple-50/20 relative overflow-hidden">
+        <main className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/20 to-purple-50/20 relative overflow-hidden">
             {/* Декоративные элементы фона */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-20 left-10 w-72 h-72 bg-blue-200/10 rounded-full blur-3xl"></div>
@@ -95,7 +103,7 @@ export function Cart() {
             <div className="container mx-auto px-4 py-8 md:py-12 relative z-10">
                 {/* Заголовок */}
                 <div className="text-center mb-10">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-indigo-200 to-purple-200 rounded-2xl mb-4 shadow-sm">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-indigo-200 to-purple-200 rounded-2xl mb-4 shadow-sm">
                         <ShoppingCart className="w-8 h-8 text-indigo-700" />
                     </div>
                     <H2 text="Корзина покупок" />
@@ -111,7 +119,7 @@ export function Cart() {
                     /* Пустая корзина */
                     <div className="max-w-lg mx-auto">
                         <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm border border-slate-100 p-12 text-center">
-                            <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                            <div className="w-24 h-24 bg-linear-to-br from-slate-100 to-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                                 <Package className="w-12 h-12 text-slate-400" />
                             </div>
                             <h3 className="text-2xl font-semibold text-slate-800 mb-3">
@@ -123,7 +131,7 @@ export function Cart() {
                             </p>
                             <Link
                                 to="/"
-                                className="inline-flex items-center gap-2 px-8 py-3.5 bg-gradient-to-r from-indigo-400 to-purple-400 text-white rounded-2xl font-medium text-base hover:shadow-lg hover:shadow-indigo-200/50 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+                                className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-indigo-400 to-purple-400 text-white rounded-2xl font-medium text-base hover:shadow-lg hover:shadow-indigo-200/50 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
                             >
                                 <Sparkles className="w-5 h-5" />
                                 Перейти в каталог
@@ -146,7 +154,7 @@ export function Cart() {
                                     >
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-5 md:p-6">
                                             {/* Изображение товара */}
-                                            <div className="relative w-full sm:w-28 h-28 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100">
+                                            <div className="relative w-full sm:w-28 h-28 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-linear-to-br from-slate-50 to-slate-100">
                                                 <img
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                     src={item.imageUrl}
@@ -162,7 +170,8 @@ export function Cart() {
                                                 <div className="flex items-center gap-2 mb-4">
                                                     <div className="px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-100">
                                                         <span className="text-xs font-medium text-emerald-700">
-                                                            В наличии: {item.inStock} шт
+                                                            В наличии:{" "}
+                                                            {item.inStock} шт
                                                         </span>
                                                     </div>
                                                 </div>
@@ -172,7 +181,7 @@ export function Cart() {
                                                     <button
                                                         onClick={() =>
                                                             decrementQuantity(
-                                                                Number(item.id)
+                                                                Number(item.id),
                                                             )
                                                         }
                                                         disabled={quantity <= 1}
@@ -181,7 +190,7 @@ export function Cart() {
                                                     >
                                                         <Minus className="w-4 h-4 text-slate-600" />
                                                     </button>
-                                                    <div className="min-w-[3rem] text-center">
+                                                    <div className="min-w-12 text-center">
                                                         <span className="text-lg font-semibold text-slate-800">
                                                             {quantity}
                                                         </span>
@@ -189,7 +198,7 @@ export function Cart() {
                                                     <button
                                                         onClick={() =>
                                                             incrementQuantity(
-                                                                Number(item.id)
+                                                                Number(item.id),
                                                             )
                                                         }
                                                         disabled={
@@ -207,14 +216,14 @@ export function Cart() {
                                                 <div className="flex items-baseline gap-2">
                                                     <span className="text-2xl font-bold text-indigo-600">
                                                         {itemTotal.toLocaleString(
-                                                            "ru-RU"
+                                                            "ru-RU",
                                                         )}{" "}
                                                         ₽
                                                     </span>
                                                     {quantity > 1 && (
                                                         <span className="text-sm text-slate-400">
                                                             {item.price.toLocaleString(
-                                                                "ru-RU"
+                                                                "ru-RU",
                                                             )}{" "}
                                                             ₽ × {quantity}
                                                         </span>
@@ -227,7 +236,7 @@ export function Cart() {
                                                 <button
                                                     onClick={() =>
                                                         removeItem(
-                                                            Number(item.id)
+                                                            Number(item.id),
                                                         )
                                                     }
                                                     className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100 transition-all duration-200"
@@ -243,11 +252,11 @@ export function Cart() {
                         </div>
 
                         {/* Боковая панель с итогами */}
-                        <div className="lg:w-[400px] w-full">
+                        <div className="lg:w-100 w-full">
                             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100 overflow-hidden sticky top-8">
                                 <div className="p-6 md:p-7">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="p-2 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl">
+                                        <div className="p-2 bg-linear-to-br from-indigo-100 to-purple-100 rounded-xl">
                                             <CreditCard className="w-5 h-5 text-indigo-600" />
                                         </div>
                                         <h3 className="text-xl font-semibold text-slate-800">
@@ -262,7 +271,7 @@ export function Cart() {
                                             </span>
                                             <span className="font-semibold text-slate-800">
                                                 {totalPrice.toLocaleString(
-                                                    "ru-RU"
+                                                    "ru-RU",
                                                 )}{" "}
                                                 ₽
                                             </span>
@@ -283,7 +292,7 @@ export function Cart() {
                                                 </span>
                                                 <span className="text-2xl font-bold text-indigo-600">
                                                     {totalPrice.toLocaleString(
-                                                        "ru-RU"
+                                                        "ru-RU",
                                                     )}{" "}
                                                     ₽
                                                 </span>
@@ -291,28 +300,21 @@ export function Cart() {
                                         </div>
                                     </div>
 
-                                    <Link
-                                        to="/checkout"
-                                        className="group w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-indigo-400 to-purple-400 text-white rounded-xl font-medium text-base hover:shadow-lg hover:shadow-indigo-200/50 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
+                                    <button
+                                        onClick={handleCheckout}
+                                        className="group w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-linear-to-r from-indigo-400 to-purple-400 text-white rounded-xl font-medium text-base hover:shadow-lg hover:shadow-indigo-200/50 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
                                     >
                                         <span>Оформить заказ</span>
                                         <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                    </Link>
+                                    </button>
 
                                     <div className="mt-5 space-y-3">
-                                        <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-100">
+                                        <div className="p-3.5 bg-linear-to-r from-emerald-50 to-teal-50 rounded-xl border border-emerald-100">
                                             <div className="flex items-center gap-2 text-emerald-700 text-sm">
                                                 <Sparkles className="w-4 h-4" />
                                                 <span className="font-medium">
-                                                    Бесплатная доставка от 2000 ₽
-                                                </span>
-                                            </div>
-                                        </div>
-                                        <div className="p-3.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                                            <div className="flex items-center gap-2 text-blue-700 text-sm">
-                                                <ShieldCheck className="w-4 h-4" />
-                                                <span className="font-medium">
-                                                    Гарантия возврата 14 дней
+                                                    Бесплатная доставка от 6000
+                                                    ₽
                                                 </span>
                                             </div>
                                         </div>

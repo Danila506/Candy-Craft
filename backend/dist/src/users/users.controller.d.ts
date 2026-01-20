@@ -5,13 +5,13 @@ export declare class UsersController {
     private readonly userService;
     constructor(userService: UserService);
     create(createUserDto: CreateUsersDto): Promise<{
-        id: number;
         name: string;
+        id: number;
         email: string;
     }>;
     findAll(): Promise<{
-        id: number;
         name: string;
+        id: number;
         email: string;
     }[]>;
     findOne(id: number): Promise<({
@@ -19,25 +19,25 @@ export declare class UsersController {
             items: ({
                 product: {
                     category: {
-                        id: number;
                         name: string;
                         description: string;
                         imageUrl: string;
+                        id: number;
                     };
                 } & {
-                    id: number;
                     name: string;
                     description: string;
-                    imageUrl: string;
-                    createdAt: Date;
-                    updatedAt: Date;
                     price: number;
+                    imageUrl: string;
                     inStock: number;
                     categoryId: number;
+                    id: number;
+                    createdAt: Date;
+                    updatedAt: Date;
                 };
             } & {
-                id: number;
                 cartId: number;
+                id: number;
                 productId: number;
                 quantity: number;
             })[];
@@ -48,8 +48,8 @@ export declare class UsersController {
             userId: number;
         }) | null;
     } & {
-        id: number;
         name: string;
+        id: number;
         email: string;
     }) | {
         cart: {
@@ -58,25 +58,25 @@ export declare class UsersController {
             items: ({
                 product: {
                     category: {
-                        id: number;
                         name: string;
                         description: string;
                         imageUrl: string;
+                        id: number;
                     };
                 } & {
-                    id: number;
                     name: string;
                     description: string;
-                    imageUrl: string;
-                    createdAt: Date;
-                    updatedAt: Date;
                     price: number;
+                    imageUrl: string;
                     inStock: number;
                     categoryId: number;
+                    id: number;
+                    createdAt: Date;
+                    updatedAt: Date;
                 };
             } & {
-                id: number;
                 cartId: number;
+                id: number;
                 productId: number;
                 quantity: number;
             })[];
@@ -85,27 +85,27 @@ export declare class UsersController {
             updatedAt: Date;
             userId: number;
         };
-        id: number;
         name: string;
+        id: number;
         email: string;
     }>;
     findByEmail(email: string): Promise<{
         cart: ({
             items: ({
                 product: {
-                    id: number;
                     name: string;
                     description: string;
-                    imageUrl: string;
-                    createdAt: Date;
-                    updatedAt: Date;
                     price: number;
+                    imageUrl: string;
                     inStock: number;
                     categoryId: number;
+                    id: number;
+                    createdAt: Date;
+                    updatedAt: Date;
                 };
             } & {
-                id: number;
                 cartId: number;
+                id: number;
                 productId: number;
                 quantity: number;
             })[];
@@ -116,8 +116,8 @@ export declare class UsersController {
             userId: number;
         }) | null;
     } & {
-        id: number;
         name: string;
+        id: number;
         email: string;
     }>;
     getUserStats(id: number): Promise<{
@@ -134,19 +134,19 @@ export declare class UsersController {
         cart: ({
             items: ({
                 product: {
-                    id: number;
                     name: string;
                     description: string;
-                    imageUrl: string;
-                    createdAt: Date;
-                    updatedAt: Date;
                     price: number;
+                    imageUrl: string;
                     inStock: number;
                     categoryId: number;
+                    id: number;
+                    createdAt: Date;
+                    updatedAt: Date;
                 };
             } & {
-                id: number;
                 cartId: number;
+                id: number;
                 productId: number;
                 quantity: number;
             })[];
@@ -157,8 +157,8 @@ export declare class UsersController {
             userId: number;
         }) | null;
     } & {
-        id: number;
         name: string;
+        id: number;
         email: string;
     }>;
     remove(id: number): Promise<{

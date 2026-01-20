@@ -5,11 +5,11 @@ import {
     useState,
     type ReactNode,
 } from "react";
-import type { ProductType } from "../types/ProductType"; // Импортируем тип
+import type { CartType } from "../types/CartType";
 
 interface CartContextType {
     cartCount: number;
-    cartItems: ProductType[]; // Добавляем массив товаров
+    cartItems: CartType[]; // Добавляем массив товаров
     refreshCart: () => void;
     isItemInCart: (productId: number) => boolean; // Функция проверки
 }
@@ -19,13 +19,13 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: ReactNode }> = ({
     children,
 }) => {
-    const [cartItems, setCartItems] = useState<ProductType[]>([]); // Сохраняем товары
+    const [cartItems, setCartItems] = useState<CartType[]>([]); // Сохраняем товары
     const cartCount = cartItems.length; // Считаем автоматически
 
     const fetchCartItems = async () => {
         try {
             const response = await fetch("http://localhost:3000/cart/1");
-            const data: ProductType[] = await response.json();
+            const data: CartType[] = await response.json();
             setCartItems(data); // Сохраняем ВЕСЬ массив товаров
         } catch (error) {
             console.error("Ошибка загрузки корзины: ", error);

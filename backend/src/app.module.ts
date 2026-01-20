@@ -8,6 +8,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AppService } from './app.service';
 import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
+import { OrdersModule } from './orders/orders.module';
 
 
 @Module({
@@ -19,7 +20,8 @@ import { UsersModule } from './users/users.module';
     CartModule,
     CategoriesModule,
     ProductsModule,
-    UsersModule
+    UsersModule,
+    OrdersModule
     
 
   ],

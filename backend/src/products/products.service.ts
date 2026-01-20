@@ -1,9 +1,7 @@
 import { BadRequestException, Body, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { Repository } from 'typeorm';
-import { ProductEntity } from './product.entity';
+
 import { CreateProductDto } from './dto/create-product.dto';
-import { CategoryEntity } from 'src/categories/category.entity';
-import { LocalStorageService } from 'src/storage/local-storage.service';
+
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Product } from '../generated/prisma/client';
 

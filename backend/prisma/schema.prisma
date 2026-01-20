@@ -5,47 +5,48 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
-  moduleFormat    = "cjs"
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
-
 model User {
   id    Int    @id @default(autoincrement())
   name  String
   email String @unique
-  cart  Cart?  // связь с корзиной (единственное число!)
+  cart  Cart? // связь с корзиной (единственное число!)
+
+  orders Order[]
 
   @@map("users") // таблица в БД будет называться "users"
 }
 
 model Cart {
-  id        Int         @id @default(autoincrement())
-  userId    Int         @unique @map("user_id")
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
-  
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   // Связи
-  user      User        @relation(fields: [userId], references: [id])
-  items     CartItem[]  // было cart_items
+  user  User       @relation(fields: [userId], references: [id])
+  items CartItem[] // было cart_items
 
   @@map("carts")
 }
 
 model CartItem {
-  id        Int      @id @default(autoincrement())
-  cartId    Int      @map("cart_id")
-  productId Int      @map("product_id")
-  quantity  Int      @default(1)
-  
+  id        Int @id @default(autoincrement())
+  cartId    Int @map("cart_id")
+  productId Int @map("product_id")
+  quantity  Int @default(1)
+
   // Связи
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade) 
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
   @@index([cartId])
@@ -53,21 +54,21 @@ model CartItem {
   @@map("cart_items")
 }
 
-
 model Product {
-  id          Int        @id @default(autoincrement())
+  id          Int      @id @default(autoincrement())
   name        String
   description String
   price       Int
-  inStock     Int        @default(0) @map("in_stock")
+  inStock     Int      @default(0) @map("in_stock")
   imageUrl    String
   categoryId  Int
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // Связи
-  cartItems   CartItem[] 
-  category    Category    @relation(fields: [categoryId], references: [id]) // было categories
+  cartItems  CartItem[]
+  category   Category    @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
 
   @@index([categoryId])
   @@map("products")
@@ -78,7 +79,50 @@ model Category {
   name        String    @unique
   description String
   imageUrl    String
-  products    Product[] // было Products[]
+  products    Product[]
 
   @@map("categories")
+}
+
+model Order {
+  id         Int         @id @default(autoincrement())
+  userId     Int         @map("user_id")
+  status     OrderStatus @default(PENDING)
+  totalPrice Int         @map("total_price")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  // Связи
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
+
+  @@index([userId])
+  @@map("orders")
+}
+
+enum OrderStatus {
+  PENDING // создан
+  PAID // оплачен
+  PROCESSING // собирается
+  SHIPPED // отправлен
+  COMPLETED // выполнен
+  CANCELED // отменён
+}
+
+model OrderItem {
+  id          Int    @id @default(autoincrement())
+  orderId     Int    @map("order_id")
+  productId   Int    @map("product_id")
+  productName String @map("product_name")
+
+  quantity Int @default(1)
+  price    Int
+
+  // Связи
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@map("order_items")
 }

@@ -149,7 +149,7 @@ export function TopHeader() {
                                 >
                                     <ShoppingCart size={isMobile ? 20 : 22} />
                                     {cartCount > 0 && (
-                                        <span className="absolute -top-1 -right-1 bg-rose-400 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold">
+                                        <span className="absolute -top-1 -right-4 bg-rose-400 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-semibold">
                                             {cartCount}
                                         </span>
                                     )}

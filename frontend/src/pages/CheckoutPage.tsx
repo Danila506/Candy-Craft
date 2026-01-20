@@ -1,5 +1,5 @@
 // pages/CheckoutPage.tsx
-import {  useState } from "react";
+import { useState } from "react";
 import { useCart } from "../contexts/CartContext";
 import {
     Package,
@@ -18,8 +18,10 @@ import {
     RefreshCw,
     ArrowLeft,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import confetti from "canvas-confetti";
+import type { CategoryType } from "../types/CategoryType";
+import { useOrders } from "../admin/context/OrderContext";
 
 // Типы для оформления заказа
 interface DeliveryOption {
@@ -40,6 +42,12 @@ interface GiftOption {
     available: boolean;
 }
 
+type OrderItemFromCart = {
+    productId: number;
+    quantity: number;
+    price: number;
+};
+
 export function CheckoutPage() {
     const { cartItems, cartCount, refreshCart } = useCart();
 
@@ -50,6 +58,24 @@ export function CheckoutPage() {
     const [selectedGift, setSelectedGift] = useState<GiftOption | null>(null);
     const [customerNote, setCustomerNote] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
+    const { createOrder } = useOrders();
+
+    const location = useLocation();
+    const orderItems =
+        (location.state?.orderItems as OrderItemFromCart[]) || [];
+
+    console.log(orderItems); // здесь будут товары из корзины с правильными quantity
+
+    const handleCreateOrder = () => {
+        // здесь ты вызываешь createOrder, например:
+        createOrder({
+            userId: 1, // берём текущего пользователя
+            items: orderItems.map((item) => ({
+                productId: item.productId,
+                quantity: item.quantity,
+            })),
+        });
+    };
 
     // Данные пользователя
     const [formData, setFormData] = useState({
@@ -130,7 +156,7 @@ export function CheckoutPage() {
     // Расчет итоговой суммы
     const subtotal = cartItems.reduce(
         (sum, item) => sum + item.price * item.inStock,
-        0
+        0,
     );
     const deliveryPrice = selectedDelivery?.price || 0;
     const giftPrice = selectedGift?.price || 0;
@@ -146,9 +172,13 @@ export function CheckoutPage() {
         });
     };
 
-    const handleInputChange = (field: keyof typeof formData) => 
+    const handleInputChange =
+        (field: keyof CategoryType) =>
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            setFormData((prev) => ({ ...prev, [field]: e.target.value }));
+            setFormData((prev) => ({
+                ...prev,
+                [field]: e.target.value,
+            }));
         };
 
     // Обработка оформления заказа
@@ -358,8 +388,8 @@ export function CheckoutPage() {
                             selectedGift?.id === option.id
                                 ? "border-[#ff398b] bg-linear-to-br from-pink-50 via-amber-50/30 to-orange-50 shadow-xl shadow-pink-200/50 scale-105"
                                 : option.available
-                                ? "border-gray-200 hover:border-pink-300 hover:shadow-lg bg-white/80 backdrop-blur-sm"
-                                : "border-gray-200 opacity-50 cursor-not-allowed bg-gray-50"
+                                  ? "border-gray-200 hover:border-pink-300 hover:shadow-lg bg-white/80 backdrop-blur-sm"
+                                  : "border-gray-200 opacity-50 cursor-not-allowed bg-gray-50"
                         }`}
                         disabled={!option.available}
                     >
@@ -374,8 +404,8 @@ export function CheckoutPage() {
                                         selectedGift?.id === option.id
                                             ? "bg-linear-to-br from-[#ff398b] to-pink-500 text-white shadow-lg shadow-pink-300/50"
                                             : option.available
-                                            ? "bg-gray-100 text-gray-600 group-hover:bg-pink-100 group-hover:text-[#ff398b]"
-                                            : "bg-gray-100 text-gray-400"
+                                              ? "bg-gray-100 text-gray-600 group-hover:bg-pink-100 group-hover:text-[#ff398b]"
+                                              : "bg-gray-100 text-gray-400"
                                     }`}
                                 >
                                     {option.icon}
@@ -469,8 +499,8 @@ export function CheckoutPage() {
                                         {index % 3 === 0
                                             ? "🍰"
                                             : index % 3 === 1
-                                            ? "🍬"
-                                            : "🎂"}
+                                              ? "🍬"
+                                              : "🎂"}
                                     </div>
                                     <div className="flex-1">
                                         <div className="font-semibold text-gray-900">
@@ -697,8 +727,8 @@ export function CheckoutPage() {
                                         step > s
                                             ? "bg-linear-to-br from-[#ff398b] to-pink-500 text-white shadow-lg shadow-pink-200 scale-110"
                                             : step === s
-                                            ? "bg-linear-to-br from-[#ff398b] to-pink-500 text-white ring-4 ring-pink-200/50 ring-offset-2 scale-110 shadow-xl shadow-pink-300/50"
-                                            : "bg-gray-100 text-gray-400"
+                                              ? "bg-linear-to-br from-[#ff398b] to-pink-500 text-white ring-4 ring-pink-200/50 ring-offset-2 scale-110 shadow-xl shadow-pink-300/50"
+                                              : "bg-gray-100 text-gray-400"
                                     }`}
                                 >
                                     {step > s ? (
@@ -820,7 +850,12 @@ export function CheckoutPage() {
                                             </>
                                         ) : (
                                             <>
-                                                <div className="flex flex-col items-center gap-1 relative z-10">
+                                                <div
+                                                    onClick={() =>
+                                                        handleCreateOrder()
+                                                    }
+                                                    className="flex flex-col items-center gap-1 relative z-10"
+                                                >
                                                     <span className="flex items-center gap-2">
                                                         <Sparkles className="w-6 h-6" />
                                                         Завершить заказ

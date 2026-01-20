@@ -14,6 +14,8 @@ import { AdminRoute } from "./admin/components/AdminRoute";
 import { AdminProvider } from "./admin/context/AdminContext";
 import { Footer } from "./components/Footer"; // Если есть Footer
 import { CheckoutPage } from "./pages/CheckoutPage";
+import { OrdersAdmin } from "./admin/pages/OrdersAdmin";
+import { OrderProvider } from "./admin/context/OrderContext";
 
 function App() {
     return (
@@ -56,7 +58,11 @@ function App() {
 
                             <Route
                                 path="/checkout"
-                                element={<CheckoutPage />}
+                                element={
+                                    <OrderProvider>
+                                        <CheckoutPage />
+                                    </OrderProvider>
+                                }
                             />
 
                             {/* === АДМИН-СТРАНИЦЫ (БЕЗ Header и Footer) === */}
@@ -77,6 +83,16 @@ function App() {
                                 element={
                                     <AdminRoute>
                                         <ProductsAdmin />
+                                    </AdminRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/orders"
+                                element={
+                                    <AdminRoute>
+                                        <OrderProvider>
+                                            <OrdersAdmin />
+                                        </OrderProvider>
                                     </AdminRoute>
                                 }
                             />

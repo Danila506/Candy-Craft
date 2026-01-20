@@ -1,10 +1,9 @@
-import { Controller, Get, Post, Body, Param, Delete, ParseIntPipe, Put, BadRequestException, UseInterceptors, UploadedFile } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, ParseIntPipe, Put } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
-import { ProductEntity } from './product.entity';
+
 import { CreateProductDto } from './dto/create-product.dto';
-import { LocalStorageService } from 'src/storage/local-storage.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+
 import { Product } from '../generated/prisma/client';
 
 @ApiTags('products')

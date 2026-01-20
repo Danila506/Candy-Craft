@@ -4,49 +4,49 @@ export declare class CartService {
     private readonly prisma;
     constructor(prisma: PrismaService);
     getCart(userId: number): Promise<{
-        id: number;
         name: string;
         description: string;
-        imageUrl: string;
-        createdAt: Date;
-        updatedAt: Date;
         price: number;
+        imageUrl: string;
         inStock: number;
         categoryId: number;
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
     }[]>;
     addToCart(userId: number, createCartDto: CreateCartItemDto): Promise<{
         product: {
-            id: number;
             name: string;
             description: string;
-            imageUrl: string;
-            createdAt: Date;
-            updatedAt: Date;
             price: number;
+            imageUrl: string;
             inStock: number;
             categoryId: number;
+            id: number;
+            createdAt: Date;
+            updatedAt: Date;
         };
     } & {
-        id: number;
         cartId: number;
+        id: number;
         productId: number;
         quantity: number;
     }>;
     updateCartItem(userId: number, productId: number, quantity: number): Promise<{
         product: {
-            id: number;
             name: string;
             description: string;
-            imageUrl: string;
-            createdAt: Date;
-            updatedAt: Date;
             price: number;
+            imageUrl: string;
             inStock: number;
             categoryId: number;
+            id: number;
+            createdAt: Date;
+            updatedAt: Date;
         };
     } & {
-        id: number;
         cartId: number;
+        id: number;
         productId: number;
         quantity: number;
     }>;
