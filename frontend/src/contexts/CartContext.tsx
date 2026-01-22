@@ -12,6 +12,7 @@ interface CartContextType {
     cartItems: CartType[]; // Добавляем массив товаров
     refreshCart: () => void;
     isItemInCart: (productId: number) => boolean; // Функция проверки
+    clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -32,6 +33,17 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         }
     };
 
+    const clearCart = async () => {
+        try {
+            const res = await fetch("http://localhost:3000/cart/1", {
+                method: "DELETE"
+            })
+            if (!res.ok) throw new Error("Не удалось очистить корзину");
+        }catch(err) {
+            console.error(err);
+        }
+    }
+
     useEffect(() => {
         fetchCartItems();
     }, []);
@@ -40,16 +52,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         fetchCartItems();
     };
 
-    // Функция проверки товара в корзине
     const isItemInCart = (productId: number): boolean => {
         return cartItems.some((item) => item.id === productId);
     };
 
     const value = {
         cartCount,
-        cartItems, // Экспортируем товары
+        cartItems, 
         refreshCart,
-        isItemInCart, // Экспортируем функцию проверки
+        isItemInCart, 
+        clearCart
     };
 
     return (

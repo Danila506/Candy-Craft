@@ -16,6 +16,7 @@ import { Footer } from "./components/Footer"; // Если есть Footer
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { OrdersAdmin } from "./admin/pages/OrdersAdmin";
 import { OrderProvider } from "./admin/context/OrderContext";
+import { CheckoutProvider } from "./contexts/CheckoutContext";
 
 function App() {
     return (
@@ -24,13 +25,11 @@ function App() {
                 <AdminProvider>
                     <BrowserRouter>
                         <Routes>
-                            {/* === ПУБЛИЧНЫЕ СТРАНИЦЫ (с Header) === */}
                             <Route
                                 path="/*"
                                 element={
                                     <>
                                         <Header />
-                                        {/* Header ТОЛЬКО для публичных страниц */}
                                         <Routes location={location}>
                                             <Route
                                                 path="/"
@@ -60,7 +59,9 @@ function App() {
                                 path="/checkout"
                                 element={
                                     <OrderProvider>
-                                        <CheckoutPage />
+                                        <CheckoutProvider>
+                                            <CheckoutPage />
+                                        </CheckoutProvider>
                                     </OrderProvider>
                                 }
                             />

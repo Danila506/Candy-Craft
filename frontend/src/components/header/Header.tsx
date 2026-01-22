@@ -32,24 +32,19 @@ function Header() {
 
     return (
         <header className="pt-20 md:pt-24 mb-12 md:mb-16 relative overflow-hidden min-h-screen">
-            {/* Фоновое изображение с пастельным оверлеем */}
             <div className="absolute inset-0 z-0 ">
-                {/* Фоновое изображение */}
                 <div
                     className="absolute inset-0 bg-cover bg-center opacity-100 "
                     style={{ backgroundImage: `url(${HeaderBackground})` }}
                 />
 
-                {/* Пастельный градиентный оверлей */}
                 <div className="absolute inset-0 bg-linear-to-b from-rose-50/60  to-white/20"></div>
             </div>
 
-            {/* Контент поверх фона */}
             <div className="relative z-10">
                 <TopHeader />
 
                 <div className="py-12 md:py-16 lg:py-20 container mx-auto px-4 sm:px-6 lg:px-8">
-                    {/* Мобильный хедер */}
                     <div className="lg:hidden flex items-center justify-between mb-8">
                         <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -80,7 +75,6 @@ function Header() {
                         <div className="w-10"></div>
                     </div>
 
-                    {/* Мобильное меню */}
                     {isMenuOpen && (
                         <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-xl mt-4 py-4 shadow-lg border border-gray-100">
                             <ul className="flex flex-col space-y-2">
@@ -97,7 +91,6 @@ function Header() {
                         </div>
                     )}
 
-                    {/* Десктопный хедер */}
                     <div className="hidden lg:block">
                         <ul className="grid grid-cols-7 items-center justify-between bg-white/70 backdrop-blur-md py-4 px-6 rounded-2xl shadow-sm border border-gray-100/50">
                             {navItems.slice(0, 3).map((text, index) => (
@@ -130,12 +123,11 @@ function Header() {
                         </ul>
                     </div>
 
-                    {/* Заголовок в хедере */}
                     <div className="text-center mt-12 md:mt-16 lg:mt-20">
-                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-light text-gray-800 mb-4">
+                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#f3b0c2] mb-4">
                             Candy Craft
                         </h1>
-                        <p className="text-base md:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+                        <p className="  font-semibold md:text-lg lg:text-xl text-[#3c3c3c] max-w-2xl mx-auto leading-relaxed">
                             Искусство сладких наслаждений. Авторские торты и
                             десерты ручной работы
                         </p>

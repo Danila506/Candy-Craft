@@ -153,7 +153,6 @@ export function Cart() {
                                         className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-slate-200 transition-all duration-300"
                                     >
                                         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-5 md:p-6">
-                                            {/* Изображение товара */}
                                             <div className="relative w-full sm:w-28 h-28 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-linear-to-br from-slate-50 to-slate-100">
                                                 <img
                                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -162,7 +161,6 @@ export function Cart() {
                                                 />
                                             </div>
 
-                                            {/* Информация о товаре */}
                                             <div className="flex-1 min-w-0 w-full sm:w-auto">
                                                 <h3 className="text-lg md:text-xl font-semibold text-slate-800 mb-2 line-clamp-2">
                                                     {item.name}
@@ -176,7 +174,6 @@ export function Cart() {
                                                     </div>
                                                 </div>
 
-                                                {/* Управление количеством */}
                                                 <div className="flex items-center gap-3 mb-4">
                                                     <button
                                                         onClick={() =>
@@ -231,7 +228,6 @@ export function Cart() {
                                                 </div>
                                             </div>
 
-                                            {/* Кнопка удаления */}
                                             <div className="flex flex-col items-end gap-4">
                                                 <button
                                                     onClick={() =>
@@ -251,7 +247,6 @@ export function Cart() {
                             })}
                         </div>
 
-                        {/* Боковая панель с итогами */}
                         <div className="lg:w-100 w-full">
                             <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100 overflow-hidden sticky top-8">
                                 <div className="p-6 md:p-7">

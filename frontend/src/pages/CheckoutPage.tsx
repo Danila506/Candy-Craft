@@ -1,30 +1,28 @@
 // pages/CheckoutPage.tsx
-import { useState } from "react";
+import {  useState } from "react";
 import { useCart } from "../contexts/CartContext";
 import {
     Package,
-    Gift,
     Sparkles,
-    Heart,
-    Star,
     Clock,
-    Truck,
-    CreditCard,
-    MapPin,
     MessageSquare,
     ChevronRight,
     CheckCircle,
-    Zap,
     RefreshCw,
     ArrowLeft,
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import confetti from "canvas-confetti";
-import type { CategoryType } from "../types/CategoryType";
 import { useOrders } from "../admin/context/OrderContext";
 
+import { Step1 } from "./CheckoutPage/Step1";
+import { useCheckout } from "../contexts/CheckoutContext";
+import { Step2 } from "./CheckoutPage/Step2";
+import { Step3 } from "./CheckoutPage/Step3";
+import { Step4 } from "./CheckoutPage/Step4";
+
 // Типы для оформления заказа
-interface DeliveryOption {
+export interface DeliveryOption {
     id: number;
     name: string;
     description: string;
@@ -33,7 +31,7 @@ interface DeliveryOption {
     icon: React.ReactNode;
 }
 
-interface GiftOption {
+export interface GiftOption {
     id: number;
     name: string;
     description: string;
@@ -48,23 +46,29 @@ type OrderItemFromCart = {
     price: number;
 };
 
+export type CheckoutFormData = {
+    name: string;
+    phone: string;
+    email: string;
+    address: string;
+    apartment: string;
+    entrance: string;
+    floor: string;
+    intercom: string;
+};
+
 export function CheckoutPage() {
-    const { cartItems, cartCount, refreshCart } = useCart();
+    const { cartCount, refreshCart, clearCart } = useCart();
 
     const [step, setStep] = useState(1);
     const [orderConfirmed, setOrderConfirmed] = useState(false);
-    const [selectedDelivery, setSelectedDelivery] =
-        useState<DeliveryOption | null>(null);
-    const [selectedGift, setSelectedGift] = useState<GiftOption | null>(null);
-    const [customerNote, setCustomerNote] = useState("");
+    const { selectedDelivery, totalAmount } = useCheckout();
     const [isAnimating, setIsAnimating] = useState(false);
     const { createOrder } = useOrders();
 
     const location = useLocation();
     const orderItems =
         (location.state?.orderItems as OrderItemFromCart[]) || [];
-
-    console.log(orderItems); // здесь будут товары из корзины с правильными quantity
 
     const handleCreateOrder = () => {
         // здесь ты вызываешь createOrder, например:
@@ -75,94 +79,13 @@ export function CheckoutPage() {
                 quantity: item.quantity,
             })),
         });
+        clearCart()
+        refreshCart()
     };
 
-    // Данные пользователя
-    const [formData, setFormData] = useState({
-        name: "",
-        phone: "",
-        email: "",
-        address: "",
-        apartment: "",
-        entrance: "",
-        floor: "",
-        intercom: "",
-    });
+    const {formData} = useCheckout();
 
-    // Опции доставки
-    const deliveryOptions: DeliveryOption[] = [
-        {
-            id: 1,
-            name: "🚀 Экспресс доставка",
-            description: "Доставим в течение 2 часов",
-            price: 500,
-            time: "2 часа",
-            icon: <Zap className="w-5 h-5" />,
-        },
-        {
-            id: 2,
-            name: "📦 Стандартная доставка",
-            description: "Доставим сегодня до 22:00",
-            price: 300,
-            time: "4-6 часов",
-            icon: <Truck className="w-5 h-5" />,
-        },
-        {
-            id: 3,
-            name: "📅 Доставка ко времени",
-            description: "Выберите удобное время",
-            price: 400,
-            time: "Ко времени",
-            icon: <Clock className="w-5 h-5" />,
-        },
-    ];
 
-    // Подарочные опции
-    const giftOptions: GiftOption[] = [
-        {
-            id: 1,
-            name: "🎀 Подарочная упаковка",
-            description: "Премиальная коробка с лентой",
-            price: 200,
-            icon: <Gift className="w-5 h-5" />,
-            available: true,
-        },
-        {
-            id: 2,
-            name: "💝 Поздравительная открытка",
-            description: "Ручная работа с теплыми пожеланиями",
-            price: 150,
-            icon: <Heart className="w-5 h-5" />,
-            available: true,
-        },
-        {
-            id: 3,
-            name: "✨ Волшебная пыль",
-            description: "Съедобные блестки для торта",
-            price: 100,
-            icon: <Sparkles className="w-5 h-5" />,
-            available: true,
-        },
-        {
-            id: 4,
-            name: "👑 Корона для именинника",
-            description: "Золотая картонная корона",
-            price: 180,
-            icon: <Star className="w-5 h-5" />,
-            available: true,
-        },
-    ];
-
-    // Расчет итоговой суммы
-    const subtotal = cartItems.reduce(
-        (sum, item) => sum + item.price * item.inStock,
-        0,
-    );
-    const deliveryPrice = selectedDelivery?.price || 0;
-    const giftPrice = selectedGift?.price || 0;
-    const totalAmount = subtotal + deliveryPrice + giftPrice;
-
-    // Анимация конфетти
     const launchConfetti = () => {
         confetti({
             particleCount: 150,
@@ -172,16 +95,6 @@ export function CheckoutPage() {
         });
     };
 
-    const handleInputChange =
-        (field: keyof CategoryType) =>
-        (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-            setFormData((prev) => ({
-                ...prev,
-                [field]: e.target.value,
-            }));
-        };
-
-    // Обработка оформления заказа
     const handlePlaceOrder = async () => {
         if (!selectedDelivery) {
             alert("Выберите способ доставки");
@@ -190,7 +103,6 @@ export function CheckoutPage() {
 
         setIsAnimating(true);
 
-        // Имитация обработки заказа
         setTimeout(() => {
             launchConfetti();
             setOrderConfirmed(true);
@@ -198,7 +110,6 @@ export function CheckoutPage() {
 
             // Очистка корзины после оформления
             setTimeout(() => {
-                // Здесь должен быть вызов API для очистки корзины
                 refreshCart();
             }, 2000);
         }, 1500);
@@ -206,416 +117,6 @@ export function CheckoutPage() {
 
     // Проверка готовности к оформлению
     const isFormValid = formData.name && formData.phone && formData.address;
-
-    // Шаг 1: Контактная информация
-    const Step1 = () => (
-        <div className="space-y-8">
-            <div className="text-center mb-10">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-[#ff398b] to-pink-500 rounded-2xl mb-4 shadow-lg shadow-pink-200/50">
-                    <Sparkles className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-                    Ваши данные
-                </h2>
-                <p className="text-gray-600 text-lg">
-                    Расскажите, куда доставить сладости
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="group">
-                    <label
-                        htmlFor="name"
-                        className="block text-sm font-semibold text-gray-700 mb-3"
-                    >
-                        <span className="flex items-center gap-2">
-                            <div className="p-1.5 bg-pink-100 rounded-lg group-focus-within:bg-pink-200 transition-colors">
-                                <Sparkles className="w-4 h-4 text-[#ff398b]" />
-                            </div>
-                            <span>Имя</span>
-                        </span>
-                    </label>
-                    <input
-                        type="text"
-                        value={formData.name}
-                        onChange={handleInputChange("name")}
-                        id="name"
-                        autoComplete="given-name"
-                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#ff398b] focus:ring-4 focus:ring-pink-100 transition-all duration-300 bg-white/50 backdrop-blur-sm hover:border-pink-200 text-gray-900 placeholder-gray-400"
-                        placeholder="Как к вам обращаться?"
-                    />
-                </div>
-
-                <div className="group">
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        <span className="flex items-center gap-2">
-                            <div className="p-1.5 bg-pink-100 rounded-lg group-focus-within:bg-pink-200 transition-colors">
-                                <MessageSquare className="w-4 h-4 text-[#ff398b]" />
-                            </div>
-                            <span>Телефон</span>
-                        </span>
-                    </label>
-                    <input
-                        type="tel"
-                        value={formData.phone}
-                        onChange={(e) =>
-                            setFormData({ ...formData, phone: e.target.value })
-                        }
-                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#ff398b] focus:ring-4 focus:ring-pink-100 transition-all duration-300 bg-white/50 backdrop-blur-sm hover:border-pink-200 text-gray-900 placeholder-gray-400"
-                        placeholder="+7 (___) ___-__-__"
-                    />
-                </div>
-
-                <div className="md:col-span-2 group">
-                    <label className="block text-sm font-semibold text-gray-700 mb-3">
-                        <span className="flex items-center gap-2">
-                            <div className="p-1.5 bg-pink-100 rounded-lg group-focus-within:bg-pink-200 transition-colors">
-                                <MapPin className="w-4 h-4 text-[#ff398b]" />
-                            </div>
-                            <span>Адрес доставки</span>
-                        </span>
-                    </label>
-                    <input
-                        type="text"
-                        value={formData.address}
-                        onChange={(e) =>
-                            setFormData({
-                                ...formData,
-                                address: e.target.value,
-                            })
-                        }
-                        className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#ff398b] focus:ring-4 focus:ring-pink-100 transition-all duration-300 bg-white/50 backdrop-blur-sm hover:border-pink-200 text-gray-900 placeholder-gray-400"
-                        placeholder="Город, улица, дом"
-                    />
-                </div>
-            </div>
-        </div>
-    );
-
-    // Шаг 2: Доставка
-    const Step2 = () => (
-        <div className="space-y-8">
-            <div className="text-center mb-10">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-500 to-purple-500 rounded-2xl mb-4 shadow-lg shadow-purple-200/50">
-                    <Truck className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-                    Способ доставки
-                </h2>
-                <p className="text-gray-600 text-lg">
-                    Как быстро хотите получить сладости?
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                {deliveryOptions.map((option) => (
-                    <button
-                        key={option.id}
-                        onClick={() => setSelectedDelivery(option)}
-                        className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden ${
-                            selectedDelivery?.id === option.id
-                                ? "border-[#ff398b] bg-linear-to-br from-pink-50 via-purple-50/30 to-rose-50 shadow-xl shadow-pink-200/50 scale-105"
-                                : "border-gray-200 hover:border-pink-300 hover:shadow-lg bg-white/80 backdrop-blur-sm"
-                        }`}
-                    >
-                        {/* Декоративный градиент при выборе */}
-                        {selectedDelivery?.id === option.id && (
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-linear-to-br from-[#ff398b]/10 to-transparent rounded-bl-full"></div>
-                        )}
-
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div
-                                    className={`p-3 rounded-xl transition-all duration-300 ${
-                                        selectedDelivery?.id === option.id
-                                            ? "bg-linear-to-br from-[#ff398b] to-pink-500 text-white shadow-lg shadow-pink-300/50"
-                                            : "bg-gray-100 text-gray-600 group-hover:bg-pink-100 group-hover:text-[#ff398b]"
-                                    }`}
-                                >
-                                    {option.icon}
-                                </div>
-                                <h3 className="font-bold text-lg text-gray-900">
-                                    {option.name}
-                                </h3>
-                            </div>
-                            <p className="text-gray-600 mb-4 text-sm leading-relaxed">
-                                {option.description}
-                            </p>
-                            <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                                <span className="text-sm font-semibold text-gray-700">
-                                    {option.time}
-                                </span>
-                                <span
-                                    className={`font-bold text-lg transition-colors ${
-                                        selectedDelivery?.id === option.id
-                                            ? "text-[#ff398b]"
-                                            : "text-gray-700"
-                                    }`}
-                                >
-                                    {option.price} ₽
-                                </span>
-                            </div>
-                        </div>
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
-
-    // Шаг 3: Дополнительные опции
-    const Step3 = () => (
-        <div className="space-y-8">
-            <div className="text-center mb-10">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-amber-400 to-orange-500 rounded-2xl mb-4 shadow-lg shadow-amber-200/50">
-                    <Gift className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-                    Дополнительные опции
-                </h2>
-                <p className="text-gray-600 text-lg">
-                    Добавьте магии в вашу коробку сладостей
-                </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-                {giftOptions.map((option) => (
-                    <button
-                        key={option.id}
-                        onClick={() =>
-                            option.available && setSelectedGift(option)
-                        }
-                        className={`group relative p-5 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
-                            selectedGift?.id === option.id
-                                ? "border-[#ff398b] bg-linear-to-br from-pink-50 via-amber-50/30 to-orange-50 shadow-xl shadow-pink-200/50 scale-105"
-                                : option.available
-                                  ? "border-gray-200 hover:border-pink-300 hover:shadow-lg bg-white/80 backdrop-blur-sm"
-                                  : "border-gray-200 opacity-50 cursor-not-allowed bg-gray-50"
-                        }`}
-                        disabled={!option.available}
-                    >
-                        {selectedGift?.id === option.id && (
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-linear-to-br from-[#ff398b]/10 to-transparent rounded-bl-full"></div>
-                        )}
-
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div
-                                    className={`p-2.5 rounded-xl transition-all duration-300 ${
-                                        selectedGift?.id === option.id
-                                            ? "bg-linear-to-br from-[#ff398b] to-pink-500 text-white shadow-lg shadow-pink-300/50"
-                                            : option.available
-                                              ? "bg-gray-100 text-gray-600 group-hover:bg-pink-100 group-hover:text-[#ff398b]"
-                                              : "bg-gray-100 text-gray-400"
-                                    }`}
-                                >
-                                    {option.icon}
-                                </div>
-                                <h3 className="font-semibold text-sm text-gray-900 leading-tight">
-                                    {option.name}
-                                </h3>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-4 leading-relaxed">
-                                {option.description}
-                            </p>
-                            <div className="text-right pt-3 border-t border-gray-100">
-                                <span
-                                    className={`font-bold text-lg transition-colors ${
-                                        selectedGift?.id === option.id
-                                            ? "text-[#ff398b]"
-                                            : "text-gray-700"
-                                    }`}
-                                >
-                                    +{option.price} ₽
-                                </span>
-                            </div>
-                        </div>
-                    </button>
-                ))}
-            </div>
-
-            <div className="group">
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                    <span className="flex items-center gap-2">
-                        <div className="p-1.5 bg-pink-100 rounded-lg group-focus-within:bg-pink-200 transition-colors">
-                            <MessageSquare className="w-4 h-4 text-[#ff398b]" />
-                        </div>
-                        <span>Ваши пожелания к заказу</span>
-                    </span>
-                </label>
-                <textarea
-                    value={customerNote}
-                    onChange={(e) => setCustomerNote(e.target.value)}
-                    className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#ff398b] focus:ring-4 focus:ring-pink-100 transition-all duration-300 h-32 bg-white/50 backdrop-blur-sm hover:border-pink-200 text-gray-900 placeholder-gray-400 resize-none"
-                    placeholder="Напишите здесь ваши пожелания, аллергии, особые указания..."
-                />
-            </div>
-        </div>
-    );
-
-    // Шаг 4: Подтверждение
-    const Step4 = () => (
-        <div className="space-y-8">
-            <div className="text-center">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-green-400 to-emerald-500 rounded-2xl mb-4 shadow-lg shadow-green-200/50">
-                    <CheckCircle className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
-                    Проверьте заказ
-                </h2>
-                <p className="text-gray-600 text-lg">
-                    Убедитесь, что всё верно перед оформлением
-                </p>
-            </div>
-
-            {/* Виртуальная коробка конфет */}
-            <div className="relative bg-linear-to-br from-pink-50/80 via-purple-50/30 to-amber-50/80 backdrop-blur-sm rounded-3xl p-8 border-2 border-pink-200/50 shadow-xl overflow-hidden">
-                {/* Декоративные элементы */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-linear-to-br from-[#ff398b]/5 to-transparent rounded-bl-full"></div>
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-linear-to-tr from-purple-400/5 to-transparent rounded-tr-full"></div>
-
-                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
-                    <div className="bg-linear-to-r from-[#ff398b] to-pink-500 text-white px-6 py-2 rounded-full text-sm font-bold shadow-lg shadow-pink-300/50">
-                        🍬 Ваша коробка конфет 🍬
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 relative z-10 mt-4">
-                    <div>
-                        <h3 className="font-bold text-xl mb-6 flex items-center gap-3">
-                            <div className="p-2 bg-linear-to-br from-[#ff398b] to-pink-500 rounded-xl shadow-lg shadow-pink-300/50">
-                                <Package className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-gray-900">
-                                Содержимое заказа
-                            </span>
-                        </h3>
-                        <div className="space-y-4">
-                            {cartItems.map((item, index) => (
-                                <div
-                                    key={item.id}
-                                    className="flex items-center gap-4 p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-pink-100/50 hover:shadow-md transition-all"
-                                >
-                                    <div className="w-14 h-14 bg-linear-to-br from-pink-200 to-rose-200 rounded-xl flex items-center justify-center text-2xl shadow-md">
-                                        {index % 3 === 0
-                                            ? "🍰"
-                                            : index % 3 === 1
-                                              ? "🍬"
-                                              : "🎂"}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="font-semibold text-gray-900">
-                                            {item.name}
-                                        </div>
-                                        <div className="text-sm text-gray-600 mt-1">
-                                            {item.inStock} ×{" "}
-                                            {item.price.toLocaleString()} ₽
-                                        </div>
-                                    </div>
-                                    <div className="font-bold text-lg text-[#ff398b]">
-                                        {(
-                                            item.price * item.inStock
-                                        ).toLocaleString()}{" "}
-                                        ₽
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {selectedGift && (
-                            <div className="mt-6 p-5 bg-linear-to-r from-pink-100/70 to-amber-100/70 backdrop-blur-sm rounded-xl border border-pink-200/50 shadow-md">
-                                <div className="flex items-center gap-4">
-                                    <div className="p-3 bg-linear-to-br from-[#ff398b] to-pink-500 text-white rounded-xl shadow-lg">
-                                        {selectedGift.icon}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="font-semibold text-gray-900">
-                                            {selectedGift.name}
-                                        </div>
-                                        <div className="text-sm text-gray-600 mt-1">
-                                            {selectedGift.description}
-                                        </div>
-                                    </div>
-                                    <div className="font-bold text-lg text-[#ff398b]">
-                                        +{selectedGift.price} ₽
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    <div>
-                        <h3 className="font-bold text-xl mb-6 flex items-center gap-3">
-                            <div className="p-2 bg-linear-to-br from-blue-500 to-purple-500 rounded-xl shadow-lg shadow-purple-300/50">
-                                <Truck className="w-5 h-5 text-white" />
-                            </div>
-                            <span className="text-gray-900">Доставка</span>
-                        </h3>
-                        {selectedDelivery && (
-                            <div className="p-5 bg-white/60 backdrop-blur-sm rounded-xl border border-pink-100/50 shadow-md mb-6">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="p-3 bg-linear-to-br from-[#ff398b] to-pink-500 text-white rounded-xl shadow-lg">
-                                        {selectedDelivery.icon}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="font-semibold text-gray-900">
-                                            {selectedDelivery.name}
-                                        </div>
-                                        <div className="text-sm text-gray-600 mt-1">
-                                            {selectedDelivery.time}
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="text-right font-bold text-xl text-[#ff398b] pt-4 border-t border-gray-200">
-                                    {selectedDelivery.price} ₽
-                                </div>
-                            </div>
-                        )}
-
-                        <div className="p-6 bg-linear-to-br from-blue-50/80 via-purple-50/50 to-cyan-50/80 backdrop-blur-sm rounded-2xl border-2 border-blue-200/50 shadow-xl">
-                            <h4 className="font-bold text-xl mb-5 flex items-center gap-3">
-                                <div className="p-2 bg-linear-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
-                                    <CreditCard className="w-5 h-5 text-white" />
-                                </div>
-                                <span className="text-gray-900">
-                                    Итоговая сумма
-                                </span>
-                            </h4>
-                            <div className="space-y-3">
-                                <div className="flex justify-between text-gray-700">
-                                    <span>Товары:</span>
-                                    <span className="font-semibold">
-                                        {subtotal.toLocaleString()} ₽
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-gray-700">
-                                    <span>Доставка:</span>
-                                    <span className="font-semibold">
-                                        {deliveryPrice.toLocaleString()} ₽
-                                    </span>
-                                </div>
-                                {selectedGift && (
-                                    <div className="flex justify-between text-gray-700">
-                                        <span>Доп. опции:</span>
-                                        <span className="font-semibold">
-                                            {giftPrice.toLocaleString()} ₽
-                                        </span>
-                                    </div>
-                                )}
-                                <div className="border-t-2 border-gray-300 pt-4 mt-4">
-                                    <div className="flex justify-between text-2xl font-extrabold bg-linear-to-r from-[#ff398b] to-pink-600 bg-clip-text text-transparent">
-                                        <span>Итого:</span>
-                                        <span className="text-[#ff398b]">
-                                            {totalAmount.toLocaleString()} ₽
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
 
     // Анимация успешного оформления
     const SuccessAnimation = () => (
@@ -701,14 +202,12 @@ export function CheckoutPage() {
 
     return (
         <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50/30 to-rose-50 relative overflow-hidden">
-            {/* Декоративные элементы фона */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <div className="absolute top-0 left-1/4 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl animate-pulse"></div>
                 <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
             </div>
 
             <div className="container mx-auto px-4 py-8 max-w-6xl relative z-10">
-                {/* Хлебные крошки */}
                 <div className="flex items-center justify-between mb-8">
                     <Link
                         to="/cart"
@@ -718,7 +217,6 @@ export function CheckoutPage() {
                         <span>Назад к корзине</span>
                     </Link>
 
-                    {/* Современный прогресс-бар */}
                     <div className="flex items-center gap-2 bg-white/80 backdrop-blur-md rounded-full px-6 py-3 shadow-lg border border-pink-100/50">
                         {[1, 2, 3, 4].map((s) => (
                             <div key={s} className="flex items-center">
@@ -755,10 +253,7 @@ export function CheckoutPage() {
                     <SuccessAnimation />
                 ) : (
                     <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/50 relative">
-                        {/* Декоративный градиент сверху */}
                         <div className="absolute top-0 left-0 right-0 h-2 bg-linear-to-r from-[#ff398b] via-pink-400 to-purple-400"></div>
-
-                        {/* Заголовок шага */}
                         <div className="bg-linear-to-br from-pink-50/80 via-purple-50/50 to-rose-50/80 backdrop-blur-sm p-8 border-b border-pink-100/50">
                             <div className="flex items-center justify-between">
                                 <div>
@@ -792,7 +287,6 @@ export function CheckoutPage() {
                             </div>
                         </div>
 
-                        {/* Контент шага */}
                         <div className="p-8">
                             {step === 1 && <Step1 />}
                             {step === 2 && <Step2 />}
@@ -800,7 +294,6 @@ export function CheckoutPage() {
                             {step === 4 && <Step4 />}
                         </div>
 
-                        {/* Кнопки навигации */}
                         <div className="p-8 border-t border-pink-100/50 bg-linear-to-r from-pink-50/30 via-white/50 to-purple-50/30 backdrop-blur-sm">
                             <div className="flex justify-between items-center">
                                 {step > 1 ? (
@@ -852,7 +345,7 @@ export function CheckoutPage() {
                                             <>
                                                 <div
                                                     onClick={() =>
-                                                        handleCreateOrder()
+                                                        handleCreateOrder() 
                                                     }
                                                     className="flex flex-col items-center gap-1 relative z-10"
                                                 >
@@ -876,7 +369,6 @@ export function CheckoutPage() {
                 )}
             </div>
 
-            {/* Добавляем CSS для анимаций */}
             <style>{`
         @keyframes shimmer {
           0% { transform: translateX(-100%); }

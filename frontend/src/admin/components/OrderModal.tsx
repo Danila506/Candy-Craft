@@ -73,7 +73,9 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
                                         newItems[idx].quantity = Number(e.target.value);
                                         setItems(newItems);
                                     }}
+                                    
                                     className="border rounded px-1 py-0.5 w-16 mx-2"
+                                    min={0}
                                 /> × {item.price} ₽
                             </li>
                         ))}
