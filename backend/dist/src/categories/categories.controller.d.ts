@@ -1,7 +1,7 @@
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { Category } from 'src/generated/prisma/client';
+import { Category } from '@prisma/client';
 export declare class CategoriesController {
     private readonly category;
     constructor(category: CategoriesService);

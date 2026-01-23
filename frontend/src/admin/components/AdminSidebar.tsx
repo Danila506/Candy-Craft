@@ -6,8 +6,6 @@ import {
     ShoppingCart, 
     Tag, 
     Settings,
-    Users,
-    BarChart3,
     LogOut
 } from "lucide-react";
 
@@ -21,8 +19,6 @@ const menuItems = [
     { path: "/admin/products", label: "Товары", icon: <Package size={20} /> },
     { path: "/admin/orders", label: "Заказы", icon: <ShoppingCart size={20} /> },
     { path: "/admin/categories", label: "Категории", icon: <Tag size={20} /> },
-    { path: "/admin/customers", label: "Клиенты", icon: <Users size={20} /> },
-    { path: "/admin/analytics", label: "Аналитика", icon: <BarChart3 size={20} /> },
     { path: "/admin/settings", label: "Настройки", icon: <Settings size={20} /> },
 ];
 

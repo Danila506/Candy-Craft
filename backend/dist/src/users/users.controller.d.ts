@@ -20,25 +20,25 @@ export declare class UsersController {
                 product: {
                     category: {
                         name: string;
+                        id: number;
                         description: string;
                         imageUrl: string;
-                        id: number;
                     };
                 } & {
                     name: string;
+                    id: number;
                     description: string;
                     price: number;
-                    imageUrl: string;
                     inStock: number;
+                    imageUrl: string;
                     categoryId: number;
-                    id: number;
                     createdAt: Date;
                     updatedAt: Date;
                 };
             } & {
-                cartId: number;
                 id: number;
                 productId: number;
+                cartId: number;
                 quantity: number;
             })[];
         } & {
@@ -59,25 +59,25 @@ export declare class UsersController {
                 product: {
                     category: {
                         name: string;
+                        id: number;
                         description: string;
                         imageUrl: string;
-                        id: number;
                     };
                 } & {
                     name: string;
+                    id: number;
                     description: string;
                     price: number;
-                    imageUrl: string;
                     inStock: number;
+                    imageUrl: string;
                     categoryId: number;
-                    id: number;
                     createdAt: Date;
                     updatedAt: Date;
                 };
             } & {
-                cartId: number;
                 id: number;
                 productId: number;
+                cartId: number;
                 quantity: number;
             })[];
             id: number;
@@ -94,19 +94,19 @@ export declare class UsersController {
             items: ({
                 product: {
                     name: string;
+                    id: number;
                     description: string;
                     price: number;
-                    imageUrl: string;
                     inStock: number;
+                    imageUrl: string;
                     categoryId: number;
-                    id: number;
                     createdAt: Date;
                     updatedAt: Date;
                 };
             } & {
-                cartId: number;
                 id: number;
                 productId: number;
+                cartId: number;
                 quantity: number;
             })[];
         } & {
@@ -135,19 +135,19 @@ export declare class UsersController {
             items: ({
                 product: {
                     name: string;
+                    id: number;
                     description: string;
                     price: number;
-                    imageUrl: string;
                     inStock: number;
+                    imageUrl: string;
                     categoryId: number;
-                    id: number;
                     createdAt: Date;
                     updatedAt: Date;
                 };
             } & {
-                cartId: number;
                 id: number;
                 productId: number;
+                cartId: number;
                 quantity: number;
             })[];
         } & {

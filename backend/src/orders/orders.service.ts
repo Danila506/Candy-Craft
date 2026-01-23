@@ -2,8 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Order, Prisma } from 'src/generated/prisma/client';
-import { OrderStatus } from '../generated/prisma/client'; // путь к твоему сгенерированному клиенту
+import { Order, Prisma } from '@prisma/client';
+import { OrderStatus } from '@prisma/client';
 
 
 

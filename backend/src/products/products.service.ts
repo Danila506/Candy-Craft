@@ -3,7 +3,7 @@ import { BadRequestException, Body, Injectable, InternalServerErrorException, No
 import { CreateProductDto } from './dto/create-product.dto';
 
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Product } from '../generated/prisma/client';
+import { Product } from '@prisma/client';
 
 @Injectable()
 export class ProductsService {

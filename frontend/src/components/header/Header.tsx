@@ -101,14 +101,14 @@ function Header() {
                                 />
                             ))}
 
-                            <li className="text-center flex justify-center">
+                            <li className="text-center flex justify-center animate-spin [animation-duration:5s]">
                                 <a className="text-2xl" href="/">
                                     <img
-                                        width={120}
-                                        height={120}
+                                        width={170}
+                                        height={170}
                                         src={Logo}
                                         alt="Candy Craft Логотип"
-                                        className="drop-shadow-sm"
+                                        className="drop-shadow-sm "
                                     />
                                 </a>
                             </li>
