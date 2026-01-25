@@ -6,6 +6,7 @@ import {
     type ReactNode,
 } from "react";
 import type { CartType } from "../types/CartType";
+import { API_URL, USER_ID } from "../api/config";
 
 interface CartContextType {
     cartCount: number;
@@ -21,11 +22,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     children,
 }) => {
     const [cartItems, setCartItems] = useState<CartType[]>([]); // Сохраняем товары
-    const cartCount = cartItems.length; // Считаем автоматически
+        const cartCount = cartItems.reduce(
+        (sum, item) => sum + item.quantity,
+        0
+    );
 
     const fetchCartItems = async () => {
         try {
-            const response = await fetch("http://localhost:3000/cart/1");
+            const response = await fetch(`${API_URL}/cart/${USER_ID}`);
             const data: CartType[] = await response.json();
             setCartItems(data); // Сохраняем ВЕСЬ массив товаров
         } catch (error) {
@@ -35,7 +39,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
     const clearCart = async () => {
         try {
-            const res = await fetch("http://localhost:3000/cart/1", {
+            const res = await fetch(`${API_URL}/cart/${USER_ID}`, {
                 method: "DELETE"
             })
             if (!res.ok) throw new Error("Не удалось очистить корзину");

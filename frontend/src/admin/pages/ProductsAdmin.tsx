@@ -7,9 +7,12 @@ import { ProductModal } from "../components/ProductModal";
 import type { CreateProductDto } from "../../types/ProductType";
 
 export function ProductsAdmin() {
-    const { products, createProduct, updateProduct, deleteProduct } = useProducts();
+    const { products, createProduct, updateProduct, deleteProduct } =
+        useProducts();
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState<{ id: number } & CreateProductDto | null>(null);
+    const [selectedProduct, setSelectedProduct] = useState<
+        ({ id: number } & CreateProductDto) | null
+    >(null);
 
     const handleCreate = async (data: CreateProductDto) => {
         await createProduct(data);
@@ -40,7 +43,7 @@ export function ProductsAdmin() {
     return (
         <AdminLayout title="Управление товарами">
             {/* Кнопка добавления */}
-            <button 
+            <button
                 onClick={handleAddNew}
                 className="mb-6 flex items-center gap-2 px-4 py-2 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a]"
             >
@@ -62,6 +65,7 @@ export function ProductsAdmin() {
                 <table className="w-full">
                     <thead className="bg-gray-50">
                         <tr>
+                            <th className="px-6 py-3 text-left">Изображение</th>
                             <th className="px-6 py-3 text-left">Название</th>
                             <th className="px-6 py-3 text-left">Цена</th>
                             <th className="px-6 py-3 text-left">В наличии</th>
@@ -70,10 +74,23 @@ export function ProductsAdmin() {
                     </thead>
                     <tbody>
                         {products.map((product) => (
-                            <tr key={product.id} className="border-t hover:bg-gray-50">
+                            <tr
+                                key={product.id}
+                                className="border-t hover:bg-gray-50"
+                            >
+                                <td className="px-6 py-4">
+                                    {" "}
+                                    <img
+                                        src={product.imageUrl}
+                                        alt={product.name}
+                                        className="w-14 h-14 object-cover rounded"
+                                    />
+                                </td>
                                 <td className="px-6 py-4">{product.name}</td>
                                 <td className="px-6 py-4">{product.price} ₽</td>
-                                <td className="px-6 py-4">{product.inStock} шт</td>
+                                <td className="px-6 py-4">
+                                    {product.inStock} шт
+                                </td>
                                 <td className="px-6 py-4">
                                     <div className="flex gap-2">
                                         <button
@@ -83,7 +100,9 @@ export function ProductsAdmin() {
                                             <Edit size={16} />
                                         </button>
                                         <button
-                                            onClick={() => handleDelete(product.id)}
+                                            onClick={() =>
+                                                handleDelete(product.id)
+                                            }
                                             className="p-2 text-red-600 hover:bg-red-50 rounded"
                                         >
                                             <Trash2 size={16} />

@@ -1,7 +1,7 @@
 import type { CreateProductDto, ProductType } from "../types/ProductType";
+import { API_URL } from "./config";
 
-// api/products.ts
-const API_URL = "http://localhost:3000";
+
 
 // api/products.ts
 // Создание товара

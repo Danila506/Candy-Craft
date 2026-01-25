@@ -1,6 +1,8 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import type { Order, OrderCreateDto, OrderStatusKey } from "../../types/OrderType";
 
+import { API_URL } from "../../api/config";
+
 export type OrderUpdateDto = {
     status?: OrderStatusKey;
     totalPrice?: number;
@@ -32,7 +34,7 @@ export const OrderProvider = ({ children }: Props) => {
 
     const fetchOrders = async () => {
         try {
-            const res = await fetch("http://localhost:3000/orders");
+            const res = await fetch(`${API_URL}/orders`);
             if (!res.ok) throw new Error("Не удалось загрузить заказы");
             const data: Order[] = await res.json();
             setOrders(data);
@@ -43,7 +45,7 @@ export const OrderProvider = ({ children }: Props) => {
 
     const createOrder = async (data: OrderCreateDto) => {
       try {
-          const res = await fetch(`http://localhost:3000/orders`, {
+          const res = await fetch(`${API_URL}/orders`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(data),
@@ -59,7 +61,7 @@ export const OrderProvider = ({ children }: Props) => {
 
     const updateOrder = async (id: number, data: OrderUpdateDto) => {
         try {
-            const res = await fetch(`http://localhost:3000/orders/${id}`, {
+            const res = await fetch(`${API_URL}/orders/${id}`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(data),
@@ -75,7 +77,7 @@ export const OrderProvider = ({ children }: Props) => {
 
     const deleteOrder = async (id: number) => {
         try {
-            const res = await fetch(`http://localhost:3000/orders/${id}`, { method: "DELETE" });
+            const res = await fetch(`${API_URL}/orders/${id}`, { method: "DELETE" });
             if (!res.ok) throw new Error("Не удалось удалить заказ");
             setOrders((prev) => prev.filter((o) => o.id !== id));
         } catch (err) {

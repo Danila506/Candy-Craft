@@ -58,7 +58,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                                     end={item.path === "/admin"}
                                     className={({ isActive }) => `
                                         flex items-center gap-3 px-4 py-3 rounded-lg
-                                        transition-colors hover:bg-gray-800
+                                        transition-colors ${!isActive ? "hover:bg-gray-800": ""}
                                         ${isActive 
                                             ? "bg-[#ff398b] text-white" 
                                             : "text-gray-300 hover:text-white"

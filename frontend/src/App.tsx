@@ -17,6 +17,8 @@ import { CheckoutPage } from "./pages/CheckoutPage";
 import { OrdersAdmin } from "./admin/pages/OrdersAdmin";
 import { OrderProvider } from "./admin/context/OrderContext";
 import { CheckoutProvider } from "./contexts/CheckoutContext";
+import { CategoriesAdmin } from "./admin/pages/CategoriesAdmin";
+import { CategoryProvider } from "./contexts/CategoryContext";
 
 function App() {
     return (
@@ -84,6 +86,16 @@ function App() {
                                 element={
                                     <AdminRoute>
                                         <ProductsAdmin />
+                                    </AdminRoute>
+                                }
+                            />
+                            <Route
+                                path="/admin/categories"
+                                element={
+                                    <AdminRoute>
+                                        <CategoryProvider>
+                                            <CategoriesAdmin />
+                                        </CategoryProvider>
                                     </AdminRoute>
                                 }
                             />

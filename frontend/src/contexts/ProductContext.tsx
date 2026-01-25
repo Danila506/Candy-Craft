@@ -7,6 +7,7 @@ import {
     type ReactNode,
 } from "react";
 import type { CreateProductDto, ProductType } from "../types/ProductType";
+import { API_URL } from "../api/config";
 
 interface ProductsContextType {
     products: ProductType[];
@@ -35,7 +36,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
         setLoading(true);
         try {
             const response = await fetch(
-                `http://localhost:3000/products/${id}`,
+                `${API_URL}/products/${id}`,
                 {
                     method: "DELETE",
                     headers: {
@@ -72,7 +73,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
         setLoading(true);
         try {
             const response = await fetch(
-                `http://localhost:3000/products/${id}`,
+                `${API_URL}/products/${id}`,
                 {
                     method: "PUT",
                     headers: {
@@ -111,7 +112,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
     const createProduct = async (createdData: CreateProductDto) => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3000/products`, {
+            const response = await fetch(`${API_URL}/products`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -144,10 +145,12 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
         }
     };
 
+
+
     const fetchProducts = async () => {
         setLoading(true);
         try {
-            const response = await fetch("http://localhost:3000/products");
+            const response = await fetch(`${API_URL}/products`);
             if (!response.ok) throw new Error("Ошибка загрузки товаров");
             const data = await response.json();
             setProducts(data);

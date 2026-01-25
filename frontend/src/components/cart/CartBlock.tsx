@@ -2,12 +2,13 @@ import { Breadcrumb } from "../ui/Breadcrumb";
 import { useEffect, useMemo, useState } from "react";
 import { H2 } from "../ui/H2";
 import { useCart } from "../../contexts/CartContext";
+import { API_URL, USER_ID } from "../../api/config";
 
 export function CartBlock() {
     const { cartItems, refreshCart } = useCart(); // Убрали decrementCart
 
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [error] = useState<string | null>(null);
 
     const [itemQuantities, setItemQuantities] = useState<
         Record<number, number>
@@ -16,7 +17,7 @@ export function CartBlock() {
     useEffect(() => {
         const initialQuantities: Record<number, number> = {};
         cartItems.forEach((item) => {
-            initialQuantities[Number(item.id)] = 1;
+            initialQuantities[Number(item.id)] = item.quantity;
         });
         setItemQuantities(initialQuantities);
         setLoading(false);
@@ -39,7 +40,7 @@ export function CartBlock() {
 
     const removeItem = async (itemId: number) => {
         try {
-            await fetch(`http://localhost:3000/cart/1/items/${itemId}`, {
+            await fetch(`${API_URL}/cart/${USER_ID}/items/${itemId}`, {
                 method: "DELETE",
             });
             refreshCart();
@@ -84,7 +85,8 @@ export function CartBlock() {
                     ) : (
                         cartItems.map((item) => {
                             const quantity =
-                                itemQuantities[Number(item.id)] || 1;
+                                itemQuantities[Number(item.id)] ??
+                                item.quantity;
                             const itemTotal = Number(item.price) * quantity;
 
                             return (
@@ -113,7 +115,7 @@ export function CartBlock() {
                                             <button
                                                 onClick={() =>
                                                     decrementQuantity(
-                                                        Number(item.id)
+                                                        Number(item.id),
                                                     )
                                                 }
                                                 className="w-8 h-8 border border-gray-300 rounded-full flex justify-center items-center hover:bg-gray-100 disabled:opacity-50"
@@ -127,7 +129,7 @@ export function CartBlock() {
                                             <button
                                                 onClick={() =>
                                                     incrementQuantity(
-                                                        Number(item.id)
+                                                        Number(item.id),
                                                     )
                                                 }
                                                 className="w-8 h-8 border border-gray-300 rounded-full flex justify-center items-center hover:bg-gray-100 disabled:opacity-50"
@@ -142,7 +144,7 @@ export function CartBlock() {
                                         <div className="w-32 text-right">
                                             <div className="font-bold text-lg">
                                                 {itemTotal.toLocaleString(
-                                                    "ru-RU"
+                                                    "ru-RU",
                                                 )}{" "}
                                                 руб
                                             </div>

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseIntPipe,
+  Query,
+  Put,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
@@ -13,7 +24,7 @@ export class CategoriesController {
   @Get()
   @ApiOperation({ summary: 'Get all categories' })
   findAll(): Promise<Category[]> {
-    return this.category.findAll()
+    return this.category.findAll();
   }
 
   @Get(':id')
@@ -25,16 +36,15 @@ export class CategoriesController {
   @Post()
   @ApiOperation({ summary: 'Create new category' })
   create(@Body() dto: CreateCategoryDto): Promise<Category> {
-    return this.category.create(dto)
+    return this.category.create(dto);
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Update category' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateCategoryDto: UpdateCategoryDto,
-  ): Promise<Category> {
-    return this.category.update(id, updateCategoryDto);
+  @Put(':id')
+  @ApiOperation({ summary: 'PutUpdate category' })
+  putUpdate(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
+    console.log('PUT id:', id);
+    console.log('PUT dto:', dto);
+    return this.category.putUpdate(Number(id), dto);
   }
 
   @Delete(':id')

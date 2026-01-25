@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
 
@@ -8,22 +12,22 @@ export class CartService {
 
   // Получить корзину пользователя
   async getCart(userId: number) {
-  const cartItems = await this.prisma.cartItem.findMany({
-    where: {
-      cart: {
-        userId: userId
-      }
-    },
-    include: {
-      product: true  // только продукт, без категории
-    }
-  });
+    const cartItems = await this.prisma.cartItem.findMany({
+      where: {
+        cart: {
+          userId: userId,
+        },
+      },
+      include: {
+        product: true, // только продукт, без категории
+      },
+    });
 
-  // Просто массив продуктов
-  const products = cartItems.map(item => item.product);
-  
-  return products;
-
+    return cartItems.map((item) => ({
+      ...item.product,
+      productId: item.productId,
+      quantity: item.quantity,
+    }));
   }
 
   // Добавить товар в корзину
@@ -38,9 +42,6 @@ export class CartService {
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-
-
-
     // Находим или создаем корзину
     let cart = await this.prisma.cart.findUnique({
       where: { userId },
@@ -62,12 +63,21 @@ export class CartService {
       },
     });
 
+    if (existingItem) {
+      return this.prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + 1 },
+        include: {
+          product: true,
+        },
+      });
+    }
 
-    // Добавляем новый товар в корзину
     return this.prisma.cartItem.create({
       data: {
         cartId: cart.id,
         productId,
+        quantity: 1,
       },
       include: {
         product: true,
@@ -128,7 +138,7 @@ export class CartService {
     });
 
     if (!cart) {
-      throw new NotFoundException('Cart not found')
+      throw new NotFoundException('Cart not found');
     }
 
     const cartItem = await this.prisma.cartItem.findUnique({

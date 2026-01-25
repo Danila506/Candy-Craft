@@ -4,6 +4,7 @@ import { Product } from "./Product";
 import { useProducts } from "../contexts/ProductContext";
 import type { CategoryType } from "../types/CategoryType";
 import type { ProductType } from "../types/ProductType";
+import { API_URL } from "../api/config";
 
 export function ProductList() {
     const { 
@@ -28,7 +29,7 @@ export function ProductList() {
 
     // Загружаем только категории (товары уже в контексте)
     useEffect(() => {
-        fetch("http://localhost:3000/categories")
+        fetch(`${API_URL}/categories`)
             .then((res) => res.json())
             .then((data) => {
                 setCategories(data);

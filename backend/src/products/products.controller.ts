@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 import { Product } from '@prisma/client';
 
@@ -52,7 +53,7 @@ export class ProductsController {
 
 //! Изменение товара
   @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: CreateProductDto){
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProductDto){
     return this.products.update(id, dto)
   }
 

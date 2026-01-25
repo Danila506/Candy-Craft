@@ -39,10 +39,12 @@ export class CartController {
   updateCartItem(
     @Param('userId', ParseIntPipe) userId: number,
     @Param('productId', ParseIntPipe) productId: number,
+    @Body() updateCartItemDto: UpdateCartItemDto,
   ) {
-    return this.cartService.removeFromCart(
+    return this.cartService.updateCartItem(
       userId,
       productId,
+      updateCartItemDto.quantity,
     );
   }
 

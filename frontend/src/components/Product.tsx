@@ -3,6 +3,7 @@ import { useCart } from "../contexts/CartContext";
 import type { ProductType } from "../types/ProductType";
 import { Link } from "react-router-dom";
 import { ShoppingCart, CheckCircle } from "lucide-react";
+import { API_URL, USER_ID } from "../api/config";
 
 export function Product(product: ProductType) {
     const { isItemInCart, refreshCart } = useCart();
@@ -13,7 +14,7 @@ export function Product(product: ProductType) {
         if (isInCart) return;
 
         try {
-            const response = await fetch(`http://localhost:3000/cart/1/items`, {
+            const response = await fetch(`${API_URL}/cart/${USER_ID}/items`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ productId: id }),

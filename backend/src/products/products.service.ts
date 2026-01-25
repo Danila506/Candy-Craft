@@ -4,6 +4,7 @@ import { CreateProductDto } from './dto/create-product.dto';
 
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Product } from '@prisma/client';
+import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
 export class ProductsService {
@@ -97,12 +98,12 @@ async removeById(id: number): Promise<{ message: string }> {
 }
 
 //todo Обновление товара
-  async update(id: number, dto: CreateProductDto): Promise<{message: string, changedProduct: Product}>{
+  async update(id: number, dto: UpdateProductDto): Promise<{message: string, changedProduct: Product}>{
     const product = await this.prisma.product.findFirst({where: {id}})
     if (!product) {
-      throw new NotFoundException(`Category with ID ${id} not found`);
+      throw new NotFoundException(`Product with ID ${id} not found`);
     }
-    const updatedProduct = await this.prisma.product.update({where: product, data: dto})
+    const updatedProduct = await this.prisma.product.update({where: { id }, data: dto})
     return {message:'Товар изменен', changedProduct: updatedProduct}
   }
 

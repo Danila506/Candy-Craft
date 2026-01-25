@@ -14,6 +14,7 @@ import {
     Sparkles,
     Tag,
 } from "lucide-react";
+import { API_URL, USER_ID } from "../api/config";
 
 export function Cart() {
     const { cartItems, refreshCart } = useCart();
@@ -27,7 +28,7 @@ export function Cart() {
     useEffect(() => {
         const initialQuantities: Record<number, number> = {};
         cartItems.forEach((item) => {
-            initialQuantities[Number(item.id)] = 1;
+            initialQuantities[Number(item.id)] = item.quantity;
         });
         setItemQuantities(initialQuantities);
         setLoading(false);
@@ -49,7 +50,7 @@ export function Cart() {
 
     const removeItem = async (itemId: number) => {
         try {
-            await fetch(`http://localhost:3000/cart/1/items/${itemId}`, {
+            await fetch(`${API_URL}/cart/${USER_ID}/items/${itemId}`, {
                 method: "DELETE",
             });
             refreshCart();
@@ -62,7 +63,7 @@ export function Cart() {
         // Формируем товары с правильными количествами
         const orderItems = cartItems.map((item) => ({
             productId: item.id,
-            quantity: itemQuantities[item.id] || 1,
+            quantity: itemQuantities[item.id] ?? item.quantity,
             price: item.price,
         }));
 
@@ -72,7 +73,7 @@ export function Cart() {
 
     const totalPrice = useMemo(() => {
         return cartItems.reduce((sum, item) => {
-            const quantity = itemQuantities[Number(item.id)] ?? 1;
+            const quantity = itemQuantities[Number(item.id)] ?? item.quantity;
             return sum + Number(item.price) * quantity;
         }, 0);
     }, [cartItems, itemQuantities]);
@@ -144,7 +145,8 @@ export function Cart() {
                         <div className="flex-1 space-y-4">
                             {cartItems.map((item) => {
                                 const quantity =
-                                    itemQuantities[Number(item.id)] || 1;
+                                    itemQuantities[Number(item.id)] ??
+                                    item.quantity;
                                 const itemTotal = Number(item.price) * quantity;
 
                                 return (

@@ -6,6 +6,7 @@ import { Breadcrumb } from "../components/ui/Breadcrumb";
 import { ProductGallery } from "../components/ProductGallery";
 import { ProductInfo } from "../components/ProductInfo";
 import { useState, useEffect } from "react";
+import { API_URL, USER_ID } from "../api/config";
 
 export function ProductPage() {
     const { id } = useParams<{ id: string }>();
@@ -61,7 +62,7 @@ export function ProductPage() {
         if (isInCart) return;
 
         try {
-            await fetch(`http://localhost:3000/cart/1/items`, {
+            await fetch(`${API_URL}/cart/${USER_ID}/items`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ productId: product.id }),

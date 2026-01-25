@@ -5,71 +5,63 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Order, Prisma } from '@prisma/client';
 import { OrderStatus } from '@prisma/client';
 
-
-
 @Injectable()
 export class OrdersService {
-    constructor(private prisma:PrismaService,
-    ) {}
+  constructor(private prisma: PrismaService) {}
 
-private readonly statusMap: Record<string, OrderStatus> = {
-  "Создан": OrderStatus.PENDING,
-  "Оплачен": OrderStatus.PAID,
-  "Собирается": OrderStatus.PROCESSING,
-  "Отправлен": OrderStatus.SHIPPED,
-  "Выполнен": OrderStatus.COMPLETED,
-  "Отменён": OrderStatus.CANCELED,
-};
-async create(dto: CreateOrderDto) {
-  // Получаем продукты из БД
-  const products = await this.prisma.product.findMany({
-    where: { id: { in: dto.items.map(i => i.productId) } },
-  });
+  async create(dto: CreateOrderDto) {
+    // Получаем продукты из БД
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: dto.items.map((i) => i.productId) } },
+    });
 
-  // Формируем позиции заказа с productName
-  const itemsData = dto.items.map(item => {
-    const product = products.find(p => p.id === item.productId);
-    if (!product) throw new Error(`Product ${item.productId} not found`);
+    // Формируем позиции заказа с productName
+    const itemsData = dto.items.map((item) => {
+      const product = products.find((p) => p.id === item.productId);
+      if (!product) {
+        throw new NotFoundException(`Product ${item.productId} not found`);
+      }
+      return {
+        productId: product.id,
+        productName: product.name,
+        quantity: item.quantity,
+        price: product.price,
+      };
+    });
 
-    return {
-      productId: product.id,
-      productName: product.name,
-      quantity: item.quantity,
-      price: product.price,
-    };
-  });
+    // Считаем общую сумму
+    const totalPrice = itemsData.reduce(
+      (sum, i) => sum + i.price * i.quantity,
+      0,
+    );
 
-  // Считаем общую сумму
-  const totalPrice = itemsData.reduce((sum, i) => sum + i.price * i.quantity, 0);
-
-  // Создаём заказ с привязкой к продуктам
-  const order = await this.prisma.order.create({
-    data: {
-      userId: dto.userId,
-      status: OrderStatus.PENDING,
-      totalPrice,
-      items: {
-        create: itemsData,
-      },
-    },
-    include: {
-      items: {
-        select: {
-          id: true,
-          quantity: true,
-          price: true,
-          productName: true,
+    // Создаём заказ с привязкой к продуктам
+    const order = await this.prisma.order.create({
+      data: {
+        userId: dto.userId,
+        status: OrderStatus.PENDING,
+        totalPrice,
+        items: {
+          create: itemsData,
         },
       },
-    },
-  });
+      include: {
+        items: {
+          select: {
+            id: true,
+            quantity: true,
+            price: true,
+            productName: true,
+          },
+        },
+      },
+    });
 
-  return order;
-}
-
+    return order;
+  }
 
   async findAll() {
-    return await this.prisma.order.findMany({include: { items: true }})
+    return await this.prisma.order.findMany({ include: { items: true } });
   }
 
   findOne(id: number) {
@@ -103,11 +95,12 @@ async create(dto: CreateOrderDto) {
             const product = await this.prisma.product.findUnique({
               where: { id: i.productId },
             });
-            if (!product) throw new NotFoundException(`Product #${i.productId} not found`);
+            if (!product)
+              throw new NotFoundException(`Product #${i.productId} not found`);
 
             return {
               product: { connect: { id: i.productId } },
-              productName: product.name, 
+              productName: product.name,
               quantity: i.quantity,
               price: product.price,
             };
@@ -121,10 +114,9 @@ async create(dto: CreateOrderDto) {
       data,
       include: { items: true },
     });
-
-}
+  }
 
   async remove(id: number) {
-    return await this.prisma.order.delete({where: { id }})
+    return await this.prisma.order.delete({ where: { id } });
   }
 }

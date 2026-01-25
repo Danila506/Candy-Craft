@@ -1,7 +1,9 @@
 // components/ProductModal.tsx
 import { useState, useEffect } from "react";
-import { X, Upload } from "lucide-react";
+import { X } from "lucide-react";
 import type { CreateProductDto } from "../../types/ProductType";
+import { API_URL } from "../../api/config";
+import { ImageUploader } from "./ImageUploader";
 
 interface ProductModalProps {
     isOpen: boolean;
@@ -66,7 +68,7 @@ export function ProductModal({
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch("http://localhost:3000/categories");
+            const response = await fetch(`${API_URL}/categories`);
             const data = await response.json();
             setCategories(data);
         } catch (error) {
@@ -273,74 +275,14 @@ export function ProductModal({
                             </div>
 
                             <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Изображение *
-                                    </label>
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex-1">
-                                            <input
-                                                type="url"
-                                                value={formData.imageUrl}
-                                                onChange={(e) =>
-                                                    handleChange(
-                                                        "imageUrl",
-                                                        e.target.value,
-                                                    )
-                                                }
-                                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
-                                                    errors.imageUrl
-                                                        ? "border-red-500"
-                                                        : "border-gray-300"
-                                                }`}
-                                                placeholder="https://example.com/image.jpg"
-                                                disabled={loading}
-                                            />
-                                        </div>
-                                        <button
-                                            type="button"
-                                            className="p-3 border border-gray-300 rounded-lg hover:bg-gray-50"
-                                            onClick={() => {
-                                                const url = prompt(
-                                                    "Введите URL изображения:",
-                                                );
-                                                if (url)
-                                                    handleChange(
-                                                        "imageUrl",
-                                                        url,
-                                                    );
-                                            }}
-                                            disabled={loading}
-                                        >
-                                            <Upload size={20} />
-                                        </button>
-                                    </div>
-                                    {errors.imageUrl && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {errors.imageUrl}
-                                        </p>
-                                    )}
-
-                                    {formData.imageUrl && (
-                                        <div className="mt-3">
-                                            <p className="text-sm text-gray-600 mb-2">
-                                                Предпросмотр:
-                                            </p>
-                                            <div className="w-full h-48 bg-gray-100 rounded-lg overflow-hidden border">
-                                                <img
-                                                    src={formData.imageUrl}
-                                                    alt="Предпросмотр"
-                                                    className="w-full h-full object-cover"
-                                                    onError={(e) => {
-                                                        e.currentTarget.src =
-                                                            "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200' viewBox='0 0 400 200'%3E%3Crect width='400' height='200' fill='%23f3f4f6'/%3E%3Ctext x='200' y='110' text-anchor='middle' fill='%239ca3af' font-family='Arial' font-size='14'%3EИзображение не загружено%3C/text%3E%3C/svg%3E";
-                                                    }}
-                                                />
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
+                                <ImageUploader
+                                    label="Изображение товара"
+                                    value={formData.imageUrl}
+                                    onChange={(url) =>
+                                        handleChange("imageUrl", url)
+                                    }
+                                    folder="products"
+                                />
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Описание *

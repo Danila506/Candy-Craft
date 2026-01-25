@@ -1,103 +1,164 @@
 // admin/components/CategoryModal.tsx
-import { useEffect, useState } from "react";
-import { X } from "lucide-react";
-import type { CategoryType } from "../../types/CategoryType";
+import { useEffect, useMemo, useState } from "react";
+import type { CreateCategoryDto } from "../../types/CategoryType";
+import { ImageUploader } from "./ImageUploader";
 
-interface CategoryModalProps {
+type CategoryModalProps = {
     isOpen: boolean;
     onClose: () => void;
-    onCreate: (data: CategoryType) => Promise<void>;
-    onUpdate: (id: number, data: CategoryType) => Promise<void>;
-    category?: { id: number } & CategoryType | null;
-}
+    onCreate: (data: CreateCategoryDto) => Promise<void> | void;
+    onUpdate: (id: number, data: CreateCategoryDto) => Promise<void> | void;
+    category: ({ id: number } & CreateCategoryDto) | null;
+};
 
-export function CategoryModal({ isOpen, onClose, onCreate, onUpdate, category }: CategoryModalProps) {
-    const [formData, setFormData] = useState<CategoryType>({
-        name: "",
-        description: "",
-    });
+const emptyForm: CreateCategoryDto = {
+    name: "",
+    description: "",
+    imageUrl: "",
+};
+
+export function CategoryModal({
+    isOpen,
+    onClose,
+    onCreate,
+    onUpdate,
+    category,
+}: CategoryModalProps) {
+    const isEdit = useMemo(() => Boolean(category?.id), [category]);
+
+    const [form, setForm] = useState<CreateCategoryDto>(emptyForm);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        if (category) {
-            setFormData({
-                name: category.name,
-                description: category.description || "",
-            });
-        } else {
-            setFormData({
-                name: "",
-                description: "",
-            });
+        if (isOpen) {
+            setForm(
+                category
+                    ? {
+                          name: category.name ?? "",
+                          description: category.description ?? "",
+                          imageUrl: category.imageUrl ?? "",
+                      }
+                    : emptyForm,
+            );
         }
-    }, [category]);
+    }, [isOpen, category]);
+
+    const setField = (key: keyof CreateCategoryDto, value: string) => {
+        setForm((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const validate = () => {
+        if (!form.name.trim()) return "Введите название";
+        if (!form.description.trim()) return "Введите описание";
+        return null;
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (category) {
-            await onUpdate(category.id, formData);
-        } else {
-            await onCreate(formData);
+        const err = validate();
+        if (err) {
+            alert(err);
+            return;
         }
-        
-        onClose();
+
+        setIsSaving(true);
+        try {
+            if (isEdit && category) {
+                await onUpdate(category.id, form);
+            } else {
+                await onCreate(form);
+            }
+            onClose();
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-md">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold">
-                        {category ? "Редактировать категорию" : "Новая категория"}
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+            {/* overlay */}
+            <button
+                type="button"
+                onClick={onClose}
+                className="absolute inset-0 bg-black/40"
+                aria-label="Close modal overlay"
+            />
+
+            {/* modal */}
+            <div className="relative z-10 w-full max-w-xl bg-white rounded-lg shadow-lg max-h-[90vh] flex flex-col">
+                <div className="px-6 py-4 border-b flex items-center justify-between">
+                    <h2 className="text-lg font-semibold">
+                        {isEdit
+                            ? "Редактировать категорию"
+                            : "Добавить категорию"}
                     </h2>
-                    <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
-                        <X size={24} />
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-2 py-1 rounded hover:bg-gray-100 text-gray-600"
+                    >
+                        ✕
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit}>
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Название *
-                            </label>
-                            <input
-                                type="text"
-                                value={formData.name}
-                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff398b]"
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Описание
-                            </label>
-                            <textarea
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff398b] min-h-25"
-                                rows={4}
-                            />
-                        </div>
+                <form
+                    onSubmit={handleSubmit}
+                    className="px-6 py-5 space-y-4 overflow-y-auto  "
+                >
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Название
+                        </label>
+                        <input
+                            value={form.name}
+                            onChange={(e) => setField("name", e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300"
+                            placeholder="Например: Торты"
+                        />
                     </div>
 
-                    <div className="flex gap-3 mt-6">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Описание
+                        </label>
+                        <textarea
+                            value={form.description}
+                            onChange={(e) =>
+                                setField("description", e.target.value)
+                            }
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300 min-h-22.5"
+                            placeholder="Короткое описание категории"
+                        />
+                    </div>
+
+                    <ImageUploader
+                        label="Изображение категории"
+                        value={form.imageUrl}
+                        onChange={(url) => setField("imageUrl", url)}
+                        folder="categories"
+                    />
+
+                    <div className="pt-2 flex justify-end gap-2">
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                            className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+                            disabled={isSaving}
                         >
                             Отмена
                         </button>
                         <button
                             type="submit"
-                            className="flex-1 px-4 py-2 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a]"
+                            className="px-4 py-2 rounded-lg bg-[#ff398b] text-white hover:bg-[#e0327a] disabled:opacity-60"
+                            disabled={isSaving}
                         >
-                            {category ? "Сохранить" : "Создать"}
+                            {isSaving
+                                ? "Сохранение..."
+                                : isEdit
+                                  ? "Сохранить"
+                                  : "Создать"}
                         </button>
                     </div>
                 </form>

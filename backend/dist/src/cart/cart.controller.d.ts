@@ -1,47 +1,81 @@
 import { CartService } from './cart.service';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
+import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 export declare class CartController {
-    private readonly cartService;
-    constructor(cartService: CartService);
-    getCart(userId: number): Promise<{
+  private readonly cartService;
+  constructor(cartService: CartService);
+  getCart(userId: number): Promise<
+    {
+      productId: number;
+      quantity: number;
+      name: string;
+      description: string;
+      price: number;
+      imageUrl: string;
+      inStock: number;
+      categoryId: number;
+      id: number;
+      createdAt: Date;
+      updatedAt: Date;
+    }[]
+  >;
+  addToCart(
+    userId: number,
+    createCartDto: CreateCartItemDto,
+  ): Promise<
+    {
+      product: {
         name: string;
-        id: number;
         description: string;
         price: number;
-        inStock: number;
         imageUrl: string;
+        inStock: number;
         categoryId: number;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-    }[]>;
-    addToCart(userId: number, createCartDto: CreateCartItemDto): Promise<{
-        product: {
-            name: string;
-            id: number;
-            description: string;
-            price: number;
-            inStock: number;
-            imageUrl: string;
-            categoryId: number;
-            createdAt: Date;
-            updatedAt: Date;
-        };
+      };
     } & {
+      cartId: number;
+      id: number;
+      productId: number;
+      quantity: number;
+    }
+  >;
+  updateCartItem(
+    userId: number,
+    productId: number,
+    updateCartItemDto: UpdateCartItemDto,
+  ): Promise<
+    {
+      product: {
+        name: string;
+        description: string;
+        price: number;
+        imageUrl: string;
+        inStock: number;
+        categoryId: number;
         id: number;
-        productId: number;
-        cartId: number;
-        quantity: number;
-    }>;
-    updateCartItem(userId: number, productId: number): Promise<{
-        message: string;
-    }>;
-    removeFromCart(userId: number, productId: number): Promise<{
-        message: string;
-    }>;
-    clearCart(userId: number): Promise<{
-        message: string;
-    }>;
-    getCartItemsCount(userId: number): Promise<{
-        count: number;
-    }>;
+        createdAt: Date;
+        updatedAt: Date;
+      };
+    } & {
+      cartId: number;
+      id: number;
+      productId: number;
+      quantity: number;
+    }
+  >;
+  removeFromCart(
+    userId: number,
+    productId: number,
+  ): Promise<{
+    message: string;
+  }>;
+  clearCart(userId: number): Promise<{
+    message: string;
+  }>;
+  getCartItemsCount(userId: number): Promise<{
+    count: number;
+  }>;
 }
