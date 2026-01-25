@@ -1,4 +1,4 @@
-import { BrowserRouter, Link, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Header from "./components/header/Header";
 import { Main } from "./components/Main";
 import { Cart } from "./pages/CartPage";
@@ -104,7 +104,6 @@ function App() {
           </BrowserRouter>
         </AdminProvider>
       </CartProvider>
-      <Link to="/admin" />
     </ProductsProvider>
   );
 }
