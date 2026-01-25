@@ -24,8 +24,8 @@
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.3",
     "@nestjs/typeorm": "^11.0.0",
-    "@prisma/client": "^7.2.0",
     "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
     "@vercel/blob": "^2.0.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
@@ -59,7 +59,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
+    "typescript": "^5.9.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
@@ -81,5 +81,8 @@
   },
   "engines": {
     "node": "20.x"
-}
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  }
 }
