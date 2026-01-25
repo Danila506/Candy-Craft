@@ -1,27 +1,58 @@
-import 'dotenv/config';
-import { prisma } from '../src/lib/prisma';
+import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
+
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL!,
+});
+
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  await prisma.product.deleteMany();
+  // Категории
+  const chocolate = await prisma.category.create({
+    data: {
+      name: 'Шоколад',
+      description: 'Шоколадные наборы',
+      imageUrl: 'https://placehold.co/300x200?text=Chocolate',
+    },
+  });
 
+  const gifts = await prisma.category.create({
+    data: {
+      name: 'Подарки',
+      description: 'Подарочные наборы',
+      imageUrl: 'https://placehold.co/300x200?text=Gifts',
+    },
+  });
+
+  // Продукты
   await prisma.product.createMany({
     data: [
       {
-        name: 'Шоколадный торт',
-        price: 1200,
-        description: 'Вкуснейший шоколадный торт',
-        imageUrl: 'https://example.com/cake.jpg',
-        inStock: 3,
-        categoryId: 1,
+        name: 'Kinder Box',
+        description: 'Набор из Kinder',
+        price: 120,
+        inStock: 10,
+        imageUrl: 'https://placehold.co/300x200?text=Kinder',
+        categoryId: chocolate.id,
+      },
+      {
+        name: 'Ferrero Heart',
+        description: 'Ferrero в форме сердца',
+        price: 180,
+        inStock: 5,
+        imageUrl: 'https://placehold.co/300x200?text=Ferrero',
+        categoryId: gifts.id,
       },
     ],
   });
+
+  console.log('✅ Seed completed');
 }
 
 main()
-  .then(() => prisma.$disconnect())
-  .catch(async (e) => {
+  .catch((e) => {
     console.error(e);
-    await prisma.$disconnect();
     process.exit(1);
-  });
+  })
+  .finally(() => prisma.$disconnect());
