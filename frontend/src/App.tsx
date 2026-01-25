@@ -32,7 +32,7 @@ function App() {
                 element={
                   <>
                     <Header />
-                    <Routes location={location}>
+                    <Routes>
                       <Route path="/" element={<Main />} />
                     </Routes>
                     <Footer />
