@@ -2,7 +2,6 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
@@ -13,18 +12,14 @@ async function bootstrap() {
     origin: [
       'http://localhost:5173', // Vite dev server
       'http://127.0.0.1:5173', // Альтернативный адрес Vite
-      'http://localhost:3000', // Ваш бэкенд (для Swagger)
+      'http://localhost:3000', // Ваш бэкенд (для Swagger)'https://candy-craft.vercel.app',
+      'https://candy-craft.vercel.app',
       'https://candy-craft.com',
       'https://www.candy-craft.com',
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders: 'Content-Type, Authorization, Accept',
-  });
-
-  // Настраиваем доступ к папке uploads
-  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-    prefix: '/uploads',
   });
 
   // Глобальная валидация
