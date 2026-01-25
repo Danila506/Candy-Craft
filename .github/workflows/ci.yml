@@ -123,3 +123,10 @@ jobs:
 
       - name: Build
         run: npm run build --if-present
+  
+  final:
+    name: CI
+    needs: [root, backend, frontend]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "CI passed"
