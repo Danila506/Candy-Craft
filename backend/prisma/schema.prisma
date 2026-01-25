@@ -6,12 +6,13 @@
 
 generator client {
   provider   = "prisma-client-js"
-  engineType = "binary"
   url      = env("DATABASE_URL")
 }
 
 datasource db {
   provider = "postgresql"
+  
+  
 }
 
 model User {
