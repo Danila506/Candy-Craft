@@ -1,5 +1,11 @@
 // contexts/CategoryContext.tsx
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import type { CategoryType, CreateCategoryDto } from "../types/CategoryType";
 
 type CategoryContextValue = {
@@ -14,11 +20,13 @@ type CategoryContextValue = {
 };
 
 // ✅ поменяй под свой бэкенд
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000"; 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
 // Я использую эндпоинты: /api/categories
 const ENDPOINT = `${API_BASE}/categories`;
 
-const CategoryContext = createContext<CategoryContextValue | undefined>(undefined);
+const CategoryContext = createContext<CategoryContextValue | undefined>(
+  undefined,
+);
 
 async function http<T>(url: string, options?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -63,8 +71,6 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
     void refetch();
   }, []);
 
-  
-
   const createCategory = async (dto: CreateCategoryDto) => {
     const created = await http<CategoryType>(ENDPOINT, {
       method: "POST",
@@ -98,10 +104,14 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
       updateCategory,
       deleteCategory,
     }),
-    [categories, isLoading, error]
+    [categories, isLoading, error],
   );
 
-  return <CategoryContext.Provider value={value}>{children}</CategoryContext.Provider>;
+  return (
+    <CategoryContext.Provider value={value}>
+      {children}
+    </CategoryContext.Provider>
+  );
 }
 
 export function useCategories() {

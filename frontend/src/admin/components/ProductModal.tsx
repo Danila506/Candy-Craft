@@ -6,342 +6,304 @@ import { API_URL } from "../../api/config";
 import { ImageUploader } from "./ImageUploader";
 
 interface ProductModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onCreate: (data: CreateProductDto) => Promise<void>;
-    onUpdate?: (id: number, data: CreateProductDto) => Promise<void>;
-    product?: ({ id: number } & CreateProductDto) | null;
+  isOpen: boolean;
+  onClose: () => void;
+  onCreate: (data: CreateProductDto) => Promise<void>;
+  onUpdate?: (id: number, data: CreateProductDto) => Promise<void>;
+  product?: ({ id: number } & CreateProductDto) | null;
 }
 
 export function ProductModal({
-    isOpen,
-    onClose,
-    onCreate,
-    onUpdate,
-    product,
+  isOpen,
+  onClose,
+  onCreate,
+  onUpdate,
+  product,
 }: ProductModalProps) {
-    const [formData, setFormData] = useState<
-        CreateProductDto & { id?: number }
-    >({
-        name: "",
-        price: 0,
-        inStock: 1,
-        categoryId: 1,
-        description: "",
-        imageUrl: "",
-    });
+  const [formData, setFormData] = useState<CreateProductDto & { id?: number }>({
+    name: "",
+    price: 0,
+    inStock: 1,
+    categoryId: 1,
+    description: "",
+    imageUrl: "",
+  });
 
-    const [loading, setLoading] = useState(false);
-    const [categories, setCategories] = useState<
-        { id: number; name: string }[]
-    >([]);
-    const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>(
+    [],
+  );
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-    useEffect(() => {
-        if (isOpen) {
-            fetchCategories();
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories();
 
-            if (product) {
-                setFormData({
-                    id: product.id,
-                    name: product.name,
-                    price: product.price,
-                    inStock: product.inStock,
-                    categoryId: product.categoryId,
-                    description: product.description,
-                    imageUrl: product.imageUrl,
-                });
-            } else {
-                setFormData({
-                    name: "",
-                    price: 0,
-                    inStock: 1,
-                    categoryId: 1,
-                    description: "",
-                    imageUrl: "",
-                });
-            }
+      if (product) {
+        setFormData({
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          inStock: product.inStock,
+          categoryId: product.categoryId,
+          description: product.description,
+          imageUrl: product.imageUrl,
+        });
+      } else {
+        setFormData({
+          name: "",
+          price: 0,
+          inStock: 1,
+          categoryId: 1,
+          description: "",
+          imageUrl: "",
+        });
+      }
 
-            setErrors({});
-        }
-    }, [isOpen, product]);
+      setErrors({});
+    }
+  }, [isOpen, product]);
 
-    const fetchCategories = async () => {
-        try {
-            const response = await fetch(`${API_URL}/categories`);
-            const data = await response.json();
-            setCategories(data);
-        } catch (error) {
-            console.error("Ошибка загрузки категорий:", error);
-        }
-    };
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch(`${API_URL}/categories`);
+      const data = await response.json();
+      setCategories(data);
+    } catch (error) {
+      console.error("Ошибка загрузки категорий:", error);
+    }
+  };
 
-    const validateForm = (): boolean => {
-        const newErrors: Record<string, string> = {};
+  const validateForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
 
-        if (!formData.name.trim()) newErrors.name = "Введите название товара";
-        if (formData.price <= 0) newErrors.price = "Цена должна быть больше 0";
-        if (formData.inStock <= 0)
-            newErrors.inStock = "Количество должно быть больше 0";
-        if (!formData.imageUrl.trim())
-            newErrors.imageUrl = "Добавьте ссылку на изображение";
-        if (!formData.description.trim())
-            newErrors.description = "Введите описание";
+    if (!formData.name.trim()) newErrors.name = "Введите название товара";
+    if (formData.price <= 0) newErrors.price = "Цена должна быть больше 0";
+    if (formData.inStock <= 0)
+      newErrors.inStock = "Количество должно быть больше 0";
+    if (!formData.imageUrl.trim())
+      newErrors.imageUrl = "Добавьте ссылку на изображение";
+    if (!formData.description.trim())
+      newErrors.description = "Введите описание";
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-        if (!validateForm()) return;
+    if (!validateForm()) return;
 
-        setLoading(true);
-        try {
-            const { id, ...submitData } = formData;
+    setLoading(true);
+    try {
+      const { id, ...submitData } = formData;
 
-            if (product && onUpdate) {
-                await onUpdate(product.id, submitData);
-            } else {
-                await onCreate(submitData);
-            }
+      if (product && onUpdate) {
+        await onUpdate(product.id, submitData);
+      } else {
+        await onCreate(submitData);
+      }
 
-            onClose();
-        } catch (error) {
-            console.error("Ошибка сохранения:", error);
-            setErrors({ submit: "Ошибка при сохранении товара" });
-        } finally {
-            setLoading(false);
-        }
-    };
+      onClose();
+    } catch (error) {
+      console.error("Ошибка сохранения:", error);
+      setErrors({ submit: "Ошибка при сохранении товара" });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleChange = (
-        field: keyof CreateProductDto,
-        value: string | number,
-    ) => {
-        setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleChange = (
+    field: keyof CreateProductDto,
+    value: string | number,
+  ) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
 
-        if (errors[field]) {
-            setErrors((prev) => ({ ...prev, [field]: "" }));
-        }
-    };
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: "" }));
+    }
+  };
 
-    if (!isOpen) return null;
+  if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div
-                className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-                onClick={onClose}
-            />
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        onClick={onClose}
+      />
 
-            <div className="flex items-center justify-center min-h-screen p-4">
-                <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
-                    <div className="flex items-center justify-between p-6 border-b">
-                        <h2 className="text-2xl font-bold text-gray-900">
-                            {product
-                                ? "Редактировать товар"
-                                : "Создать новый товар"}
-                        </h2>
-                        <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                            disabled={loading}
-                        >
-                            <X size={24} />
-                        </button>
-                    </div>
+      <div className="flex items-center justify-center min-h-screen p-4">
+        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
+          <div className="flex items-center justify-between p-6 border-b">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {product ? "Редактировать товар" : "Создать новый товар"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              disabled={loading}
+            >
+              <X size={24} />
+            </button>
+          </div>
 
-                    <form onSubmit={handleSubmit} className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Название товара *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.name}
-                                        onChange={(e) =>
-                                            handleChange("name", e.target.value)
-                                        }
-                                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
-                                            errors.name
-                                                ? "border-red-500"
-                                                : "border-gray-300"
-                                        }`}
-                                        placeholder="Например: Торт 'Медовик'"
-                                        disabled={loading}
-                                    />
-                                    {errors.name && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {errors.name}
-                                        </p>
-                                    )}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Цена (₽) *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            value={formData.price}
-                                            onChange={(e) =>
-                                                handleChange(
-                                                    "price",
-                                                    parseFloat(
-                                                        e.target.value,
-                                                    ) || 0,
-                                                )
-                                            }
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
-                                                errors.price
-                                                    ? "border-red-500"
-                                                    : "border-gray-300"
-                                            }`}
-                                            placeholder="999.99"
-                                            disabled={loading}
-                                        />
-                                        {errors.price && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errors.price}
-                                            </p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                                            Количество *
-                                        </label>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            value={formData.inStock}
-                                            onChange={(e) =>
-                                                handleChange(
-                                                    "inStock",
-                                                    parseInt(e.target.value) ||
-                                                        1,
-                                                )
-                                            }
-                                            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
-                                                errors.inStock
-                                                    ? "border-red-500"
-                                                    : "border-gray-300"
-                                            }`}
-                                            placeholder="10"
-                                            disabled={loading}
-                                        />
-                                        {errors.inStock && (
-                                            <p className="mt-1 text-sm text-red-600">
-                                                {errors.inStock}
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Категория *
-                                    </label>
-                                    <select
-                                        value={formData.categoryId}
-                                        onChange={(e) =>
-                                            handleChange(
-                                                "categoryId",
-                                                parseInt(e.target.value),
-                                            )
-                                        }
-                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
-                                        disabled={
-                                            loading || categories.length === 0
-                                        }
-                                    >
-                                        {categories.map((category) => (
-                                            <option
-                                                key={category.id}
-                                                value={category.id}
-                                            >
-                                                {category.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div className="space-y-4">
-                                <ImageUploader
-                                    label="Изображение товара"
-                                    value={formData.imageUrl}
-                                    onChange={(url) =>
-                                        handleChange("imageUrl", url)
-                                    }
-                                    folder="products"
-                                />
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Описание *
-                                    </label>
-                                    <textarea
-                                        value={formData.description}
-                                        onChange={(e) =>
-                                            handleChange(
-                                                "description",
-                                                e.target.value,
-                                            )
-                                        }
-                                        rows={4}
-                                        className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
-                                            errors.description
-                                                ? "border-red-500"
-                                                : "border-gray-300"
-                                        }`}
-                                        placeholder="Опишите ваш товар..."
-                                        disabled={loading}
-                                    />
-                                    {errors.description && (
-                                        <p className="mt-1 text-sm text-red-600">
-                                            {errors.description}
-                                        </p>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-6 mt-6 border-t">
-                            <button
-                                type="button"
-                                onClick={onClose}
-                                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
-                                disabled={loading}
-                            >
-                                Отмена
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-6 py-3 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a] transition-colors font-medium disabled:opacity-50"
-                                disabled={loading}
-                            >
-                                {loading ? (
-                                    <span className="flex items-center gap-2">
-                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                        Сохранение...
-                                    </span>
-                                ) : product ? (
-                                    "Сохранить изменения"
-                                ) : (
-                                    "Создать товар"
-                                )}
-                            </button>
-                        </div>
-                    </form>
+          <form onSubmit={handleSubmit} className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Название товара *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                      errors.name ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="Например: Торт 'Медовик'"
+                    disabled={loading}
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+                  )}
                 </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Цена (₽) *
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={formData.price}
+                      onChange={(e) =>
+                        handleChange("price", parseFloat(e.target.value) || 0)
+                      }
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                        errors.price ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="999.99"
+                      disabled={loading}
+                    />
+                    {errors.price && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.price}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Количество *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.inStock}
+                      onChange={(e) =>
+                        handleChange("inStock", parseInt(e.target.value) || 1)
+                      }
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                        errors.inStock ? "border-red-500" : "border-gray-300"
+                      }`}
+                      placeholder="10"
+                      disabled={loading}
+                    />
+                    {errors.inStock && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.inStock}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Категория *
+                  </label>
+                  <select
+                    value={formData.categoryId}
+                    onChange={(e) =>
+                      handleChange("categoryId", parseInt(e.target.value))
+                    }
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
+                    disabled={loading || categories.length === 0}
+                  >
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <ImageUploader
+                  label="Изображение товара"
+                  value={formData.imageUrl}
+                  onChange={(url) => handleChange("imageUrl", url)}
+                  folder="products"
+                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Описание *
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) =>
+                      handleChange("description", e.target.value)
+                    }
+                    rows={4}
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
+                      errors.description ? "border-red-500" : "border-gray-300"
+                    }`}
+                    placeholder="Опишите ваш товар..."
+                    disabled={loading}
+                  />
+                  {errors.description && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.description}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
+
+            <div className="flex justify-end gap-3 pt-6 mt-6 border-t">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                disabled={loading}
+              >
+                Отмена
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-3 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a] transition-colors font-medium disabled:opacity-50"
+                disabled={loading}
+              >
+                {loading ? (
+                  <span className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Сохранение...
+                  </span>
+                ) : product ? (
+                  "Сохранить изменения"
+                ) : (
+                  "Создать товар"
+                )}
+              </button>
+            </div>
+          </form>
         </div>
-    );
+      </div>
+    </div>
+  );
 }
