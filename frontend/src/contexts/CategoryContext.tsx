@@ -8,6 +8,8 @@ import React, {
 } from "react";
 import type { CategoryType, CreateCategoryDto } from "../types/CategoryType";
 
+import { API_URL } from "../api/config";
+
 type CategoryContextValue = {
   categories: CategoryType[];
   isLoading: boolean;
@@ -20,9 +22,9 @@ type CategoryContextValue = {
 };
 
 // ✅ поменяй под свой бэкенд
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000";
+
 // Я использую эндпоинты: /api/categories
-const ENDPOINT = `${API_BASE}/categories`;
+const ENDPOINT = `${API_URL}/categories`;
 
 const CategoryContext = createContext<CategoryContextValue | undefined>(
   undefined,
