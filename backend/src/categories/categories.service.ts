@@ -12,8 +12,14 @@ import { Category } from '@prisma/client';
 export class CategoriesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(): Promise<Category[]> {
-    return this.prisma.category.findMany();
+  async findAll(page = 1, limit = 50): Promise<Category[]> {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safePage = Math.max(page, 1);
+    return this.prisma.category.findMany({
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
+      orderBy: { name: 'asc' },
+    });
   }
 
   async findOne(id: number): Promise<Category> {

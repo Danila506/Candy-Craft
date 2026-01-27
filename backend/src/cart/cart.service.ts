@@ -18,8 +18,20 @@ export class CartService {
           userId: userId,
         },
       },
-      include: {
-        product: true, // только продукт, без категории
+      select: {
+        productId: true,
+        quantity: true,
+        product: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            price: true,
+            inStock: true,
+            imageUrl: true,
+            categoryId: true,
+          },
+        },
       },
     });
 
@@ -180,19 +192,15 @@ export class CartService {
 
   // Получить количество товаров в корзине
   async getCartItemsCount(userId: number) {
-    const cart = await this.prisma.cart.findUnique({
-      where: { userId },
-      include: {
-        items: true,
+    const totals = await this.prisma.cartItem.aggregate({
+      where: {
+        cart: { userId },
+      },
+      _sum: {
+        quantity: true,
       },
     });
 
-    if (!cart) {
-      return { count: 0 };
-    }
-
-    const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-
-    return { count: totalItems };
+    return { count: totals._sum.quantity ?? 0 };
   }
 }

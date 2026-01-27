@@ -16,8 +16,14 @@ import { UpdateProductDto } from './dto/update-product.dto';
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
   // //todo Поиск всех товаров
-  async findAll(): Promise<Product[]> {
-    return await this.prisma.product.findMany();
+  async findAll(page = 1, limit = 50): Promise<Product[]> {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safePage = Math.max(page, 1);
+    return await this.prisma.product.findMany({
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
   //todo Удаление всех товаров
@@ -53,7 +59,11 @@ export class ProductsService {
   }
 
   //todo Найти товары по категории
-  async findByCategory(categoryId: number): Promise<Product[]> {
+  async findByCategory(
+    categoryId: number,
+    page = 1,
+    limit = 50,
+  ): Promise<Product[]> {
     const category = await this.prisma.category.findFirst({
       where: { id: categoryId },
     });
@@ -62,8 +72,13 @@ export class ProductsService {
       throw new NotFoundException(`Категория с ID ${categoryId} не найдена`);
     }
 
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safePage = Math.max(page, 1);
     return this.prisma.product.findMany({
       where: { category: { id: categoryId } },
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
+      orderBy: { createdAt: 'desc' },
     });
   }
 

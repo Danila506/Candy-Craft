@@ -7,6 +7,8 @@ import {
   Delete,
   ParseIntPipe,
   Put,
+  Query,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
@@ -24,8 +26,11 @@ export class ProductsController {
   @Get()
   @ApiOperation({ summary: 'Get all products' })
   @ApiResponse({ status: 200, description: 'Return all products.' })
-  findAll(): Promise<Product[]> {
-    return this.products.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+  ): Promise<Product[]> {
+    return this.products.findAll(page, limit);
   }
   // //! Удаление всех товаров
   @Delete()
@@ -44,8 +49,10 @@ export class ProductsController {
   @ApiOperation({ summary: 'Получить товары по категории' })
   findByCategory(
     @Param('categoryId', ParseIntPipe) categoryId: number,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
   ): Promise<Product[]> {
-    return this.products.findByCategory(categoryId);
+    return this.products.findByCategory(categoryId, page, limit);
   }
 
   // //! Поиск товара по id

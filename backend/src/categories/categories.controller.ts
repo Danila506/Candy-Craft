@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Query,
   Put,
+  DefaultValuePipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
@@ -23,8 +24,11 @@ export class CategoriesController {
 
   @Get()
   @ApiOperation({ summary: 'Get all categories' })
-  findAll(): Promise<Category[]> {
-    return this.category.findAll();
+  findAll(
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number,
+    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
+  ): Promise<Category[]> {
+    return this.category.findAll(page, limit);
   }
 
   @Get(':id')

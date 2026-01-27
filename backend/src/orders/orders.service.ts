@@ -13,6 +13,11 @@ export class OrdersService {
     // Получаем продукты из БД
     const products = await this.prisma.product.findMany({
       where: { id: { in: dto.items.map((i) => i.productId) } },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+      },
     });
 
     // Формируем позиции заказа с productName
@@ -60,8 +65,15 @@ export class OrdersService {
     return order;
   }
 
-  async findAll() {
-    return await this.prisma.order.findMany({ include: { items: true } });
+  async findAll(page = 1, limit = 50) {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safePage = Math.max(page, 1);
+    return await this.prisma.order.findMany({
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
+      orderBy: { createdAt: 'desc' },
+      include: { items: true },
+    });
   }
 
   findOne(id: number) {
@@ -89,23 +101,33 @@ export class OrdersService {
       });
 
       // Потом создаём новые
-      data.items = {
-        create: await Promise.all(
-          dto.items.map(async (i) => {
-            const product = await this.prisma.product.findUnique({
-              where: { id: i.productId },
-            });
-            if (!product)
-              throw new NotFoundException(`Product #${i.productId} not found`);
+      const updatedProductIds = dto.items.map((i) => i.productId);
+      const updatedProducts = await this.prisma.product.findMany({
+        where: { id: { in: updatedProductIds } },
+        select: {
+          id: true,
+          name: true,
+          price: true,
+        },
+      });
 
-            return {
-              product: { connect: { id: i.productId } },
-              productName: product.name,
-              quantity: i.quantity,
-              price: product.price,
-            };
-          }),
-        ),
+      const productsById = new Map(
+        updatedProducts.map((product) => [product.id, product]),
+      );
+
+      data.items = {
+        create: dto.items.map((i) => {
+          const product = productsById.get(i.productId);
+          if (!product)
+            throw new NotFoundException(`Product #${i.productId} not found`);
+
+          return {
+            product: { connect: { id: i.productId } },
+            productName: product.name,
+            quantity: i.quantity,
+            price: product.price,
+          };
+        }),
       };
     }
 

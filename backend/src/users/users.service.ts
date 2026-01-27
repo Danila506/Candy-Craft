@@ -37,8 +37,19 @@ export class UserService {
   }
 
   // Получить всех пользователей
-  async findAll() {
-    return this.prisma.user.findMany()
+  async findAll(page = 1, limit = 50) {
+    const safeLimit = Math.min(Math.max(limit, 1), 100);
+    const safePage = Math.max(page, 1);
+    return this.prisma.user.findMany({
+      skip: (safePage - 1) * safeLimit,
+      take: safeLimit,
+      orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
   }
 
   // Получить пользователя по ID
