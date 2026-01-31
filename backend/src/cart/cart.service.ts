@@ -18,20 +18,8 @@ export class CartService {
           userId: userId,
         },
       },
-      select: {
-        productId: true,
-        quantity: true,
-        product: {
-          select: {
-            id: true,
-            name: true,
-            description: true,
-            price: true,
-            inStock: true,
-            imageUrl: true,
-            categoryId: true,
-          },
-        },
+      include: {
+        product: true, // только продукт, без категории
       },
     });
 
@@ -54,73 +42,47 @@ export class CartService {
     if (!product) {
       throw new NotFoundException('Product not found');
     }
+    // Находим или создаем корзину
+    let cart = await this.prisma.cart.findUnique({
+      where: { userId },
+    });
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      let cart = await tx.cart.findUnique({
-        where: { userId },
+    if (!cart) {
+      cart = await this.prisma.cart.create({
+        data: { userId },
       });
+    }
 
-      if (!cart) {
-        cart = await tx.cart.create({
-          data: { userId },
-        });
-      }
-
-      const cartItem = await tx.cartItem.upsert({
-        where: {
-          cartId_productId: {
-            cartId: cart.id,
-            productId,
-          },
-        },
-        update: {
-          quantity: {
-            increment: 1,
-          },
-        },
-        create: {
+    // Проверяем, есть ли уже этот товар в корзине
+    const existingItem = await this.prisma.cartItem.findUnique({
+      where: {
+        cartId_productId: {
           cartId: cart.id,
           productId,
         },
-        select: {
-          productId: true,
-          quantity: true,
-          product: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              price: true,
-              inStock: true,
-              imageUrl: true,
-              categoryId: true,
-            },
-          },
-        },
-      });
-
-      const totals = await tx.cartItem.aggregate({
-        where: {
-          cartId: cart.id,
-        },
-        _sum: {
-          quantity: true,
-        },
-      });
-
-      return {
-        cartItem,
-        count: totals._sum.quantity ?? 0,
-      };
-    });
-    return {
-      item: {
-        ...result.cartItem.product,
-        productId: result.cartItem.productId,
-        quantity: result.cartItem.quantity,
       },
-      count: result.count,
-    };
+    });
+
+    if (existingItem) {
+      return this.prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + 1 },
+        include: {
+          product: true,
+        },
+      });
+    }
+
+    return this.prisma.cartItem.create({
+      data: {
+        cartId: cart.id,
+        productId,
+        quantity: 1,
+      },
+      include: {
+        product: true,
+      },
+    });
   }
 
   // Обновить количество товара в корзине

@@ -2,51 +2,64 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
+import { CreateUsersDto } from './dto/create-users.dto';
 import { UpdateUsersDto } from './dto/update-users.dto';
+
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Получить всех пользователей
-  async findAll(page = 1, limit = 50) {
-    const safeLimit = Math.min(Math.max(limit, 1), 100);
-    const safePage = Math.max(page, 1);
-    return this.prisma.user.findMany({
-      skip: (safePage - 1) * safeLimit,
-      take: safeLimit,
-      orderBy: { id: 'desc' },
-      select: {
-        id: true,
-        firstName: true,
-        email: true,
+  // Создать пользователя
+  async create(createUserDto: CreateUsersDto) {
+    const { email, name } = createUserDto;
+
+    // Проверяем, существует ли пользователь с таким email
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    // Создаем пользователя
+    const user = await this.prisma.user.create({
+      data: {
+        name,
+        email,
       },
     });
+
+    return user;
+  }
+
+  // Получить всех пользователей
+  async findAll() {
+    return this.prisma.user.findMany()
   }
 
   // Получить пользователя по ID
   async findOne(id: number) {
     const users = await this.prisma.user.findUnique({
       where: { id },
-      include: {
-        cart: {
-          include: {
-            items: {
-              include: {
+      include: { 
+        cart: { 
+          include: { 
+            items: { 
+              include: { 
                 product: {
                   include: {
-                    category: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+                    category: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     });
 
     if (!users) {
@@ -203,8 +216,7 @@ export class UserService {
     if (!users.cart || users.cart.items.length === 0) {
       return {
         userId: users.id,
-        userFirstName: users.firstName,
-        userLastName: users.lastName,
+        userName: users.name,
         cartItemsCount: 0,
         totalCartValue: 0,
         categories: [],
@@ -234,8 +246,7 @@ export class UserService {
 
     return {
       userId: users.id,
-      userFirstName: users.firstName,
-      userLastName: users.lastName,
+      userName: users.name,
       cartItemsCount: users.cart.items.reduce(
         (sum, item) => sum + item.quantity,
         0,

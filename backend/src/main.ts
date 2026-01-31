@@ -4,11 +4,9 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { NestExpressApplication } from '@nestjs/platform-express';
 
-import cookieParser from 'cookie-parser';
-
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  app.use(cookieParser());
+
   // Включение CORS с правильными настройками
   app.enableCors({
     origin: [
