@@ -39,7 +39,7 @@ function validate(form: RegisterForm): FieldErrors {
   return errors;
 }
 
-export default function RegisterPage() {
+export function RegisterPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState<RegisterForm>({

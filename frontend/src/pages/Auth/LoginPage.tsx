@@ -28,7 +28,7 @@ function validate(form: LoginForm): FieldErrors {
   return errors;
 }
 
-export default function LoginPage() {
+export function LoginPage() {
   const navigate = useNavigate();
 
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
