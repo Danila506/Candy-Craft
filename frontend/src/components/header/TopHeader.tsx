@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../contexts/CartContext";
-import { MapPin, Phone, ShoppingCart, Menu, X, User } from "lucide-react";
+import { MapPin, Phone, ShoppingCart, Menu, X } from "lucide-react";
 
 const headerItems = [
   "Гарантия свежести",
@@ -152,11 +152,6 @@ export function TopHeader() {
                         : `${cartCount} товар`}
                     </span>
                   )}
-                </Link>
-              </li>
-              <li>
-                <Link to="/account/login">
-                  <User />
                 </Link>
               </li>
 

@@ -1,16 +1,16 @@
 export type ProductType = {
-  categoryId: number;
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  inStock: number;
-  imageUrl: string;
-  category: {
+    categoryId: number;
+    id: number;
     name: string;
-  };
-  className?: string;
+    description: string;
+    price: number;
+    inStock: number;
+    imageUrl: string;
+    className?: string;
 };
+
+
+
 
 // DTO для создания (без ID)
 export interface CreateProductDto {

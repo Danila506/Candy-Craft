@@ -11,7 +11,7 @@ type ImageUploaderProps = {
 export function ImageUploader({
   value,
   onChange,
-  folder = "products",
+  folder = "categories",
   label = "Изображение",
 }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
@@ -43,6 +43,7 @@ export function ImageUploader({
         accept="image/*"
         onChange={onPickFile}
         className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-300"
+        placeholder="Выберите файл"
       />
 
       {uploading && (

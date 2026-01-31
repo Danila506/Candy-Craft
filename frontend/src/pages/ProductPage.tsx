@@ -6,12 +6,13 @@ import { Breadcrumb } from "../components/ui/Breadcrumb";
 import { ProductGallery } from "../components/ProductGallery";
 import { ProductInfo } from "../components/ProductInfo";
 import { useState, useEffect } from "react";
+import { API_URL, USER_ID } from "../api/config";
 
 export function ProductPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { getProductById, loading } = useProducts();
-  const { isItemInCart, addToCart } = useCart();
+  const { isItemInCart, refreshCart } = useCart();
   const [isMobile, setIsMobile] = useState(false);
 
   // Определение мобильного устройства
@@ -63,7 +64,17 @@ export function ProductPage() {
 
   const handleAddToCart = async () => {
     if (isInCart) return;
-    await addToCart(product.id);
+
+    try {
+      await fetch(`${API_URL}/cart/${USER_ID}/items`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId: product.id }),
+      });
+      refreshCart();
+    } catch (error) {
+      console.error("Ошибка добавления в корзину:", error);
+    }
   };
 
   return (

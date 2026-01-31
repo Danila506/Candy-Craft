@@ -14,7 +14,6 @@ interface CartContextType {
   refreshCart: () => void;
   isItemInCart: (productId: number) => boolean; // Функция проверки
   clearCart: () => void;
-  addToCart: (productId: number) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -41,7 +40,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Не удалось очистить корзину");
-      setCartItems([]);
     } catch (err) {
       console.error(err);
     }
@@ -55,39 +53,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     fetchCartItems();
   };
 
-  const addToCart = async (productId: number) => {
-    try {
-      const response = await fetch(`${API_URL}/cart/${USER_ID}/items`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "Ошибка сервера");
-        throw new Error(`Ошибка ${response.status}: ${errorText}`);
-      }
-
-      const data: { item: CartType } = await response.json();
-      console.log(data);
-      setCartItems((prevItems) => {
-        const existingIndex = prevItems.findIndex(
-          (item) => item.id === data.item.id,
-        );
-
-        if (existingIndex === -1) {
-          return [...prevItems, data.item];
-        }
-
-        return prevItems.map((item, index) =>
-          index === existingIndex ? { ...item, ...data.item } : item,
-        );
-      });
-    } catch (error) {
-      console.error("Не удалось добавить товар:", error);
-    }
-  };
-
   const isItemInCart = (productId: number): boolean => {
     return cartItems.some((item) => item.id === productId);
   };
@@ -98,7 +63,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     refreshCart,
     isItemInCart,
     clearCart,
-    addToCart,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

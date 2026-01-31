@@ -67,7 +67,6 @@ export function ProductsAdmin() {
             <tr>
               <th className="px-6 py-3 text-left">Изображение</th>
               <th className="px-6 py-3 text-left">Название</th>
-              <th className="px-6 py-3 text-left">Категория</th>
               <th className="px-6 py-3 text-left">Цена</th>
               <th className="px-6 py-3 text-left">В наличии</th>
               <th className="px-6 py-3 text-left">Действия</th>
@@ -85,7 +84,6 @@ export function ProductsAdmin() {
                   />
                 </td>
                 <td className="px-6 py-4">{product.name}</td>
-                <td className="px-6 py-4">{product.category.name}</td>
                 <td className="px-6 py-4">{product.price} ₽</td>
                 <td className="px-6 py-4">{product.inStock} шт</td>
                 <td className="px-6 py-4">
