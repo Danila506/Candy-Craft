@@ -3,38 +3,21 @@ import { useCart } from "../contexts/CartContext";
 import type { ProductType } from "../types/ProductType";
 import { Link } from "react-router-dom";
 import { ShoppingCart, CheckCircle } from "lucide-react";
-import { API_URL, USER_ID } from "../api/config";
 
 export function Product(product: ProductType) {
-  const { isItemInCart, refreshCart } = useCart();
-  const { className, imageUrl, name, description, price, id } = product;
+  const { isItemInCart, addToCart } = useCart();
+  const { imageUrl, name, description, price, id } = product;
   const isInCart = isItemInCart(id);
 
   const handleAddToCart = async () => {
     if (isInCart) return;
-
-    try {
-      const response = await fetch(`${API_URL}/cart/${USER_ID}/items`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId: id }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "Ошибка сервера");
-        throw new Error(`Ошибка ${response.status}: ${errorText}`);
-      }
-
-      refreshCart();
-    } catch (error) {
-      console.error("Не удалось добавить товар:", error);
-    }
+    await addToCart(id);
   };
 
   return (
     <li
       className={`
-            ${className} 
+            
             w-full max-w-xs sm:max-w-sm md:max-w-none
             list-none flex flex-col h-full
         `}
