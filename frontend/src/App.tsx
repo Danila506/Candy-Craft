@@ -7,7 +7,8 @@ import { ProductPage } from "./pages/ProductPage";
 import { ProductsProvider } from "./contexts/ProductContext";
 
 // Админ-страницы
-import { LoginPage } from "./admin/pages/LoginPage";
+import { AdminLoginPage } from "./admin/pages/LoginPage";
+import { RegisterPage } from "./pages/Auth/RegisterPage";
 import { Dashboard } from "./admin/pages/Dashboard";
 import { ProductsAdmin } from "./admin/pages/ProductsAdmin";
 import { AdminRoute } from "./admin/components/AdminRoute";
@@ -19,6 +20,8 @@ import { OrderProvider } from "./admin/context/OrderContext";
 import { CheckoutProvider } from "./contexts/CheckoutContext";
 import { CategoriesAdmin } from "./admin/pages/CategoriesAdmin";
 import { CategoryProvider } from "./contexts/CategoryContext";
+import { TopHeader } from "./components/header/TopHeader";
+import { LoginPage } from "./pages/Auth/LoginPage";
 
 function App() {
   return (
@@ -50,6 +53,24 @@ function App() {
                   </>
                 }
               />
+              <Route
+                path="/account/login"
+                element={
+                  <>
+                    <TopHeader />
+                    <LoginPage />
+                  </>
+                }
+              />
+              <Route
+                path="/account/register"
+                element={
+                  <>
+                    <TopHeader />
+                    <RegisterPage />
+                  </>
+                }
+              />
 
               <Route
                 path="/checkout"
@@ -63,7 +84,7 @@ function App() {
               />
 
               {/* === АДМИН-СТРАНИЦЫ (БЕЗ Header и Footer) === */}
-              <Route path="/admin/login" element={<LoginPage />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route
                 path="/admin"
                 element={

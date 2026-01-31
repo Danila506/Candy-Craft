@@ -9,6 +9,8 @@ import {
 import type { CreateProductDto, ProductType } from "../types/ProductType";
 import { API_URL } from "../api/config";
 
+console.log(API_URL);
+
 interface ProductsContextType {
   products: ProductType[];
   loading: boolean;

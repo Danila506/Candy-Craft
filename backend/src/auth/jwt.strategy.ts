@@ -1,0 +1,27 @@
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor() {
+    const jwtSecret =
+      process.env.JWT_SECRET ||
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30';
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is not set');
+    }
+    function cookieExtractor(req: any): string | null {
+      return req?.cookies?.access_token || null;
+    }
+
+    super({
+      jwtFromRequest: cookieExtractor,
+      secretOrKey: jwtSecret,
+    });
+  }
+
+  async validate(payload: { sub: number; email: string }) {
+    return { userId: payload.sub, email: payload.email };
+  }
+}

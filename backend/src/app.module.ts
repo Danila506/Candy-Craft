@@ -9,7 +9,7 @@ import { AppService } from './app.service';
 import { AppController } from './app.controller';
 import { UsersModule } from './users/users.module';
 import { OrdersModule } from './orders/orders.module';
-
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -21,9 +21,8 @@ import { OrdersModule } from './orders/orders.module';
     CategoriesModule,
     ProductsModule,
     UsersModule,
-    OrdersModule
-    
-
+    OrdersModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
