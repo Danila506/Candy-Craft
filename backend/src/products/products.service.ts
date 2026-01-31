@@ -17,7 +17,9 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
   // //todo Поиск всех товаров
   async findAll(): Promise<Product[]> {
-    return await this.prisma.product.findMany();
+    return await this.prisma.product.findMany({
+      include: { category: { select: { name: true } } },
+    });
   }
 
   //todo Удаление всех товаров
