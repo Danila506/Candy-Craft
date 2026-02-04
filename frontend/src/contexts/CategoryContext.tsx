@@ -8,8 +8,7 @@ import React, {
 } from "react";
 import type { CategoryType, CreateCategoryDto } from "../types/CategoryType";
 
-import { API_URL } from "../api/config";
-
+import { http } from "../api/http";
 type CategoryContextValue = {
   categories: CategoryType[];
   isLoading: boolean;
@@ -21,35 +20,9 @@ type CategoryContextValue = {
   deleteCategory: (id: number) => Promise<void>;
 };
 
-// ✅ поменяй под свой бэкенд
-
-// Я использую эндпоинты: /api/categories
-const ENDPOINT = `${API_URL}/categories`;
-
 const CategoryContext = createContext<CategoryContextValue | undefined>(
   undefined,
 );
-
-async function http<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options?.headers ?? {}),
-    },
-    ...options,
-  });
-
-  if (!res.ok) {
-    // пытаемся вытащить текст ошибки
-    const text = await res.text().catch(() => "");
-    throw new Error(text || `Request failed: ${res.status}`);
-  }
-
-  // 204 No Content
-  if (res.status === 204) return undefined as T;
-
-  return (await res.json()) as T;
-}
 
 export function CategoryProvider({ children }: { children: React.ReactNode }) {
   const [categories, setCategories] = useState<CategoryType[]>([]);
@@ -60,7 +33,7 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const data = await http<CategoryType[]>(ENDPOINT);
+      const data = await http.get<CategoryType[]>("/categories");
       setCategories(data);
     } catch (e: any) {
       setError(e?.message ?? "Ошибка загрузки категорий");
@@ -74,25 +47,19 @@ export function CategoryProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const createCategory = async (dto: CreateCategoryDto) => {
-    const created = await http<CategoryType>(ENDPOINT, {
-      method: "POST",
-      body: JSON.stringify(dto),
-    });
+    const created = await http.post<CategoryType>("/categories", dto);
     setCategories((prev) => [created, ...prev]);
     return created;
   };
 
   const updateCategory = async (id: number, dto: CreateCategoryDto) => {
-    const updated = await http<CategoryType>(`${ENDPOINT}/${id}`, {
-      method: "PUT",
-      body: JSON.stringify(dto),
-    });
+    const updated = await http.put<CategoryType>(`/categories/${id}`, dto);
     setCategories((prev) => prev.map((c) => (c.id === id ? updated : c)));
     return updated;
   };
 
   const deleteCategory = async (id: number) => {
-    await http<void>(`${ENDPOINT}/${id}`, { method: "DELETE" });
+    await http.del<void>(`/categories/${id}`);
     setCategories((prev) => prev.filter((c) => c.id !== id));
   };
 

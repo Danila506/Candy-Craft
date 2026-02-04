@@ -11,7 +11,8 @@ import type {
   OrderStatusKey,
 } from "../../types/OrderType";
 
-import { API_URL } from "../../api/config";
+import { http } from "../../api/http";
+import { useAuth } from "../../contexts/AuthContext";
 
 export type OrderUpdateDto = {
   status?: OrderStatusKey;
@@ -39,13 +40,12 @@ type Props = { children: ReactNode };
 
 export const OrderProvider = ({ children }: Props) => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const { user } = useAuth();
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch(`${API_URL}/orders`);
-      if (!res.ok) throw new Error("Не удалось загрузить заказы");
-      const data: Order[] = await res.json();
-      setOrders(data);
+      const data = await http.get<Order[]>("/orders");
+      setOrders(data ?? []);
     } catch (err) {
       console.error(err);
     }
@@ -53,13 +53,7 @@ export const OrderProvider = ({ children }: Props) => {
 
   const createOrder = async (data: OrderCreateDto) => {
     try {
-      const res = await fetch(`${API_URL}/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      if (!res.ok) throw new Error("Не удалось создать заказ");
-      const created: Order = await res.json();
+      const created = await http.post<Order>("/orders", data);
       setOrders((prev) => [...prev, created]);
       console.log(created);
     } catch (err) {
@@ -69,14 +63,7 @@ export const OrderProvider = ({ children }: Props) => {
 
   const updateOrder = async (id: number, data: OrderUpdateDto) => {
     try {
-      const res = await fetch(`${API_URL}/orders/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-      console.log(res);
-      if (!res.ok) throw new Error("Не удалось обновить заказ");
-      const updated: Order = await res.json();
+      const updated = await http.patch<Order>(`/orders/${id}`, data);
       setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
     } catch (err) {
       console.error(err);
@@ -85,8 +72,7 @@ export const OrderProvider = ({ children }: Props) => {
 
   const deleteOrder = async (id: number) => {
     try {
-      const res = await fetch(`${API_URL}/orders/${id}`, { method: "DELETE" });
-      if (!res.ok) throw new Error("Не удалось удалить заказ");
+      await http.del(`/orders/${id}`);
       setOrders((prev) => prev.filter((o) => o.id !== id));
     } catch (err) {
       console.error(err);
@@ -94,12 +80,20 @@ export const OrderProvider = ({ children }: Props) => {
   };
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    if (user?.role === "ADMIN") {
+      fetchOrders();
+    }
+  }, [user?.role]);
 
   return (
     <OrderContext.Provider
-      value={{ orders, fetchOrders, updateOrder, deleteOrder, createOrder }}
+      value={{
+        orders,
+        fetchOrders,
+        updateOrder,
+        deleteOrder,
+        createOrder,
+      }}
     >
       {children}
     </OrderContext.Provider>
