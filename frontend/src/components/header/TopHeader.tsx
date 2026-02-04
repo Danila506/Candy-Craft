@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../contexts/CartContext";
 import { MapPin, Phone, ShoppingCart, Menu, X, User } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 const headerItems = [
   "Гарантия свежести",
@@ -17,6 +18,7 @@ export function TopHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+  const { user } = useAuth();
 
   // Для контроля анимации
   const headerRef = useRef<HTMLDivElement>(null);
@@ -202,9 +204,11 @@ export function TopHeader() {
                       </svg>
                     </a>
                   </li>
-                  <li className="cursor-pointer">
-                    <Link to={"/admin"}>Админка</Link>
-                  </li>
+                  {user?.role === "ADMIN" && (
+                    <li className="cursor-pointer">
+                      <Link to="/admin">Админка</Link>
+                    </li>
+                  )}
                 </ul>
               </li>
             </ul>

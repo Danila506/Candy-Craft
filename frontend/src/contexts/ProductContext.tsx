@@ -7,9 +7,7 @@ import {
   type ReactNode,
 } from "react";
 import type { CreateProductDto, ProductType } from "../types/ProductType";
-import { API_URL } from "../api/config";
-
-console.log(API_URL);
+import { http } from "../api/http";
 
 interface ProductsContextType {
   products: ProductType[];
@@ -37,20 +35,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
   const deleteProduct = async (id: number) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/products/${id}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json;charset=utf-8",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Получаем ответ от сервера
-      const result = await response.json();
-
+      const result = await http.del<{ message?: string }>(`/products/${id}`);
       // Обновляем локальное состояние - удаляем товар из массива
       setProducts((prevProducts) =>
         prevProducts.filter((product) => product.id !== id),
@@ -71,19 +56,10 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
   const updateProduct = async (id: number, updatedData: CreateProductDto) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/products/${id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json;charset=utf-8",
-        },
-        body: JSON.stringify(updatedData),
-      });
-
-      if (!response.ok) {
-        throw new Error("Ошибка обновления товара");
-      }
-
-      const updatedProduct = await response.json();
+      const updatedProduct = await http.put<ProductType>(
+        `/products/${id}`,
+        updatedData,
+      );
       console.log("Товар успешно обновлен:", updatedProduct);
 
       // Обновляем товар в локальном состоянии
@@ -108,20 +84,10 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
   const createProduct = async (createdData: CreateProductDto) => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/products`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(createdData),
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Сервер возвращает созданный товар С ID
-      const createdProduct = await response.json();
+      const createdProduct = await http.post<ProductType>(
+        "/products",
+        createdData,
+      );
       console.log("Товар успешно создан:", createdProduct);
 
       // Добавляем товар, который вернул сервер (с id!)
@@ -144,9 +110,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/products`);
-      if (!response.ok) throw new Error("Ошибка загрузки товаров");
-      const data = await response.json();
+      const data = await http.get<ProductType[]>("/products");
       setProducts(data);
       setError(null);
     } catch (err) {

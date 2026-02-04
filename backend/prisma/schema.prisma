@@ -13,6 +13,11 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
   id           Int     @id @default(autoincrement())
   firstName    String
@@ -20,11 +25,12 @@ model User {
   email        String  @unique
   phone        String? @unique
   passwordHash String
+  role Role @default(USER)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cart Cart? // связь с корзиной (единственное число!)
+  cart Cart? 
 
   orders Order[]
 

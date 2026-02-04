@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthShell } from "./AuthShell";
-import { http, ApiError } from "../../api/http";
+import { ApiError } from "../../api/http";
+import { useAuth } from "../../contexts/AuthContext";
 
 type LoginForm = {
   email: string;
@@ -30,6 +31,10 @@ function validate(form: LoginForm): FieldErrors {
 
 export function LoginPage() {
   const navigate = useNavigate();
+
+  const location = useLocation();
+  const { login } = useAuth();
+  const from = (location.state as { from?: string } | null)?.from;
 
   const [form, setForm] = useState<LoginForm>({ email: "", password: "" });
   const [errors, setErrors] = useState<FieldErrors>({});
@@ -61,13 +66,15 @@ export function LoginPage() {
 
     try {
       // ✅ токены уйдут в HttpOnly cookies автоматически
-      await http.post<{ user: any }>("/auth/login", {
-        email: form.email.trim().toLowerCase(),
-        password: form.password,
-      });
+      const user = await login(form.email.trim().toLowerCase(), form.password);
 
       // можно вести в аккаунт или на главную
-      navigate("/account", { replace: true });
+      if (user.role === "ADMIN") {
+        const adminTarget = from?.startsWith("/admin") ? from : "/admin";
+        navigate(adminTarget, { replace: true });
+      } else {
+        navigate("/account", { replace: true });
+      }
     } catch (err) {
       if (err instanceof ApiError) {
         // 401 уже пытался refresh, но тут логин — просто покажем ошибку

@@ -7,7 +7,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as argon2 from 'argon2';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, Role } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { normalizeRuPhone } from 'src/utils/phone';
 import type { StringValue } from 'ms';
@@ -76,6 +76,7 @@ export class AuthService {
           email: true,
           phone: true,
           createdAt: true,
+          role: true,
         },
       });
 
@@ -107,6 +108,7 @@ export class AuthService {
         lastName: true,
         phone: true,
         passwordHash: true,
+        role: true,
       },
     });
 
@@ -116,7 +118,7 @@ export class AuthService {
     if (!ok) throw new UnauthorizedException('Неверный email или пароль');
 
     const { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt } =
-      await this.issueTokens(user.id, user.email);
+      await this.issueTokens(user.id, user.email, user.role);
 
     // сохраняем refresh hash в БД
     await this.prisma.refreshToken.create({
@@ -133,6 +135,7 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       phone: user.phone,
+      role: user.role,
     };
 
     return { accessToken, refreshToken, user: safeUser };
@@ -150,7 +153,6 @@ export class AuthService {
     }
 
     const userId = payload.sub as number;
-    const email = payload.email as string;
 
     // 2) хэш и поиск в БД активного refresh
     const refreshTokenHash = await argon2.hash(refreshToken);
@@ -178,7 +180,13 @@ export class AuthService {
       data: { revokedAt: new Date() },
     });
 
-    const issued = await this.issueTokens(userId, email);
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, role: true },
+    });
+    if (!user) throw new UnauthorizedException('Invalid refresh token');
+
+    const issued = await this.issueTokens(userId, user.email, user.role);
 
     await this.prisma.refreshToken.create({
       data: {
@@ -207,14 +215,14 @@ export class AuthService {
     return null;
   }
 
-  private async issueTokens(userId: number, email: string) {
+  private async issueTokens(userId: number, email: string, role: Role) {
     const accessToken = await this.jwt.signAsync(
-      { sub: userId, email },
+      { sub: userId, email, role },
       { secret: this.accessSecret, expiresIn: this.accessExp as StringValue },
     );
 
     const refreshToken = await this.jwt.signAsync(
-      { sub: userId, email },
+      { sub: userId, email, role },
       { secret: this.refreshSecret, expiresIn: this.refreshExp as StringValue },
     );
 
@@ -251,5 +259,22 @@ export class AuthService {
     } catch {
       // игнор
     }
+  }
+  async me(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+      },
+    });
+
+    if (!user) throw new UnauthorizedException('User not found');
+
+    return user;
   }
 }

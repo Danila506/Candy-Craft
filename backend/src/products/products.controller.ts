@@ -7,6 +7,7 @@ import {
   Delete,
   ParseIntPipe,
   Put,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
@@ -14,7 +15,10 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
-import { Product } from '@prisma/client';
+import { Product, Role } from '@prisma/client';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @ApiTags('products')
 @Controller('products')
@@ -29,6 +33,8 @@ export class ProductsController {
   }
   // //! Удаление всех товаров
   @Delete()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   removeAll(): Promise<string> {
     return this.products.removeAll();
   }
@@ -36,6 +42,8 @@ export class ProductsController {
   // //! Создание нового товара
   @Post()
   @ApiOperation({ summary: 'Создать товар' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   create(@Body() dto: CreateProductDto): Promise<Product> {
     return this.products.create(dto);
   }
@@ -56,12 +64,16 @@ export class ProductsController {
 
   //! Удаление товара по id
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   removeById(@Param('id', ParseIntPipe) id: number) {
     return this.products.removeById(id);
   }
 
   //! Изменение товара
   @Put(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateProductDto) {
     return this.products.update(id, dto);
   }

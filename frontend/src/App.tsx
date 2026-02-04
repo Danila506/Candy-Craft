@@ -7,12 +7,10 @@ import { ProductPage } from "./pages/ProductPage";
 import { ProductsProvider } from "./contexts/ProductContext";
 
 // Админ-страницы
-import { AdminLoginPage } from "./admin/pages/LoginPage";
 import { RegisterPage } from "./pages/Auth/RegisterPage";
 import { Dashboard } from "./admin/pages/Dashboard";
 import { ProductsAdmin } from "./admin/pages/ProductsAdmin";
 import { AdminRoute } from "./admin/components/AdminRoute";
-import { AdminProvider } from "./admin/context/AdminContext";
 import { Footer } from "./components/Footer"; // Если есть Footer
 import { CheckoutPage } from "./pages/CheckoutPage";
 import { OrdersAdmin } from "./admin/pages/OrdersAdmin";
@@ -22,12 +20,14 @@ import { CategoriesAdmin } from "./admin/pages/CategoriesAdmin";
 import { CategoryProvider } from "./contexts/CategoryContext";
 import { TopHeader } from "./components/header/TopHeader";
 import { LoginPage } from "./pages/Auth/LoginPage";
+import { AuthProvider } from "./contexts/AuthContext";
+import AccountPage from "./pages/AccountPage";
 
 function App() {
   return (
     <ProductsProvider>
       <CartProvider>
-        <AdminProvider>
+        <AuthProvider>
           <BrowserRouter>
             <Routes>
               <Route
@@ -50,6 +50,14 @@ function App() {
                 element={
                   <>
                     <Cart />
+                  </>
+                }
+              />
+              <Route
+                path="/account"
+                element={
+                  <>
+                    <AccountPage />
                   </>
                 }
               />
@@ -84,7 +92,6 @@ function App() {
               />
 
               {/* === АДМИН-СТРАНИЦЫ (БЕЗ Header и Footer) === */}
-              <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route
                 path="/admin"
                 element={
@@ -123,7 +130,7 @@ function App() {
               />
             </Routes>
           </BrowserRouter>
-        </AdminProvider>
+        </AuthProvider>
       </CartProvider>
     </ProductsProvider>
   );

@@ -12,7 +12,10 @@ import type { StringValue } from 'ms';
   imports: [
     PassportModule,
     JwtModule.register({
-      secret: (process.env.JWT_SECRET as Secret) || 'dev_secret',
+      secret:
+        (process.env.JWT_ACCESS_SECRET as Secret) ||
+        (process.env.JWT_SECRET as Secret) ||
+        'dev_secret',
       signOptions: {
         expiresIn: (process.env.JWT_EXPIRES_IN as StringValue) || '7d',
       },

@@ -7,11 +7,15 @@ import {
   Post,
   Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from './dto/create-user.dto';
+import { Roles } from './decorators/roles.decorator';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { RolesGuard } from './guards/roles.guard';
 
 function cookieBaseOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -26,6 +30,13 @@ function cookieBaseOptions() {
 @Controller('auth')
 export class AuthController {
   constructor(private auth: AuthService) {}
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  async me(@Req() req: Request) {
+    const userId = (req as any).user?.userId as number | undefined;
+    return this.auth.me(userId ?? 0);
+  }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
