@@ -5,19 +5,16 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
-    const jwtSecret =
-      process.env.JWT_ACCESS_SECRET ||
-      process.env.JWT_SECRET ||
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30';
+    const jwtSecret = process.env.JWT_ACCESS_SECRET;
     if (!jwtSecret) {
-      throw new Error('JWT_SECRET is not set');
+      throw new Error('JWT_ACCESS_SECRET is not set');
     }
     function cookieExtractor(req: any): string | null {
       return req?.cookies?.access_token || null;
     }
 
     super({
-      jwtFromRequest: cookieExtractor,
+      jwtFromRequest: ExtractJwt.fromExtractors([cookieExtractor]),
       secretOrKey: jwtSecret,
     });
   }
