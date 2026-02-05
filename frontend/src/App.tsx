@@ -5,6 +5,7 @@ import { Cart } from "./pages/CartPage";
 import { CartProvider } from "./contexts/CartContext";
 import { ProductPage } from "./pages/ProductPage";
 import { ProductsProvider } from "./contexts/ProductContext";
+import { ContactsPage } from "./pages/ContactsPage";
 
 // Админ-страницы
 import { RegisterPage } from "./pages/Auth/RegisterPage";
@@ -26,8 +27,8 @@ import AccountPage from "./pages/AccountPage";
 function App() {
   return (
     <ProductsProvider>
-      <CartProvider>
-        <AuthProvider>
+      <AuthProvider>
+        <CartProvider>
           <BrowserRouter>
             <Routes>
               <Route
@@ -90,6 +91,7 @@ function App() {
                   </OrderProvider>
                 }
               />
+              <Route path="/contacts" element={<ContactsPage />} />
 
               {/* === АДМИН-СТРАНИЦЫ (БЕЗ Header и Footer) === */}
               <Route
@@ -130,8 +132,8 @@ function App() {
               />
             </Routes>
           </BrowserRouter>
-        </AuthProvider>
-      </CartProvider>
+        </CartProvider>
+      </AuthProvider>
     </ProductsProvider>
   );
 }

@@ -64,8 +64,13 @@ export class OrdersService {
     return await this.prisma.order.findMany({ include: { items: true } });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} order`;
+  async findOrders(userId: number) {
+    const orders = await this.prisma.order.findMany({
+      where: { userId: userId },
+      select: { status: true, totalPrice: true, createdAt: true, id: true },
+    });
+    if (!orders) throw new NotFoundException(`User with #${userId} not found`);
+    return orders;
   }
 
   async update(id: number, dto: UpdateOrderDto) {

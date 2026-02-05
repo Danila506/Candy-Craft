@@ -14,7 +14,8 @@ import {
   Sparkles,
   Tag,
 } from "lucide-react";
-import { API_URL, USER_ID } from "../api/config";
+import { API_URL } from "../api/config";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Cart() {
   const { cartItems, refreshCart } = useCart();
@@ -24,6 +25,8 @@ export function Cart() {
   const [itemQuantities, setItemQuantities] = useState<Record<number, number>>(
     {},
   );
+  const { user } = useAuth();
+  const userId = user?.id;
 
   useEffect(() => {
     const initialQuantities: Record<number, number> = {};
@@ -50,7 +53,9 @@ export function Cart() {
 
   const removeItem = async (itemId: number) => {
     try {
-      await fetch(`${API_URL}/cart/${USER_ID}/items/${itemId}`, {
+      if (!userId) return;
+
+      await fetch(`${API_URL}/cart/${userId}/items/${itemId}`, {
         method: "DELETE",
       });
       refreshCart();
