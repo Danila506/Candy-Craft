@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { http, ApiError } from "../api/http";
-import { type Role } from "../contexts/AuthContext";
+import { useAuth, type Role } from "../contexts/AuthContext";
 
 type MeDto = {
   id: number;
@@ -88,6 +88,9 @@ export default function AccountPage() {
 
   const [error, setError] = useState<string>("");
 
+  const { user } = useAuth();
+  const userId = user?.id;
+
   // форма профиля
   const [profile, setProfile] = useState({
     firstName: "",
@@ -148,15 +151,16 @@ export default function AccountPage() {
   useEffect(() => {
     let alive = true;
 
-    async function loadOrders() {
+    async function loadOrders(id: number | undefined) {
       if (tab !== "orders") return;
       setLoadingOrders(true);
       setError("");
 
       try {
-        const data = await http.get<MyOrderDto[]>("/orders/my");
+        const data = await http.get<MyOrderDto[]>(`/orders/${id}`);
         if (!alive) return;
         setOrders(data);
+        console.log(orders);
       } catch (e) {
         if (!alive) return;
 
@@ -172,7 +176,7 @@ export default function AccountPage() {
       }
     }
 
-    loadOrders();
+    loadOrders(userId);
     return () => {
       alive = false;
     };

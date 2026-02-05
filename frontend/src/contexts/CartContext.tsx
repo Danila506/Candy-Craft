@@ -6,7 +6,8 @@ import {
   type ReactNode,
 } from "react";
 import type { CartType } from "../types/CartType";
-import { API_URL, USER_ID } from "../api/config";
+import { API_URL } from "../api/config";
+import { useAuth } from "./AuthContext";
 
 interface CartContextType {
   cartCount: number;
@@ -24,10 +25,16 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [cartItems, setCartItems] = useState<CartType[]>([]); // Сохраняем товары
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const { user } = useAuth();
+  const userId = user?.id;
 
   const fetchCartItems = async () => {
+    if (!userId) {
+      setCartItems([]);
+      return;
+    }
     try {
-      const response = await fetch(`${API_URL}/cart/${USER_ID}`);
+      const response = await fetch(`${API_URL}/cart/${userId}`);
       const data: CartType[] = await response.json();
       setCartItems(data); // Сохраняем ВЕСЬ массив товаров
     } catch (error) {
@@ -37,7 +44,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   const clearCart = async () => {
     try {
-      const res = await fetch(`${API_URL}/cart/${USER_ID}`, {
+      if (!userId) return;
+
+      const res = await fetch(`${API_URL}/cart/${userId}`, {
         method: "DELETE",
       });
       if (!res.ok) throw new Error("Не удалось очистить корзину");
@@ -49,7 +58,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     fetchCartItems();
-  }, []);
+  }, [userId]);
 
   const refreshCart = () => {
     fetchCartItems();
@@ -57,7 +66,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   const addToCart = async (productId: number) => {
     try {
-      const response = await fetch(`${API_URL}/cart/${USER_ID}/items`, {
+      if (!userId) {
+        throw new Error("Пользователь не авторизован");
+      }
+
+      const response = await fetch(`${API_URL}/cart/${userId}/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId }),

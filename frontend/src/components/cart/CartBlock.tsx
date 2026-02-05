@@ -2,11 +2,13 @@ import { Breadcrumb } from "../ui/Breadcrumb";
 import { useEffect, useMemo, useState } from "react";
 import { H2 } from "../ui/H2";
 import { useCart } from "../../contexts/CartContext";
-import { API_URL, USER_ID } from "../../api/config";
+import { API_URL } from "../../api/config";
+import { useAuth } from "../../contexts/AuthContext";
 
 export function CartBlock() {
-  const { cartItems, refreshCart } = useCart(); // Убрали decrementCart
-
+  const { cartItems, refreshCart } = useCart();
+  const { user } = useAuth();
+  const userId = user?.id; // Убрали decrementCart
   const [loading, setLoading] = useState(true);
   const [error] = useState<string | null>(null);
 
@@ -40,7 +42,9 @@ export function CartBlock() {
 
   const removeItem = async (itemId: number) => {
     try {
-      await fetch(`${API_URL}/cart/${USER_ID}/items/${itemId}`, {
+      if (!userId) return;
+
+      await fetch(`${API_URL}/cart/${userId}/items/${itemId}`, {
         method: "DELETE",
       });
       refreshCart();

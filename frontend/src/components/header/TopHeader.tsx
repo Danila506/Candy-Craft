@@ -2,15 +2,16 @@
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useCart } from "../../contexts/CartContext";
-import { MapPin, Phone, ShoppingCart, Menu, X, User } from "lucide-react";
+import {
+  MapPin,
+  Phone,
+  ShoppingCart,
+  Menu,
+  X,
+  User,
+  Shield,
+} from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-
-const headerItems = [
-  "Гарантия свежести",
-  "Доставка и оплата",
-  "Оптовые поставки",
-  "Контакты",
-];
 
 export function TopHeader() {
   const { cartCount } = useCart();
@@ -18,7 +19,9 @@ export function TopHeader() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
   const { user } = useAuth();
+  const profileLink = user ? "/account" : "/account/login";
 
   // Для контроля анимации
   const headerRef = useRef<HTMLDivElement>(null);
@@ -87,16 +90,26 @@ export function TopHeader() {
             {/* Информационные ссылки */}
             <div className="hidden md:block">
               <ul className="flex flex-wrap gap-x-4 gap-y-1">
-                {headerItems.map((item, index) => (
-                  <li key={index}>
-                    <a
-                      href="/"
-                      className="text-xs md:text-sm text-gray-600 hover:text-rose-600 transition-colors font-medium"
-                    >
-                      {item}
-                    </a>
+                <Link to={"/contacts"}>
+                  <li className="text-xs md:text-sm text-gray-600 hover:text-rose-600 transition-colors font-medium">
+                    Гарантия свежести
                   </li>
-                ))}
+                </Link>
+                <Link to={"/contacts"}>
+                  <li className="text-xs md:text-sm text-gray-600 hover:text-rose-600 transition-colors font-medium">
+                    Доставка и оплата
+                  </li>
+                </Link>
+                <Link to={"/contacts"}>
+                  <li className="text-xs md:text-sm text-gray-600 hover:text-rose-600 transition-colors font-medium">
+                    Оптовые поставки
+                  </li>
+                </Link>
+                <Link to={"/contacts"}>
+                  <li className="text-xs md:text-sm text-gray-600 hover:text-rose-600 transition-colors font-medium">
+                    Контакты
+                  </li>
+                </Link>
               </ul>
             </div>
 
@@ -104,17 +117,13 @@ export function TopHeader() {
             {isMenuOpen && (
               <div className="absolute top-full left-0 right-0 md:hidden bg-white/95 backdrop-blur    -md border-b border-gray-100 shadow-md">
                 <ul className="space-y-1 p-4">
-                  {headerItems.map((item, index) => (
-                    <li key={index}>
-                      <a
-                        href="/"
-                        className="text-sm text-gray-600 hover:text-rose-600 transition-colors block py-2 font-medium"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        {item}
-                      </a>
-                    </li>
-                  ))}
+                  <li>
+                    <a
+                      href="/"
+                      className="text-sm text-gray-600 hover:text-rose-600 transition-colors block py-2 font-medium"
+                      onClick={() => setIsMenuOpen(false)}
+                    ></a>
+                  </li>
                 </ul>
               </div>
             )}
@@ -157,10 +166,26 @@ export function TopHeader() {
                 </Link>
               </li>
               <li>
-                <Link to="/account/login">
+                <Link
+                  to={profileLink}
+                  className="flex items-center justify-center p-1 text-gray-600 hover:text-rose-600 transition-colors"
+                  aria-label="Профиль"
+                >
                   <User />
                 </Link>
               </li>
+
+              {user?.role === "ADMIN" && (
+                <li>
+                  <Link
+                    to="/admin"
+                    className="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-violet-200 bg-linear-to-r from-violet-50 to-indigo-50 text-violet-700 hover:text-violet-900 hover:border-violet-300 hover:shadow-sm transition-all"
+                  >
+                    <Shield className="w-4 h-4" />
+                    <span className="text-sm font-semibold">Админка</span>
+                  </Link>
+                </li>
+              )}
 
               <li className="hidden sm:block">
                 <ul className="flex gap-x-3">
@@ -204,11 +229,6 @@ export function TopHeader() {
                       </svg>
                     </a>
                   </li>
-                  {user?.role === "ADMIN" && (
-                    <li className="cursor-pointer">
-                      <Link to="/admin">Админка</Link>
-                    </li>
-                  )}
                 </ul>
               </li>
             </ul>
