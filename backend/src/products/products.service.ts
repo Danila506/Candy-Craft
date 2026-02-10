@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   Body,
+  ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -9,7 +10,7 @@ import {
 import { CreateProductDto } from './dto/create-product.dto';
 
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Product } from '@prisma/client';
+import { Prisma, Product } from '@prisma/client';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
@@ -44,14 +45,26 @@ export class ProductsService {
     }
 
     // Создаем продукт
-    const product = await this.prisma.product.create({
-      data: dto,
-      include: {
-        category: true,
-      },
-    });
-
-    return product;
+    //     const exists = await this.prisma.product.findFirst({
+    //   where: { categoryId: dto.categoryId },
+    // });
+    // if (exists) throw new ConflictException("Товар уже существует");
+    try {
+      return await this.prisma.product.create({
+        data: dto,
+        include: {
+          category: true,
+        },
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        throw new ConflictException('Товар с таким названием уже существует');
+      }
+      throw e;
+    }
   }
 
   //todo Найти товары по категории

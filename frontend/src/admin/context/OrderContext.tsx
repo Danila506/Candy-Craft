@@ -44,7 +44,8 @@ export const OrderProvider = ({ children }: Props) => {
 
   const fetchOrders = async () => {
     try {
-      const data = await http.get<Order[]>("/orders");
+      const data = await http.get<Order[]>(`/orders`);
+      console.log(data);
       setOrders(data ?? []);
     } catch (err) {
       console.error(err);

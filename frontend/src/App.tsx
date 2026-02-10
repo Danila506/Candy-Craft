@@ -13,16 +13,16 @@ import { Dashboard } from "./admin/pages/Dashboard";
 import { ProductsAdmin } from "./admin/pages/ProductsAdmin";
 import { AdminRoute } from "./admin/components/AdminRoute";
 import { Footer } from "./components/Footer"; // Если есть Footer
-import { CheckoutPage } from "./pages/CheckoutPage";
+import { CheckoutPage } from "./pages/CheckoutPage/CheckoutPage";
 import { OrdersAdmin } from "./admin/pages/OrdersAdmin";
 import { OrderProvider } from "./admin/context/OrderContext";
 import { CheckoutProvider } from "./contexts/CheckoutContext";
 import { CategoriesAdmin } from "./admin/pages/CategoriesAdmin";
 import { CategoryProvider } from "./contexts/CategoryContext";
-import { TopHeader } from "./components/header/TopHeader";
 import { LoginPage } from "./pages/Auth/LoginPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import AccountPage from "./pages/AccountPage";
+import { PrivacyPage } from "./pages/PrivacyPage";
 
 function App() {
   return (
@@ -66,7 +66,7 @@ function App() {
                 path="/account/login"
                 element={
                   <>
-                    <TopHeader />
+                    <Header />
                     <LoginPage />
                   </>
                 }
@@ -75,7 +75,7 @@ function App() {
                 path="/account/register"
                 element={
                   <>
-                    <TopHeader />
+                    <Header />
                     <RegisterPage />
                   </>
                 }
@@ -91,14 +91,32 @@ function App() {
                   </OrderProvider>
                 }
               />
-              <Route path="/contacts" element={<ContactsPage />} />
+              <Route
+                path="/contacts"
+                element={
+                  <>
+                    <Header />
+                    <ContactsPage />
+                  </>
+                }
+              />
+              <Route
+                path="/privacy"
+                element={
+                  <>
+                    <PrivacyPage />
+                  </>
+                }
+              />
 
               {/* === АДМИН-СТРАНИЦЫ (БЕЗ Header и Footer) === */}
               <Route
                 path="/admin"
                 element={
                   <AdminRoute>
-                    <Dashboard />
+                    <OrderProvider>
+                      <Dashboard />
+                    </OrderProvider>
                   </AdminRoute>
                 }
               />

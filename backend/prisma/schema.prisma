@@ -83,7 +83,7 @@ model Product {
   category   Category    @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
 
-  @@index([categoryId])
+  @@index([name, categoryId])
   @@map("products")
 }
 
