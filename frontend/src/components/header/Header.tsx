@@ -1,141 +1,130 @@
 // components/Header/Header.tsx
-import { useState, useEffect } from "react";
-import { TopHeader } from "./TopHeader";
-import Logo from "../../assets/logo.svg";
-import HeaderLink from "../ui/HeaderLink";
-import { MenuIcon, XIcon } from "lucide-react";
-
-import HeaderBackground from "../../assets/Torty-od-reki-2-1920x541.png";
+import Logo from "../../assets/candyLogo.png";
+import { useCart } from "../../contexts/CartContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { useState } from "react";
+import { Link, NavLink } from "react-router-dom";
+import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
 
 function Header() {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+  const { cartCount } = useCart();
+  const { user } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    useEffect(() => {
-        const checkMobile = () => {
-            setIsMobile(window.innerWidth < 1024);
-            if (window.innerWidth >= 1024) setIsMenuOpen(false);
-        };
-        checkMobile();
-        window.addEventListener("resize", checkMobile);
-        return () => window.removeEventListener("resize", checkMobile);
-    }, []);
+  const profileLink = user ? "/account" : "/account/login";
 
-    const navItems = [
-        "СЛАДКИЕ ДНИ",
-        "ПОДАРОЧНЫЕ НАБОРЫ",
-        "СОБРАТЬ НАБОР",
-        "СОЗДАТЬ ДИЗАЙН",
-        "КОМПАНИЯМ",
-        "ВЕСЬ КАТАЛОГ",
-    ];
+  const navClass = ({ isActive }: { isActive: boolean }) =>
+    `transition-colors ${isActive ? "text-[#ff398b]" : "text-gray-700 hover:text-[#ff398b]"}`;
 
-    return (
-        <header className="pt-20 md:pt-24 mb-12 md:mb-16 relative overflow-hidden min-h-screen">
-            <div className="absolute inset-0 z-0 ">
-                <div
-                    className="absolute inset-0 bg-cover bg-center opacity-100 "
-                    style={{ backgroundImage: `url(${HeaderBackground})` }}
-                />
+  return (
+    <header className="sticky top-0 z-50 border-b border-rose-100 bg-white/85 backdrop-blur">
+      {/* top bar */}
+      <div className="bg-linear-to-r from-rose-50 via-pink-50 to-rose-50 text-center text-xs text-gray-700 py-2 px-4 border-b border-rose-100">
+        Доставка по Биробиджану • Заказы на сегодня до 18:00
+      </div>
 
-                <div className="absolute inset-0 bg-linear-to-b from-rose-50/60  to-white/20"></div>
-            </div>
+      <div className="container mx-auto md:py-15 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <button
+            className="lg:hidden p-2 rounded-xl border border-rose-100 text-gray-700 hover:bg-rose-50"
+            onClick={() => setIsMobileMenuOpen((prev) => !prev)}
+            aria-label={isMobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
+          >
+            {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
+          </button>
 
-            <div className="relative z-10">
-                <TopHeader />
+          <Link
+            to="/"
+            className="inline-flex items-center"
+            aria-label="CandyCraft — на главную"
+          >
+            <img src={Logo} alt="CandyCraft" className="h-35 w-auto" />
+          </Link>
+        </div>
 
-                <div className="py-12 md:py-16 lg:py-20 container mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="lg:hidden flex items-center justify-between mb-8">
-                        <button
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                            className="p-2 bg-white/80 backdrop-blur-sm rounded-lg text-gray-700 hover:text-rose-600 transition-colors border border-gray-200"
-                            aria-label={
-                                isMenuOpen ? "Закрыть меню" : "Открыть меню"
-                            }
-                        >
-                            {isMenuOpen ? (
-                                <XIcon size={24} />
-                            ) : (
-                                <MenuIcon size={24} />
-                            )}
-                        </button>
+        <nav className="hidden lg:flex items-center gap-6 text-sm">
+          <NavLink to="/" className={navClass}>
+            Каталог
+          </NavLink>
+          <NavLink to="/delivery" className={navClass}>
+            Доставка и оплата
+          </NavLink>
+          <NavLink to="/contacts" className={navClass}>
+            Контакты
+          </NavLink>
+        </nav>
 
-                        <div className="flex-1 flex justify-center">
-                            <a href="/" className="text-2xl">
-                                <img
-                                    width={isMobile ? 90 : 110}
-                                    height={isMobile ? 90 : 110}
-                                    src={Logo}
-                                    alt="Candy Craft Логотип"
-                                    className="drop-shadow-sm"
-                                />
-                            </a>
-                        </div>
+        <ul className="flex items-center gap-1 sm:gap-2">
+          <li>
+            <button
+              className="p-2 rounded-xl text-gray-700 hover:bg-rose-50 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b]"
+              aria-label="Поиск"
+              type="button"
+            >
+              <Search size={20} />
+            </button>
+          </li>
+          <li>
+            <Link
+              to={profileLink}
+              className="p-2 rounded-xl text-gray-700 hover:bg-rose-50 inline-flex focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b]"
+              aria-label="Аккаунт"
+            >
+              <User size={20} />
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/cart"
+              className="relative p-2 rounded-xl text-gray-700 hover:bg-rose-50 inline-flex focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b]"
+              aria-label="Корзина"
+            >
+              <ShoppingCart size={20} />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-5 h-5 px-1 rounded-full bg-[#ff398b] text-white text-[10px] font-semibold flex items-center justify-center shadow-sm">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+          </li>
+        </ul>
+      </div>
 
-                        <div className="w-10"></div>
-                    </div>
-
-                    {isMenuOpen && (
-                        <div className="lg:hidden bg-white/95 backdrop-blur-md rounded-xl mt-4 py-4 shadow-lg border border-gray-100">
-                            <ul className="flex flex-col space-y-2">
-                                {navItems.map((text, index) => (
-                                    <li key={index} className="px-4">
-                                        <HeaderLink
-                                            text={text}
-                                            onClick={() => setIsMenuOpen(false)}
-                                            className="text-gray-700 hover:text-rose-600 font-medium py-2 block transition-colors"
-                                        />
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    <div className="hidden lg:block">
-                        <ul className="grid grid-cols-7 items-center justify-between bg-white/70 backdrop-blur-md py-4 px-6 rounded-2xl shadow-sm border border-gray-100/50">
-                            {navItems.slice(0, 3).map((text, index) => (
-                                <HeaderLink
-                                    key={index}
-                                    text={text}
-                                    className="text-gray-700 hover:text-rose-600 font-medium transition-colors"
-                                />
-                            ))}
-
-                            <li className="text-center flex justify-center animate-spin [animation-duration:5s]">
-                                <a className="text-2xl" href="/">
-                                    <img
-                                        width={170}
-                                        height={170}
-                                        src={Logo}
-                                        alt="Candy Craft Логотип"
-                                        className="drop-shadow-sm "
-                                    />
-                                </a>
-                            </li>
-
-                            {navItems.slice(3).map((text, index) => (
-                                <HeaderLink
-                                    key={index + 3}
-                                    text={text}
-                                    className="text-gray-700 hover:text-rose-600 font-medium transition-colors"
-                                />
-                            ))}
-                        </ul>
-                    </div>
-
-                    <div className="text-center mt-12 md:mt-16 lg:mt-20">
-                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#f3b0c2] mb-4">
-                            Candy Craft
-                        </h1>
-                        <p className="  font-semibold md:text-lg lg:text-xl text-[#3c3c3c] max-w-2xl mx-auto leading-relaxed">
-                            Искусство сладких наслаждений. Авторские торты и
-                            десерты ручной работы
-                        </p>
-                    </div>
-                </div>
-            </div>
-        </header>
-    );
+      {isMobileMenuOpen && (
+        <nav className="lg:hidden border-t border-rose-100 bg-white px-4 py-3">
+          <ul className="space-y-2 text-sm">
+            <li>
+              <Link
+                className="text-gray-700 hover:text-[#ff398b]"
+                to="/"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Каталог
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="text-gray-700 hover:text-[#ff398b]"
+                to="/delivery"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Доставка и оплата
+              </Link>
+            </li>
+            <li>
+              <Link
+                className="text-gray-700 hover:text-[#ff398b]"
+                to="/contacts"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Контакты
+              </Link>
+            </li>
+          </ul>
+        </nav>
+      )}
+    </header>
+  );
 }
 
 export default Header;

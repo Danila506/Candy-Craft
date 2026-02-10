@@ -1,112 +1,122 @@
 // components/Product.tsx
+import { useState } from "react";
 import { useCart } from "../contexts/CartContext";
 import type { ProductType } from "../types/ProductType";
 import { Link } from "react-router-dom";
-import { ShoppingCart, CheckCircle } from "lucide-react";
+import { ShoppingCart, CheckCircle, ImageOff } from "lucide-react";
 
 export function Product(product: ProductType) {
   const { isItemInCart, addToCart } = useCart();
-  const { imageUrl, name, description, price, id } = product;
+  const { imageUrl, name, description, price, id, inStock, category } = product;
+
+  const [imageBroken, setImageBroken] = useState(!imageUrl);
   const isInCart = isItemInCart(id);
+  const isOutOfStock = inStock < 1;
 
   const handleAddToCart = async () => {
-    if (isInCart) return;
+    if (isInCart || isOutOfStock) return;
     await addToCart(id);
   };
 
   return (
-    <li
-      className={`
-            
-            w-full max-w-xs sm:max-w-sm md:max-w-none
-            list-none flex flex-col h-full
-        `}
-    >
-      <div className="group w-full flex flex-col h-full bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-gray-200 transition-all duration-300">
-        {/* Изображение с адаптивной высотой */}
-        <Link
-          key={product.id}
-          to={`/product/${product.id}`}
-          className="block relative overflow-hidden"
-        >
-          <div className="relative overflow-hidden bg-rose-50/50">
-            <div className="pt-[75%] md:pt-[100%] relative">
+    <li className="list-none ">
+      <div className="group h-full bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <Link to={`/product/${id}`} className="block">
+          {/* IMAGE */}
+          <div className="relative max-h-100 overflow-hidden bg-linear-to-br from-rose-100 via-pink-100 to-rose-50 aspect-5/5">
+            {imageBroken ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-rose-300 gap-2">
+                <ImageOff className="w-8 h-8" />
+                <span className="text-xs">Нет фото</span>
+              </div>
+            ) : (
               <img
                 className="absolute top-0 left-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 src={imageUrl}
                 alt={name}
                 loading="lazy"
+                onError={() => setImageBroken(true)}
               />
+            )}
+
+            {/* BADGES */}
+            <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
+              <span className="inline-flex items-center rounded-full border border-rose-100 bg-white/85 px-2.5 py-1 text-[11px] font-medium text-gray-700 backdrop-blur">
+                {category?.name ?? "Категория"}
+              </span>
+
+              <span
+                className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-medium border backdrop-blur ${
+                  isOutOfStock
+                    ? "bg-white/85 text-red-600 border-red-100"
+                    : "bg-white/85 text-emerald-700 border-emerald-100"
+                }`}
+              >
+                {isOutOfStock ? "Нет в наличии" : `В наличии: ${inStock}`}
+              </span>
             </div>
 
-            {/* Бейдж для товара в корзине */}
             {isInCart && (
-              <div className="absolute top-3 right-3 bg-rose-200/90 backdrop-blur-sm text-rose-800 text-xs font-medium px-3 py-1.5 rounded-full border border-rose-300/50 flex items-center gap-1.5 z-10 shadow-sm">
+              <div className="absolute top-3 right-3 bg-white/90 text-[#ff398b] text-xs font-semibold px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1 z-10 shadow-sm backdrop-blur">
                 <CheckCircle className="w-3.5 h-3.5" />
                 <span>В корзине</span>
               </div>
             )}
+
+            {/* subtle bottom fade for text readability on images */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-linear-to-t from-white/70 to-transparent" />
           </div>
 
-          {/* Контентная часть */}
-          <div className="bg-white flex flex-col flex-1 p-4 md:p-5">
-            <div className="flex flex-col gap-y-2 md:gap-y-3 flex-1">
-              <h3 className="text-base md:text-lg font-medium text-gray-800 line-clamp-2 group-hover:text-rose-700 transition-colors duration-200">
-                {name}
-              </h3>
-              <p className="text-gray-500 text-xs md:text-sm line-clamp-2 md:line-clamp-3 leading-relaxed">
-                {description}
-              </p>
-            </div>
+          {/* CONTENT */}
+          <div className="bg-white p-4">
+            <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-[#ff398b] transition-colors">
+              {name}
+            </h3>
+            <p className="mt-2 text-gray-600 text-xs line-clamp-2 leading-relaxed">
+              {description}
+            </p>
           </div>
         </Link>
 
-        {/* Нижняя часть с ценой и кнопкой */}
-        <div className="border-t border-gray-100 bg-gray-50/30 px-4 md:px-5 py-4">
-          <div className="flex justify-between items-center gap-3">
+        {/* FOOTER */}
+        <div className="border-t border-rose-100 bg-white px-4 py-3.5">
+          <div className="flex justify-between items-center gap-2">
             <div className="flex flex-col">
-              <span className="text-xl md:text-2xl font-semibold text-gray-800">
+              <span className="text-[11px] text-gray-500">Цена</span>
+              <span className="text-lg md:text-xl font-semibold text-gray-900">
                 {price}₽
               </span>
-              <span className="text-xs text-gray-400 hidden md:block">
-                за единицу
-              </span>
             </div>
+
             <button
               onClick={handleAddToCart}
-              disabled={isInCart}
-              className={`
-                                group/btn
-                                flex justify-center items-center 
-                                font-medium
-                                gap-2
-                                px-4 md:px-5 py-2 md:py-2.5
-                                rounded-lg
-                                text-sm md:text-base
-                                transition-all duration-200
-                                ${
-                                  isInCart
-                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                    : "bg-rose-200/60 text-rose-800 border border-rose-300/50 hover:bg-rose-300/60 hover:border-rose-400/60 active:scale-95 shadow-sm hover:shadow"
-                                }
-                            `}
+              disabled={isInCart || isOutOfStock}
+              className={`inline-flex justify-center items-center font-semibold gap-2 px-3.5 py-2 rounded-xl text-xs md:text-sm transition-all duration-200 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b] ${
+                isInCart
+                  ? "bg-rose-50 text-[#ff398b] border border-rose-100 cursor-not-allowed"
+                  : isOutOfStock
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-[#ff398b] text-white hover:bg-[#ff2a81] active:scale-95 shadow-sm"
+              }`}
               aria-label={
-                isInCart ? "Товар уже в корзине" : `Добавить ${name} в корзину`
+                isInCart
+                  ? "Товар уже в корзине"
+                  : isOutOfStock
+                    ? "Товара нет в наличии"
+                    : `Добавить ${name} в корзину`
               }
             >
               {isInCart ? (
-                <>
-                  <CheckCircle className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="hidden sm:inline">В корзине</span>
-                  <span className="sm:hidden">✓</span>
-                </>
+                <CheckCircle className="w-4 h-4" />
               ) : (
-                <>
-                  <ShoppingCart className="w-4 h-4 md:w-5 md:h-5" />
-                  <span className="hidden sm:inline">В корзину</span>
-                  <span className="sm:hidden">Купить</span>
-                </>
+                <ShoppingCart className="w-4 h-4" />
               )}
+
+              {isInCart
+                ? "В корзине"
+                : isOutOfStock
+                  ? "Нет в наличии"
+                  : "В корзину"}
             </button>
           </div>
         </div>

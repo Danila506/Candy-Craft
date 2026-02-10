@@ -79,8 +79,8 @@ export function ProductModal({
 
     if (!formData.name.trim()) newErrors.name = "Введите название товара";
     if (formData.price <= 0) newErrors.price = "Цена должна быть больше 0";
-    if (formData.inStock <= 0)
-      newErrors.inStock = "Количество должно быть больше 0";
+    if (formData.inStock < 0)
+      newErrors.inStock = "Количество должно быть больше либо равно 0";
     if (!formData.imageUrl.trim())
       newErrors.imageUrl = "Добавьте ссылку на изображение";
     if (!formData.description.trim())
@@ -203,10 +203,10 @@ export function ProductModal({
                     </label>
                     <input
                       type="number"
-                      min="1"
+                      min="0"
                       value={formData.inStock}
                       onChange={(e) =>
-                        handleChange("inStock", parseInt(e.target.value) || 1)
+                        handleChange("inStock", parseInt(e.target.value) || 0)
                       }
                       className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent ${
                         errors.inStock ? "border-red-500" : "border-gray-300"

@@ -10,9 +10,7 @@ html {
   scroll-behavior: smooth;
 }
 
-body{ 
-    background-color: rgba(247, 247, 247, 1);
-}
+
 
 .active {
     border-bottom: 1px solid #123;
