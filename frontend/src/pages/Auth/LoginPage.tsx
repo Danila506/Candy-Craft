@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthShell } from "./AuthShell";
 import { ApiError } from "../../api/http";
+import { API_URL } from "../../api/config";
 import { useAuth } from "../../contexts/AuthContext";
 
 type LoginForm = {
@@ -41,6 +42,7 @@ export function LoginPage() {
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const googleUrl = `${API_URL}/auth/google`;
 
   const canSubmit = useMemo(() => {
     if (loading) return false;
@@ -101,6 +103,16 @@ export function LoginPage() {
             {serverError}
           </div>
         )}
+
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = googleUrl;
+          }}
+          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 hover:bg-gray-50"
+        >
+          Войти через Google
+        </button>
 
         <div>
           <label className="text-sm font-medium" htmlFor="email">
