@@ -11,6 +11,7 @@ import { Prisma, Role } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { normalizeRuPhone } from 'src/utils/phone';
 import type { StringValue } from 'ms';
+import { randomBytes } from 'crypto';
 
 function msFromExpires(expires: string) {
   // простая поддержка 15m/30d/1h
@@ -121,6 +122,102 @@ export class AuthService {
       await this.issueTokens(user.id, user.email, user.role);
 
     // сохраняем refresh hash в БД
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: refreshTokenHash,
+        expiresAt: refreshExpiresAt,
+      },
+    });
+
+    const safeUser = {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      phone: user.phone,
+      role: user.role,
+    };
+
+    return { accessToken, refreshToken, user: safeUser };
+  }
+
+  async googleLogin(profile: {
+    email: string | null;
+    firstName: string;
+    lastName: string;
+    googleId: string;
+  }) {
+    if (!profile.email) {
+      throw new BadRequestException('Не удалось получить email от Google');
+    }
+
+    const email = profile.email.trim().toLowerCase();
+    const googleId = profile.googleId;
+
+    let user = await this.prisma.user.findUnique({
+      where: { googleId },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        googleId: true,
+      },
+    });
+
+    if (!user) {
+      const byEmail = await this.prisma.user.findUnique({
+        where: { email },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+          googleId: true,
+        },
+      });
+
+      if (byEmail) {
+        if (byEmail.googleId !== googleId) {
+          await this.prisma.user.update({
+            where: { id: byEmail.id },
+            data: { googleId },
+          });
+        }
+        user = { ...byEmail, googleId };
+      } else {
+        const passwordHash = await argon2.hash(randomBytes(32).toString('hex'));
+        const created = await this.prisma.user.create({
+          data: {
+            firstName: profile.firstName || 'Google',
+            lastName: profile.lastName || 'User',
+            email,
+            phone: null,
+            passwordHash,
+            googleId,
+          },
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            role: true,
+            googleId: true,
+          },
+        });
+        user = created;
+      }
+    }
+
+    const { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt } =
+      await this.issueTokens(user.id, user.email, user.role);
+
     await this.prisma.refreshToken.create({
       data: {
         userId: user.id,

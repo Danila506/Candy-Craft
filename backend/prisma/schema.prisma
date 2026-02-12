@@ -25,6 +25,7 @@ model User {
   email        String  @unique
   phone        String? @unique
   passwordHash String
+  googleId     String? @unique
   role Role @default(USER)
 
   createdAt DateTime @default(now())

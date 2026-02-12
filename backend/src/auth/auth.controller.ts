@@ -9,6 +9,7 @@ import {
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -25,6 +26,13 @@ function cookieBaseOptions() {
     sameSite: 'none' as const, // для большинства случаев ок
     path: '/', // важно
   };
+}
+
+function getFrontendBaseUrl() {
+  return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(
+    /\/+$/,
+    '',
+  );
 }
 
 @Controller('auth')
@@ -64,6 +72,35 @@ export class AuthController {
     });
 
     return { user };
+  }
+
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth() {
+    return null;
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { accessToken, refreshToken } = await this.auth.googleLogin(
+      (req as any).user,
+    );
+
+    res.cookie('access_token', accessToken, {
+      ...cookieBaseOptions(),
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie('refresh_token', refreshToken, {
+      ...cookieBaseOptions(),
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    return res.redirect(`${getFrontendBaseUrl()}/account`);
   }
 
   @Post('refresh')
