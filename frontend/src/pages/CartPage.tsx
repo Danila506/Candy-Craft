@@ -14,19 +14,15 @@ import {
   Sparkles,
   Tag,
 } from "lucide-react";
-import { API_URL } from "../api/config";
-import { useAuth } from "../contexts/AuthContext";
 
 export function Cart() {
-  const { cartItems, refreshCart } = useCart();
+  const { cartItems, removeItem } = useCart();
 
   const [loading, setLoading] = useState(true);
 
   const [itemQuantities, setItemQuantities] = useState<Record<number, number>>(
     {},
   );
-  const { user } = useAuth();
-  const userId = user?.id;
 
   useEffect(() => {
     const initialQuantities: Record<number, number> = {};
@@ -51,18 +47,6 @@ export function Cart() {
     }));
   };
 
-  const removeItem = async (itemId: number) => {
-    try {
-      if (!userId) return;
-
-      await fetch(`${API_URL}/cart/${userId}/items/${itemId}`, {
-        method: "DELETE",
-      });
-      refreshCart();
-    } catch (error) {
-      console.error("Ошибка удаления:", error);
-    }
-  };
   const navigate = useNavigate(); // <-- вот здесь
   const handleCheckout = () => {
     // Формируем товары с правильными количествами

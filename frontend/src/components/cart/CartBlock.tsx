@@ -46,6 +46,7 @@ export function CartBlock() {
 
       await fetch(`${API_URL}/cart/${userId}/items/${itemId}`, {
         method: "DELETE",
+        credentials: "include",
       });
       refreshCart();
     } catch (error) {
