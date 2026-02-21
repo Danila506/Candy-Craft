@@ -16,6 +16,7 @@ interface CartContextType {
   isItemInCart: (productId: number) => boolean; // Функция проверки
   clearCart: () => void;
   addToCart: (productId: number) => Promise<void>;
+  removeItem: (itemId: number) => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -34,7 +35,9 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
       return;
     }
     try {
-      const response = await fetch(`${API_URL}/cart/${userId}`);
+      const response = await fetch(`${API_URL}/cart/${userId}`, {
+        credentials: "include",
+      });
       const data: CartType[] = await response.json();
       setCartItems(data); // Сохраняем ВЕСЬ массив товаров
     } catch (error) {
@@ -48,6 +51,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
       const res = await fetch(`${API_URL}/cart/${userId}`, {
         method: "DELETE",
+        credentials: "include",
       });
       if (!res.ok) throw new Error("Не удалось очистить корзину");
       setCartItems([]);
@@ -66,12 +70,14 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   const addToCart = async (productId: number) => {
     try {
+      console.log(user);
       if (!userId) {
         throw new Error("Пользователь не авторизован");
       }
 
       const response = await fetch(`${API_URL}/cart/${userId}/items`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ productId }),
       });
@@ -101,6 +107,20 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const removeItem = async (itemId: number) => {
+    try {
+      if (!userId) return;
+
+      await fetch(`${API_URL}/cart/${userId}/items/${itemId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      refreshCart();
+    } catch (error) {
+      console.error("Ошибка удаления:", error);
+    }
+  };
+
   const isItemInCart = (productId: number): boolean => {
     return cartItems.some((item) => item.id === productId);
   };
@@ -112,6 +132,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     isItemInCart,
     clearCart,
     addToCart,
+    removeItem,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;

@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Controller,
   Get,
   Post,
@@ -9,29 +10,46 @@ import {
   HttpCode,
   HttpStatus,
   ParseIntPipe,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { CartService } from './cart.service';
+import type { Request } from 'express';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
 @Controller('cart')
+@UseGuards(JwtAuthGuard)
 export class CartController {
   constructor(private readonly cartService: CartService) {}
 
+  private getAuthorizedUserId(req: Request, requestUserId: number) {
+    const authUserId = (req as any).user?.userId as number | undefined;
+
+    if (!authUserId || authUserId !== requestUserId) {
+      throw new ForbiddenException('You can only access your own cart');
+    }
+    return authUserId;
+  }
+
   // Получить корзину пользователя
   @Get(':userId')
-  getCart(@Param('userId', ParseIntPipe) userId: number) {
-    return this.cartService.getCart(userId);
+  getCart(@Req() req: Request, @Param('useId', ParseIntPipe) userId: number) {
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.getCart(authorizedUserId);
   }
 
   // Добавить товар в корзину
   @Post(':userId/items')
   @HttpCode(HttpStatus.CREATED)
   addToCart(
+    @Req() req: Request,
     @Param('userId', ParseIntPipe) userId: number,
     @Body() createCartDto: CreateCartItemDto,
   ) {
-    return this.cartService.addToCart(userId, createCartDto);
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.addToCart(authorizedUserId, createCartDto);
   }
 
   // Обновить количество товара в корзине
@@ -52,22 +70,32 @@ export class CartController {
   @Delete(':userId/items/:productId')
   @HttpCode(HttpStatus.OK)
   removeFromCart(
+    @Req() req: Request,
     @Param('userId', ParseIntPipe) userId: number,
     @Param('productId', ParseIntPipe) productId: number,
   ) {
-    return this.cartService.removeFromCart(userId, productId);
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.removeFromCart(authorizedUserId, productId);
   }
 
   // Очистить корзину
   @Delete(':userId')
   @HttpCode(HttpStatus.OK)
-  clearCart(@Param('userId', ParseIntPipe) userId: number) {
-    return this.cartService.clearCart(userId);
+  clearCart(
+    @Req() req: Request,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.clearCart(authorizedUserId);
   }
 
   // Получить количество товаров в корзине
   @Get(':userId/count')
-  getCartItemsCount(@Param('userId', ParseIntPipe) userId: number) {
-    return this.cartService.getCartItemsCount(userId);
+  getCartItemsCount(
+    @Req() req: Request,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.clearCart(authorizedUserId);
   }
 }

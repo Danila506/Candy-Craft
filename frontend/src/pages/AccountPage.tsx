@@ -227,10 +227,11 @@ export default function AccountPage() {
     }
   };
 
-  const logout = async () => {
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
     try {
-      // 🔁 обычно: POST /auth/logout — чистит cookies
-      await http.post("/auth/logout", {});
+      await logout();
     } catch {
       // даже если упало — всё равно выкидываем на логин
     } finally {
@@ -288,7 +289,7 @@ export default function AccountPage() {
             )}
 
             <button
-              onClick={logout}
+              onClick={handleLogout}
               className="rounded-lg bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black"
             >
               Выйти
