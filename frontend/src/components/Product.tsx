@@ -4,16 +4,25 @@ import { useCart } from "../contexts/CartContext";
 import type { ProductType } from "../types/ProductType";
 import { Link } from "react-router-dom";
 import { ShoppingCart, CheckCircle, ImageOff } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Product(product: ProductType) {
+  const { user } = useAuth();
+  const userId = user?.id;
   const { isItemInCart, addToCart } = useCart();
   const { imageUrl, name, description, price, id, inStock, category } = product;
 
   const [imageBroken, setImageBroken] = useState(!imageUrl);
   const isInCart = isItemInCart(id);
   const isOutOfStock = inStock < 1;
+  const { setShowAuthWarn } = useCart();
 
   const handleAddToCart = async () => {
+    if (!userId) {
+      setShowAuthWarn(true);
+      return;
+    }
+    await handleAddToCart();
     if (isInCart || isOutOfStock) return;
     await addToCart(id);
   };

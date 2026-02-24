@@ -23,6 +23,7 @@ import { LoginPage } from "./pages/Auth/LoginPage";
 import { AuthProvider } from "./contexts/AuthContext";
 import AccountPage from "./pages/AccountPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
+import { DeliveryPayment } from "./pages/DeliveryPage";
 
 function App() {
   return (
@@ -44,7 +45,15 @@ function App() {
                 }
               />
 
-              <Route path="/product/:id" element={<ProductPage />} />
+              <Route
+                path="/product/:id"
+                element={
+                  <>
+                    <Header />
+                    <ProductPage />
+                  </>
+                }
+              />
 
               <Route
                 path="/cart"
@@ -77,6 +86,15 @@ function App() {
                   <>
                     <Header />
                     <RegisterPage />
+                  </>
+                }
+              />
+              <Route
+                path="/delivery"
+                element={
+                  <>
+                    <Header />
+                    <DeliveryPayment />
                   </>
                 }
               />
