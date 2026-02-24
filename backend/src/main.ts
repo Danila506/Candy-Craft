@@ -12,13 +12,11 @@ async function bootstrap() {
   // Включение CORS с правильными настройками
   app.enableCors({
     origin: [
-      'http://localhost:5173', // Vite dev server
-      'http://127.0.0.1:5173', // Альтернативный адрес Vite
-      'http://localhost:3000', // Ваш бэкенд (для Swagger)'https://candy-craft.vercel.app',
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+      'http://localhost:3000',
       'https://candy-craft.vercel.app',
       'https://candy-craft.onrender.com',
-      'https://candy-craft.com',
-      'https://www.candy-craft.com',
     ],
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,

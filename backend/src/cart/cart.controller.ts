@@ -33,14 +33,13 @@ export class CartController {
     return authUserId;
   }
 
-  // Получить количество товаров в корзине
   @Get(':userId/count')
   getCartItemsCount(
     @Req() req: Request,
     @Param('userId', ParseIntPipe) userId: number,
   ) {
     const authorizedUserId = this.getAuthorizedUserId(req, userId);
-    return this.cartService.clearCart(authorizedUserId);
+    return this.cartService.getCartItemsCount(authorizedUserId);
   }
 
   // Получить корзину пользователя

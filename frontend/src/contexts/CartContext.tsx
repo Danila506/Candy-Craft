@@ -111,11 +111,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
-  const removeItem = async (itemId: number) => {
+  const removeItem = async (productId: number) => {
     try {
       if (!userId) return;
 
-      await fetch(`${API_URL}/cart/${userId}/items/${itemId}`, {
+      await fetch(`${API_URL}/cart/${userId}/items/${productId}`, {
         method: "DELETE",
         credentials: "include",
       });
