@@ -33,9 +33,19 @@ export class CartController {
     return authUserId;
   }
 
+  // Получить количество товаров в корзине
+  @Get(':userId/count')
+  getCartItemsCount(
+    @Req() req: Request,
+    @Param('userId', ParseIntPipe) userId: number,
+  ) {
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.clearCart(authorizedUserId);
+  }
+
   // Получить корзину пользователя
   @Get(':userId')
-  getCart(@Req() req: Request, @Param('useId', ParseIntPipe) userId: number) {
+  getCart(@Req() req: Request, @Param('userId', ParseIntPipe) userId: number) {
     const authorizedUserId = this.getAuthorizedUserId(req, userId);
     return this.cartService.getCart(authorizedUserId);
   }
@@ -82,16 +92,6 @@ export class CartController {
   @Delete(':userId')
   @HttpCode(HttpStatus.OK)
   clearCart(
-    @Req() req: Request,
-    @Param('userId', ParseIntPipe) userId: number,
-  ) {
-    const authorizedUserId = this.getAuthorizedUserId(req, userId);
-    return this.cartService.clearCart(authorizedUserId);
-  }
-
-  // Получить количество товаров в корзине
-  @Get(':userId/count')
-  getCartItemsCount(
     @Req() req: Request,
     @Param('userId', ParseIntPipe) userId: number,
   ) {

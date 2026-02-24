@@ -16,6 +16,7 @@ async function bootstrap() {
       'http://127.0.0.1:5173', // Альтернативный адрес Vite
       'http://localhost:3000', // Ваш бэкенд (для Swagger)'https://candy-craft.vercel.app',
       'https://candy-craft.vercel.app',
+      'https://candy-craft.onrender.com',
       'https://candy-craft.com',
       'https://www.candy-craft.com',
     ],
@@ -46,7 +47,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  console.log(`Application is running on: http://localhost:${port}`);
+  console.log(`Application is running`);
   console.log(`Swagger documentation: http://localhost:${port}/api`);
 }
 bootstrap();

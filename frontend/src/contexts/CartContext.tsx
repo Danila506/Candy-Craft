@@ -17,6 +17,8 @@ interface CartContextType {
   clearCart: () => void;
   addToCart: (productId: number) => Promise<void>;
   removeItem: (itemId: number) => Promise<void>;
+  showAuthWarn: boolean;
+  setShowAuthWarn: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -29,9 +31,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   const { user } = useAuth();
   const userId = user?.id;
 
+  const [showAuthWarn, setShowAuthWarn] = useState(false);
+
   const fetchCartItems = async () => {
     if (!userId) {
       setCartItems([]);
+
       return;
     }
     try {
@@ -70,7 +75,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
 
   const addToCart = async (productId: number) => {
     try {
-      console.log(user);
       if (!userId) {
         throw new Error("Пользователь не авторизован");
       }
@@ -122,7 +126,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   };
 
   const isItemInCart = (productId: number): boolean => {
-    return cartItems.some((item) => item.id === productId);
+    return cartItems.some((item) => item.productId === productId);
   };
 
   const value = {
@@ -133,6 +137,8 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     clearCart,
     addToCart,
     removeItem,
+    showAuthWarn,
+    setShowAuthWarn,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
