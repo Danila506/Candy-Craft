@@ -22,7 +22,6 @@ export function Product(product: ProductType) {
       setShowAuthWarn(true);
       return;
     }
-    await handleAddToCart();
     if (isInCart || isOutOfStock) return;
     await addToCart(id);
   };
