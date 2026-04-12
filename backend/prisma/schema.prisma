@@ -117,10 +117,36 @@ model Order {
   // Связи
   user  User        @relation(fields: [userId], references: [id])
   items OrderItem[]
+  orderAddress OrderAddress?
   statusHistory OrderStatusHistory[]
 
   @@index([userId])
   @@map("orders")
+}
+
+model OrderAddress {
+  id             Int      @id @default(autoincrement())
+  orderId        Int      @unique @map("order_id")
+  country        String   @default("Россия")
+  city           String?
+  street         String?
+  house          String?
+  apartment      String?
+  entrance       String?
+  floor          String?
+  intercom       String?
+  postalCode     String?  @map("postal_code")
+  comment        String?
+  recipientName  String?  @map("recipient_name")
+  recipientPhone String?  @map("recipient_phone")
+  fullAddress    String   @map("full_address")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([city])
+  @@map("order_addresses")
 }
 
 model OrderStatusHistory {
