@@ -34,6 +34,7 @@ model User {
   cart Cart?
 
   orders        Order[]
+  orderStatusChanges OrderStatusHistory[] @relation("OrderStatusChangedBy")
   refreshTokens RefreshToken[]
 
   @@map("users")
@@ -116,9 +117,28 @@ model Order {
   // Связи
   user  User        @relation(fields: [userId], references: [id])
   items OrderItem[]
+  statusHistory OrderStatusHistory[]
 
   @@index([userId])
   @@map("orders")
+}
+
+model OrderStatusHistory {
+  id              Int         @id @default(autoincrement())
+  orderId         Int         @map("order_id")
+  fromStatus      OrderStatus? @map("from_status")
+  toStatus        OrderStatus  @map("to_status")
+  reason          String?
+  changedByUserId Int?        @map("changed_by_user_id")
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedBy User? @relation("OrderStatusChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@index([changedByUserId])
+  @@map("order_status_history")
 }
 
 enum OrderStatus {
