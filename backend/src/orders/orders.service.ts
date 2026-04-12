@@ -107,6 +107,15 @@ export class OrdersService {
         },
         include: { items: true },
       });
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          fromStatus: null,
+          toStatus: order.status,
+          reason: 'Order created',
+          changedByUserId: userId ?? null,
+        },
+      });
 
       return order;
     });
@@ -149,51 +158,102 @@ export class OrdersService {
     return orders;
   }
 
-  async update(id: number, dto: UpdateOrderDto) {
-    const order = await this.prisma.order.findUnique({
-      where: { id },
-      include: { items: true },
-    });
-
-    if (!order) throw new NotFoundException(`Order #${id} not found`);
-
-    const data: Prisma.OrderUpdateInput = {};
-
-    if (dto.status) data.status = dto.status;
-    if (dto.totalPrice !== undefined) data.totalPrice = dto.totalPrice;
-
-    // Если пришли новые items
-    if (dto.items) {
-      // Сначала удаляем старые
-      await this.prisma.orderItem.deleteMany({
-        where: { orderId: id },
+  async update(id: number, dto: UpdateOrderDto, changedByUserId?: number) {
+    return this.prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id },
+        include: { items: true },
       });
 
-      // Потом создаём новые
-      data.items = {
-        create: await Promise.all(
-          dto.items.map(async (i) => {
-            const product = await this.prisma.product.findUnique({
-              where: { id: i.productId },
-            });
-            if (!product)
-              throw new NotFoundException(`Product #${i.productId} not found`);
+      if (!order) throw new NotFoundException(`Order #${id} not found`);
 
-            return {
-              product: { connect: { id: i.productId } },
-              productName: product.name,
-              quantity: i.quantity,
-              price: product.price,
-            };
-          }),
-        ),
-      };
-    }
+      const data: Prisma.OrderUpdateInput = {};
 
-    return this.prisma.order.update({
-      where: { id },
-      data,
-      include: { items: true },
+      if (dto.status) data.status = dto.status;
+      if (dto.totalPrice !== undefined) {
+        const subtotalMinor = dto.totalPrice * 100;
+        data.totalPrice = dto.totalPrice;
+        data.subtotalMinor = subtotalMinor;
+        data.finalAmountMinor = subtotalMinor;
+      }
+
+      // Если пришли новые items
+      if (dto.items) {
+        // Сначала удаляем старые
+        await tx.orderItem.deleteMany({
+          where: { orderId: id },
+        });
+
+        // Потом создаём новые
+        data.items = {
+          create: await Promise.all(
+            dto.items.map(async (i) => {
+              const product = await tx.product.findUnique({
+                where: { id: i.productId },
+              });
+              if (!product)
+                throw new NotFoundException(
+                  `Product #${i.productId} not found`,
+                );
+
+              return {
+                product: { connect: { id: i.productId } },
+                productName: product.name,
+                quantity: i.quantity,
+                price: product.price,
+              };
+            }),
+          ),
+        };
+      }
+
+      const updatedOrder = await tx.order.update({
+        where: { id },
+        data,
+        include: { items: true },
+      });
+
+      if (dto.status && dto.status !== order.status) {
+        await tx.orderStatusHistory.create({
+          data: {
+            orderId: id,
+            fromStatus: order.status,
+            toStatus: dto.status,
+            reason: dto.statusReason?.trim() || null,
+            changedByUserId: changedByUserId ?? null,
+          },
+        });
+      }
+
+      return updatedOrder;
+    });
+  }
+
+  async getStatusHistory(orderId: number) {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      select: { id: true },
+    });
+    if (!order) throw new NotFoundException(`Order #${orderId} not found`);
+
+    return this.prisma.orderStatusHistory.findMany({
+      where: { orderId },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        fromStatus: true,
+        toStatus: true,
+        reason: true,
+        createdAt: true,
+        changedBy: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+          },
+        },
+      },
     });
   }
 

@@ -6,6 +6,7 @@ import {
   Patch,
   Param,
   Delete,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
@@ -15,6 +16,7 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { Role } from '@prisma/client';
+import type { Request } from 'express';
 
 @Controller('orders')
 export class OrdersController {
@@ -37,11 +39,23 @@ export class OrdersController {
     return this.ordersService.findOrders(+id);
   }
 
+  @Get(':id/history')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
+  findStatusHistory(@Param('id') id: string) {
+    return this.ordersService.getStatusHistory(+id);
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
-    return this.ordersService.update(+id, updateOrderDto);
+  update(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Body() updateOrderDto: UpdateOrderDto,
+  ) {
+    const changedByUserId = (req as any).user?.userId as number | undefined;
+    return this.ordersService.update(+id, updateOrderDto, changedByUserId);
   }
 
   @Delete(':id')
