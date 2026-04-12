@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { normalizeRuPhone } from 'src/utils/phone';
 import type { StringValue } from 'ms';
 import { randomBytes } from 'crypto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 function msFromExpires(expires: string) {
   // простая поддержка 15m/30d/1h
@@ -373,5 +374,59 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('User not found');
 
     return user;
+  }
+
+  async updateMe(userId: number, dto: UpdateProfileDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true },
+    });
+
+    if (!user) throw new UnauthorizedException('User not found');
+
+    const firstName = dto.firstName?.trim();
+    const lastName = dto.lastName?.trim();
+    const email = dto.email?.trim().toLowerCase();
+    const phoneRaw = dto.phone?.trim();
+    const phone = phoneRaw ? normalizeRuPhone(phoneRaw) : null;
+
+    if (dto.phone !== undefined && phoneRaw && !phone) {
+      throw new BadRequestException('Некорректный номер телефона');
+    }
+
+    if (email && email !== user.email) {
+      const exists = await this.prisma.user.findUnique({ where: { email } });
+      if (exists) {
+        throw new ConflictException('Email уже используется');
+      }
+    }
+
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(firstName !== undefined ? { firstName } : {}),
+          ...(lastName !== undefined ? { lastName } : {}),
+          ...(email !== undefined ? { email } : {}),
+          ...(dto.phone !== undefined ? { phone } : {}),
+        },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          role: true,
+        },
+      });
+    } catch (e) {
+      if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        throw new ConflictException('Email или телефон уже используются');
+      }
+      throw e;
+    }
   }
 }

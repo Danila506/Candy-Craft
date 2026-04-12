@@ -26,17 +26,17 @@ model User {
   phone        String? @unique
   passwordHash String
   googleId     String? @unique
-  role Role @default(USER)
+  role         Role    @default(USER)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  cart Cart? 
+  cart Cart?
 
-  orders Order[]
+  orders        Order[]
+  refreshTokens RefreshToken[]
 
   @@map("users")
-  refreshTokens RefreshToken[]
 }
 
 model Cart {
@@ -103,6 +103,7 @@ model Order {
   userId     Int         @map("user_id")
   status     OrderStatus @default(PENDING)
   totalPrice Int         @map("total_price")
+  address    String
   createdAt  DateTime    @default(now()) @map("created_at")
   updatedAt  DateTime    @updatedAt @map("updated_at")
 
@@ -126,15 +127,15 @@ enum OrderStatus {
 model OrderItem {
   id          Int    @id @default(autoincrement())
   orderId     Int    @map("order_id")
-  productId   Int    @map("product_id")
+  productId   Int?   @map("product_id")
   productName String @map("product_name")
 
   quantity Int @default(1)
   price    Int
 
   // Связи
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
@@ -142,16 +143,14 @@ model OrderItem {
 }
 
 model RefreshToken {
-  id           Int      @id @default(autoincrement())
-  tokenHash    String   @unique
-  userId       Int
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  revokedAt    DateTime?
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id        Int       @id @default(autoincrement())
+  tokenHash String    @unique
+  userId    Int
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  revokedAt DateTime?
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   @@index([userId])
 }
-
-
