@@ -51,6 +51,12 @@ export class OrdersService {
       const product = products.find((p) => p.id === item.productId)!;
       return sum + product.price * item.quantity;
     }, 0);
+    const subtotalMinor = totalPrice * 100;
+    const discountTotalMinor = 0;
+    const taxTotalMinor = 0;
+    const deliveryFeeMinor = 0;
+    const finalAmountMinor =
+      subtotalMinor - discountTotalMinor + taxTotalMinor + deliveryFeeMinor;
 
     // 4) Транзакция: создаём заказ + списываем остатки
     return this.prisma.$transaction(async (tx) => {
@@ -81,6 +87,12 @@ export class OrdersService {
           userId: userId ?? undefined,
           address,
           totalPrice,
+          currency: 'RUB',
+          subtotalMinor,
+          discountTotalMinor,
+          taxTotalMinor,
+          deliveryFeeMinor,
+          finalAmountMinor,
           items: {
             create: dto.items.map((item) => {
               const product = products.find((p) => p.id === item.productId)!;
@@ -115,6 +127,12 @@ export class OrdersService {
     return orders.map((order) => ({
       id: order.id,
       totalPrice: order.totalPrice,
+      currency: order.currency,
+      subtotalMinor: order.subtotalMinor,
+      discountTotalMinor: order.discountTotalMinor,
+      taxTotalMinor: order.taxTotalMinor,
+      deliveryFeeMinor: order.deliveryFeeMinor,
+      finalAmountMinor: order.finalAmountMinor,
       status: order.status,
       createdAt: order.createdAt,
       fullName: `${order.user.firstName} ${order.user.lastName}`,

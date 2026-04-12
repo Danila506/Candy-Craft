@@ -99,13 +99,19 @@ model Category {
 }
 
 model Order {
-  id         Int         @id @default(autoincrement())
-  userId     Int         @map("user_id")
-  status     OrderStatus @default(PENDING)
-  totalPrice Int         @map("total_price")
-  address    String
-  createdAt  DateTime    @default(now()) @map("created_at")
-  updatedAt  DateTime    @updatedAt @map("updated_at")
+  id                 Int         @id @default(autoincrement())
+  userId             Int         @map("user_id")
+  status             OrderStatus @default(PENDING)
+  totalPrice         Int         @map("total_price")
+  currency           String      @default("RUB")
+  subtotalMinor      Int         @default(0) @map("subtotal_minor")
+  discountTotalMinor Int         @default(0) @map("discount_total_minor")
+  taxTotalMinor      Int         @default(0) @map("tax_total_minor")
+  deliveryFeeMinor   Int         @default(0) @map("delivery_fee_minor")
+  finalAmountMinor   Int         @default(0) @map("final_amount_minor")
+  address            String
+  createdAt          DateTime    @default(now()) @map("created_at")
+  updatedAt          DateTime    @updatedAt @map("updated_at")
 
   // Связи
   user  User        @relation(fields: [userId], references: [id])

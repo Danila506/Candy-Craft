@@ -157,12 +157,19 @@ async function main() {
 
     if (sampleProducts.length > 0) {
       const totalPrice = sampleProducts.reduce((sum, p) => sum + p.price, 0);
+      const subtotalMinor = totalPrice * 100;
       await prisma.order.create({
         data: {
           userId: testUser.id,
           status: 'PENDING',
           address: 'Тестовый адрес, дом 1',
           totalPrice,
+          currency: 'RUB',
+          subtotalMinor,
+          discountTotalMinor: 0,
+          taxTotalMinor: 0,
+          deliveryFeeMinor: 0,
+          finalAmountMinor: subtotalMinor,
           items: {
             create: sampleProducts.map((p) => ({
               productId: p.id,
