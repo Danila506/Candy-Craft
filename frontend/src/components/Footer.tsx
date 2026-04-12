@@ -36,7 +36,7 @@ export function Footer() {
         <div>
           <h4 className="font-medium mb-3">Contact</h4>
           <p className="text-sm text-gray-600">Email: your@email.com</p>
-          <p className="text-sm text-gray-600">Phone: +972 XX XXX XXXX</p>
+          <p className="text-sm text-gray-600">Phone: +7 XXX XXX-XX-XX</p>
         </div>
       </div>
 

@@ -34,13 +34,48 @@ function cn(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
 }
 
-function moneyILS(value: number) {
-  // у тебя price Int — вероятно это ₪, без агорот
-  return new Intl.NumberFormat("he-IL", {
+function moneyRUB(value: number) {
+  return new Intl.NumberFormat("ru-RU", {
     style: "currency",
-    currency: "ILS",
+    currency: "RUB",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function formatRuPhoneInput(input: string) {
+  const digits = input.replace(/\D/g, "");
+  let local = digits;
+
+  if (local.startsWith("7") || local.startsWith("8")) {
+    local = local.slice(1);
+  }
+  local = local.slice(0, 10);
+
+  if (!local) return "";
+
+  let formatted = "+7";
+  if (local.length > 0) formatted += ` (${local.slice(0, 3)}`;
+  if (local.length >= 3) formatted += ")";
+  if (local.length > 3) formatted += ` ${local.slice(3, 6)}`;
+  if (local.length > 6) formatted += `-${local.slice(6, 8)}`;
+  if (local.length > 8) formatted += `-${local.slice(8, 10)}`;
+
+  return formatted;
+}
+
+function normalizeRuPhone(input: string): string | null {
+  let digits = input.replace(/\D/g, "");
+
+  if (digits.length === 10) digits = `7${digits}`;
+  if (digits.length === 11 && digits.startsWith("8")) {
+    digits = `7${digits.slice(1)}`;
+  }
+
+  if (digits.length === 11 && digits.startsWith("7")) {
+    return `+${digits}`;
+  }
+
+  return null;
 }
 
 function formatDate(iso: string) {
@@ -138,7 +173,7 @@ export default function AccountPage() {
           firstName: data.firstName || "",
           lastName: data.lastName || "",
           email: data.email || "",
-          phone: data.phone || "",
+          phone: formatRuPhoneInput(data.phone || ""),
         });
       } catch (e) {
         if (!alive) return;
@@ -198,7 +233,9 @@ export default function AccountPage() {
   const onProfileChange =
     (key: "firstName" | "lastName" | "phone" | "email") =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setProfile((p) => ({ ...p, [key]: e.target.value }));
+      const nextValue =
+        key === "phone" ? formatRuPhoneInput(e.target.value) : e.target.value;
+      setProfile((p) => ({ ...p, [key]: nextValue }));
       setSaveMsg("");
       if (key === "email") setEmailError("");
     };
@@ -209,7 +246,8 @@ export default function AccountPage() {
     const firstName = profile.firstName.trim();
     const lastName = profile.lastName.trim();
     const email = profile.email.trim();
-    const phone = profile.phone.trim() || undefined;
+    const rawPhone = profile.phone.trim();
+    const phone = rawPhone ? normalizeRuPhone(rawPhone) : undefined;
 
     if (!firstName || !lastName || !email) {
       setSaveMsg("Заполните имя, фамилию и email");
@@ -219,6 +257,10 @@ export default function AccountPage() {
     if (!isValidEmail(email)) {
       setEmailError("Введите корректный email");
       setSaveMsg("Проверьте email");
+      return;
+    }
+    if (rawPhone && !phone) {
+      setSaveMsg("Введите телефон в формате +7 (999) 999-99-99");
       return;
     }
 
@@ -431,7 +473,7 @@ export default function AccountPage() {
 
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium" htmlFor="phone">
-                    Телефон (RU/IL)
+                    Телефон (РФ)
                   </label>
                   <input
                     id="phone"
@@ -440,8 +482,9 @@ export default function AccountPage() {
                     value={profile.phone}
                     onChange={onProfileChange("phone")}
                     className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-rose-100"
-                    placeholder="+7 (999) 999-99-99 или +972 50-123-4567"
+                    placeholder="+7 (999) 999-99-99"
                     autoComplete="tel"
+                    maxLength={18}
                   />
                   <p className="mt-1 text-xs text-gray-500">
                     Можно оставить пустым — будем связываться по email.
@@ -540,7 +583,7 @@ export default function AccountPage() {
                           </span>
                         </td>
                         <td className="py-3 font-semibold">
-                          {moneyILS(o.totalPrice)}
+                          {moneyRUB(o.totalPrice)}
                         </td>
                         <td className="py-3 text-right">
                           {/* если будет страница заказа — включишь */}

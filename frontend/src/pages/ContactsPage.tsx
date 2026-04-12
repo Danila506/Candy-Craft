@@ -20,9 +20,9 @@ export function ContactsPage() {
                 <div className="text-sm text-gray-500">Phone</div>
                 <a
                   className="text-base font-medium hover:underline"
-                  href="tel:+972500000000"
+                  href="tel:+79990000000"
                 >
-                  +972 50-000-00-00
+                  +7 999 000-00-00
                 </a>
                 <div className="mt-1 text-sm text-gray-500">
                   WhatsApp / Calls
@@ -54,7 +54,7 @@ export function ContactsPage() {
               <MapPin className="mt-1" size={20} />
               <div>
                 <div className="text-sm text-gray-500">Location</div>
-                <div className="text-base font-medium">Holon, Israel</div>
+                <div className="text-base font-medium">Москва, Россия</div>
                 <div className="mt-1 text-sm text-gray-500">
                   Самовывоз по договорённости
                 </div>
@@ -67,11 +67,9 @@ export function ContactsPage() {
               <Clock className="mt-1" size={20} />
               <div>
                 <div className="text-sm text-gray-500">Working hours</div>
-                <div className="text-base font-medium">
-                  Sun–Thu: 10:00–19:00
-                </div>
+                <div className="text-base font-medium">Пн–Пт: 10:00–19:00</div>
                 <div className="mt-1 text-sm text-gray-500">
-                  Fri: 10:00–13:00
+                  Сб–Вс: 11:00–16:00
                 </div>
               </div>
             </div>

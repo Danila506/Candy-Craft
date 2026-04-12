@@ -16,10 +16,9 @@ export function formatDate(date: string | Date) {
 }
 
 function formatMoneyRU(value: number) {
-  // Под Израиль обычно ₪ — но если у тебя рубли/доллары, поменяй locale/currency
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
-    currency: "ILS",
+    currency: "RUB",
     maximumFractionDigits: 0,
   }).format(value);
 }

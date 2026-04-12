@@ -130,7 +130,7 @@ export default function ContactPage() {
                   <span className="mt-0.5">📍</span>
                   <div>
                     <div className="text-gray-500">Локация</div>
-                    <div className="font-medium">Израиль</div>
+                    <div className="font-medium">Россия</div>
                   </div>
                 </div>
 
@@ -138,7 +138,7 @@ export default function ContactPage() {
                   <span className="mt-0.5">📞</span>
                   <div>
                     <div className="text-gray-500">Телефон</div>
-                    <div className="font-medium">+972 50-123-4567</div>
+                    <div className="font-medium">+7 999 123-45-67</div>
                     <div className="text-xs text-gray-500">
                       (замени на свой)
                     </div>
@@ -149,7 +149,7 @@ export default function ContactPage() {
                   <span className="mt-0.5">✉️</span>
                   <div>
                     <div className="text-gray-500">Email</div>
-                    <div className="font-medium">hello@candycraft.co</div>
+                    <div className="font-medium">hello@candycraft.ru</div>
                     <div className="text-xs text-gray-500">
                       (замени на свой)
                     </div>
@@ -283,7 +283,7 @@ export default function ContactPage() {
                         ? "border-red-300 focus:ring-red-100"
                         : "border-gray-200 focus:ring-rose-100",
                     )}
-                    placeholder="+972 50-123-4567"
+                    placeholder="+7 (999) 123-45-67"
                     autoComplete="tel"
                   />
                   {errors.phone && (
