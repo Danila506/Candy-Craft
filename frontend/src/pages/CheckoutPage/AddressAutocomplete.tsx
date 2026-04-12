@@ -93,9 +93,9 @@ export function AddressAutocomplete({
       />
 
       {hasList && (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl">
+        <div className="absolute z-50 mt-2 w-full max-h-80 overflow-y-auto custom-scroll rounded-2xl border border-gray-200 bg-white shadow-xl">
           {loading && (
-            <div className="px-4 py-3 text-sm text-gray-500">Ищу адрес…</div>
+            <div className="px-4 py-3 text-sm text-gray-500">Поиск адреса…</div>
           )}
           {!loading &&
             items.map((s, idx) => (

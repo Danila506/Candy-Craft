@@ -4,9 +4,11 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
   Req,
   Res,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
@@ -17,14 +19,15 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 
 function cookieBaseOptions() {
   const isProd = process.env.NODE_ENV === 'production';
   return {
     httpOnly: true as const,
-    secure: true, // prod: true (https)
-    sameSite: 'none' as const, // для большинства случаев ок
-    path: '/', // важно
+    secure: isProd, // ✅ только в проде
+    sameSite: isProd ? ('none' as const) : ('lax' as const), // ✅
+    path: '/',
   };
 }
 
@@ -43,7 +46,8 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   async me(@Req() req: Request) {
     const userId = (req as any).user?.userId as number | undefined;
-    return this.auth.me(userId ?? 0);
+    if (!userId) throw new UnauthorizedException();
+    return this.auth.me(userId);
   }
 
   @Post('register')
@@ -135,5 +139,11 @@ export class AuthController {
     res.clearCookie('refresh_token', { ...cookieBaseOptions() });
 
     return { ok: true };
+  }
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  async updateMe(@Req() req: Request, @Body() dto: UpdateProfileDto) {
+    const userId = (req as any).user?.userId as number | undefined;
+    return this.auth.updateMe(userId ?? 0, dto);
   }
 }

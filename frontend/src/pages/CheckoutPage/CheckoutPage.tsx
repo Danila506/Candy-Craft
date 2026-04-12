@@ -48,14 +48,7 @@ type OrderItemFromCart = {
 };
 
 export type CheckoutFormData = {
-  name: string;
-  phone: string;
-  email: string;
   address: string;
-  apartment: string;
-  entrance: string;
-  floor: string;
-  intercom: string;
 };
 
 export function CheckoutPage() {
@@ -117,7 +110,7 @@ export function CheckoutPage() {
   };
 
   // Проверка готовности к оформлению
-  const isFormValid = formData.name && formData.phone && formData.address;
+  const isFormValid = formData.address;
 
   // Анимация успешного оформления
   const SuccessAnimation = () => (
@@ -193,7 +186,7 @@ export function CheckoutPage() {
   );
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50/30 to-rose-50 relative overflow-hidden">
+    <div className="min-h-screen bg-linear-to-br from-pink-50 via-purple-50/30 to-rose-50 relative">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-pink-200/20 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-200/20 rounded-full blur-3xl animate-pulse delay-1000"></div>
@@ -240,7 +233,7 @@ export function CheckoutPage() {
         {orderConfirmed ? (
           <SuccessAnimation />
         ) : (
-          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl overflow-hidden border border-white/50 relative">
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/50 relative">
             <div className="absolute top-0 left-0 right-0 h-2 bg-linear-to-r from-[#ff398b] via-pink-400 to-purple-400"></div>
             <div className="bg-linear-to-br from-pink-50/80 via-purple-50/50 to-rose-50/80 backdrop-blur-sm p-8 border-b border-pink-100/50">
               <div className="flex items-center justify-between">

@@ -20,7 +20,6 @@ export class SuggestService {
     count = 8,
   ): Promise<DadataSuggestResponse> {
     const apiKey = process.env.DADATA_API_KEY;
-    console.log('apiKey: ' + apiKey);
 
     if (!apiKey) {
       throw new InternalServerErrorException('DADATA_API_KEY is not set');
