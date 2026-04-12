@@ -2,6 +2,7 @@ import { useCart } from "../contexts/CartContext";
 import { useNavigate } from "react-router-dom";
 import { XCircle } from "lucide-react";
 import { ProductList } from "./ProductList";
+import ContactForm from "./ContactForm";
 
 export function Main() {
   const { showAuthWarn, setShowAuthWarn } = useCart();
@@ -61,6 +62,7 @@ export function Main() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-7">
         <ProductList />
       </div>
+      <ContactForm />
     </main>
   );
 }

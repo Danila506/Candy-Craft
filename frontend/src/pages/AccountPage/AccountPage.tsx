@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { http, ApiError } from "../api/http";
-import { useAuth, type Role } from "../contexts/AuthContext";
+import { http, ApiError } from "../../api/http";
+import { useAuth, type Role } from "../../contexts/AuthContext";
 
 type MeDto = {
   id: number;
@@ -52,6 +52,12 @@ function formatDate(iso: string) {
   }).format(d);
 }
 
+function isValidEmail(email: string) {
+  // Достаточно строгая, но без “перелома” UX.
+  // + не даём пробелы и запрещаем двойные @
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
 function statusLabel(s: OrderStatus) {
   switch (s) {
     case "PENDING":
@@ -77,6 +83,7 @@ function RequiredStar() {
 
 export default function AccountPage() {
   const navigate = useNavigate();
+  const [emailError, setEmailError] = useState<string>("");
 
   const [tab, setTab] = useState<Tab>("profile");
 
@@ -96,6 +103,7 @@ export default function AccountPage() {
     firstName: "",
     lastName: "",
     phone: "",
+    email: "",
   });
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState<string>("");
@@ -104,7 +112,12 @@ export default function AccountPage() {
     if (!me) return false;
     const fn = profile.firstName.trim();
     const ln = profile.lastName.trim();
-    return !!fn && !!ln && !saving;
+    const email = profile.email.trim();
+
+    if (!fn || !ln || !email) return false;
+    if (!isValidEmail(email)) return false;
+
+    return !saving;
   }, [profile, saving, me]);
 
   useEffect(() => {
@@ -124,6 +137,7 @@ export default function AccountPage() {
         setProfile({
           firstName: data.firstName || "",
           lastName: data.lastName || "",
+          email: data.email || "",
           phone: data.phone || "",
         });
       } catch (e) {
@@ -160,7 +174,6 @@ export default function AccountPage() {
         const data = await http.get<MyOrderDto[]>(`/orders/${id}`);
         if (!alive) return;
         setOrders(data);
-        console.log(orders);
       } catch (e) {
         if (!alive) return;
 
@@ -180,13 +193,14 @@ export default function AccountPage() {
     return () => {
       alive = false;
     };
-  }, [tab, navigate]);
+  }, [tab, navigate, userId]);
 
   const onProfileChange =
-    (key: "firstName" | "lastName" | "phone") =>
+    (key: "firstName" | "lastName" | "phone" | "email") =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setProfile((p) => ({ ...p, [key]: e.target.value }));
       setSaveMsg("");
+      if (key === "email") setEmailError("");
     };
 
   const saveProfile = async () => {
@@ -194,10 +208,17 @@ export default function AccountPage() {
 
     const firstName = profile.firstName.trim();
     const lastName = profile.lastName.trim();
+    const email = profile.email.trim();
     const phone = profile.phone.trim() || undefined;
 
-    if (!firstName || !lastName) {
-      setSaveMsg("Заполните имя и фамилию");
+    if (!firstName || !lastName || !email) {
+      setSaveMsg("Заполните имя, фамилию и email");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setEmailError("Введите корректный email");
+      setSaveMsg("Проверьте email");
       return;
     }
 
@@ -205,11 +226,11 @@ export default function AccountPage() {
     setSaveMsg("");
 
     try {
-      // 🔁 Подстрой endpoint под себя:
-      // часто: PATCH /users/me
-      const updated = await http.patch<MeDto>("/users/me", {
+      // PATCH профиль текущего пользователя
+      const updated = await http.patch<MeDto>("/auth/me", {
         firstName,
         lastName,
+        email,
         phone,
       });
 
@@ -217,6 +238,7 @@ export default function AccountPage() {
       setProfile({
         firstName: updated.firstName || "",
         lastName: updated.lastName || "",
+        email: updated.email || "",
         phone: updated.phone || "",
       });
       setSaveMsg("Сохранено ✅");
@@ -297,7 +319,6 @@ export default function AccountPage() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="mt-6 flex gap-2">
           <button
             onClick={() => setTab("profile")}
@@ -313,7 +334,6 @@ export default function AccountPage() {
           <button
             onClick={() => {
               setTab("orders");
-              console.log(tab);
             }}
             className={cn(
               "rounded-full px-4 py-2 text-sm border",
@@ -341,7 +361,7 @@ export default function AccountPage() {
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Данные профиля</h3>
                 <span className="text-xs text-gray-500">
-                  Email менять нельзя (пока)
+                  Обновите контакты для уведомлений по заказам
                 </span>
               </div>
 
@@ -376,14 +396,37 @@ export default function AccountPage() {
 
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium" htmlFor="email">
-                    Email
+                    Email <RequiredStar />
                   </label>
+
                   <input
                     id="email"
-                    value={me?.email || ""}
-                    readOnly
-                    className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-gray-600"
+                    type="email"
+                    value={profile.email}
+                    onChange={onProfileChange("email")}
+                    onBlur={() => {
+                      const v = profile.email.trim();
+                      if (!v) {
+                        setEmailError("Введите email");
+                      } else if (!isValidEmail(v)) {
+                        setEmailError("Введите корректный email");
+                      } else {
+                        setEmailError("");
+                      }
+                    }}
+                    className={cn(
+                      "mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2",
+                      emailError
+                        ? "border-red-300 focus:ring-red-100"
+                        : "border-gray-200 focus:ring-rose-100",
+                    )}
+                    autoComplete="email"
+                    placeholder="name@example.com"
                   />
+
+                  {emailError && (
+                    <p className="mt-1 text-xs text-red-600">{emailError}</p>
+                  )}
                 </div>
 
                 <div className="sm:col-span-2">

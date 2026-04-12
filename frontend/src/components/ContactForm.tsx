@@ -1,0 +1,351 @@
+import { useMemo, useState } from "react";
+import { http, ApiError } from "../api/http";
+
+type ContactDto = {
+  name: string;
+  email: string;
+  phone?: string;
+  message: string;
+};
+
+function cn(...cls: Array<string | false | null | undefined>) {
+  return cls.filter(Boolean).join(" ");
+}
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+}
+
+export default function ContactPage() {
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    message: "",
+  });
+
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof ContactDto, string>>
+  >({});
+
+  const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
+  const [serverError, setServerError] = useState<string>("");
+
+  const setField =
+    (key: keyof typeof form) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const value = e.target.value;
+      setForm((p) => ({ ...p, [key]: value }));
+      setServerError("");
+      setErrors((prev) => ({ ...prev, [key]: "" }));
+    };
+
+  const validate = () => {
+    const e: Partial<Record<keyof ContactDto, string>> = {};
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const message = form.message.trim();
+    const phone = form.phone.trim();
+
+    if (!name) e.name = "Введите имя";
+    if (!email) e.email = "Введите email";
+    else if (!isValidEmail(email)) e.email = "Введите корректный email";
+    if (!message) e.message = "Напишите сообщение";
+
+    // телефон опциональный — но если ввели, делаем мягкую проверку на длину
+    if (phone && phone.replace(/[^\d]/g, "").length < 7) {
+      e.phone = "Похоже, телефон слишком короткий";
+    }
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const canSubmit = useMemo(() => {
+    if (status === "loading") return false;
+    const name = form.name.trim();
+    const email = form.email.trim();
+    const message = form.message.trim();
+    if (!name || !email || !message) return false;
+    if (!isValidEmail(email)) return false;
+    return true;
+  }, [form, status]);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+
+    setStatus("loading");
+    setServerError("");
+
+    try {
+      const payload: ContactDto = {
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || undefined,
+        message: form.message.trim(),
+      };
+
+      await http.post<void>("/contact", payload);
+
+      setStatus("success");
+      setForm({ name: "", email: "", phone: "", message: "" });
+      setErrors({});
+    } catch (err) {
+      setStatus("idle");
+      setServerError(
+        err instanceof ApiError
+          ? err.message
+          : "Не удалось отправить сообщение. Попробуйте ещё раз.",
+      );
+    }
+  };
+
+  return (
+    <section className="pt-24 mx-auto max-w-5xl px-4">
+      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-2">
+          {/* Left: info */}
+          <div className="relative p-6 sm:p-8">
+            {/* soft gradient */}
+            <div className="pointer-events-none absolute inset-0 bg-linear-to-br from-rose-50 via-white to-amber-50" />
+
+            <div className="relative">
+              <div className="inline-flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-semibold">
+                  Свяжитесь с нами
+                </h1>
+                <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
+                  Candy Craft 🍰
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm text-gray-600">
+                Вопрос, индивидуальный заказ или сотрудничество — напишите,
+                ответим быстро 💬
+              </p>
+
+              <div className="mt-6 space-y-3 text-sm">
+                <div className="flex items-start gap-3 rounded-xl bg-white/70 border border-gray-100 p-3">
+                  <span className="mt-0.5">📍</span>
+                  <div>
+                    <div className="text-gray-500">Локация</div>
+                    <div className="font-medium">Израиль</div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 rounded-xl bg-white/70 border border-gray-100 p-3">
+                  <span className="mt-0.5">📞</span>
+                  <div>
+                    <div className="text-gray-500">Телефон</div>
+                    <div className="font-medium">+972 50-123-4567</div>
+                    <div className="text-xs text-gray-500">
+                      (замени на свой)
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 rounded-xl bg-white/70 border border-gray-100 p-3">
+                  <span className="mt-0.5">✉️</span>
+                  <div>
+                    <div className="text-gray-500">Email</div>
+                    <div className="font-medium">hello@candycraft.co</div>
+                    <div className="text-xs text-gray-500">
+                      (замени на свой)
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 rounded-xl bg-white/70 border border-gray-100 p-3">
+                  <span className="mt-0.5">📷</span>
+                  <div>
+                    <div className="text-gray-500">Instagram</div>
+                    <div className="font-medium">@candycraft</div>
+                    <div className="text-xs text-gray-500">
+                      (замени на свой)
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 rounded-xl bg-white/70 border border-gray-100 p-4">
+                <div className="text-sm font-medium">Время ответа</div>
+                <p className="mt-1 text-sm text-gray-600">
+                  Обычно отвечаем в течение 24 часов.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: form */}
+          <div className="p-6 sm:p-8 border-t lg:border-t-0 lg:border-l border-gray-100">
+            {status === "success" ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+                <div className="text-lg font-semibold text-emerald-800">
+                  Спасибо! Сообщение отправлено ✅
+                </div>
+                <p className="mt-2 text-sm text-emerald-800/80">
+                  Мы свяжемся с вами как можно скорее.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setStatus("idle")}
+                  className="mt-5 rounded-lg bg-gray-900 px-4 py-2.5 text-sm text-white hover:bg-black"
+                >
+                  Отправить ещё одно
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={onSubmit} className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium" htmlFor="name">
+                    Ваше имя <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    id="name"
+                    value={form.name}
+                    onChange={setField("name")}
+                    onBlur={() => {
+                      if (!form.name.trim()) {
+                        setErrors((p) => ({ ...p, name: "Введите имя" }));
+                      }
+                    }}
+                    className={cn(
+                      "mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2",
+                      errors.name
+                        ? "border-red-300 focus:ring-red-100"
+                        : "border-gray-200 focus:ring-rose-100",
+                    )}
+                    placeholder="Никита"
+                    autoComplete="name"
+                  />
+                  {errors.name && (
+                    <p className="mt-1 text-xs text-red-600">{errors.name}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium" htmlFor="email">
+                    Email <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={form.email}
+                    onChange={setField("email")}
+                    onBlur={() => {
+                      const v = form.email.trim();
+                      if (!v)
+                        setErrors((p) => ({ ...p, email: "Введите email" }));
+                      else if (!isValidEmail(v))
+                        setErrors((p) => ({
+                          ...p,
+                          email: "Введите корректный email",
+                        }));
+                    }}
+                    className={cn(
+                      "mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2",
+                      errors.email
+                        ? "border-red-300 focus:ring-red-100"
+                        : "border-gray-200 focus:ring-rose-100",
+                    )}
+                    placeholder="name@example.com"
+                    autoComplete="email"
+                  />
+                  {errors.email && (
+                    <p className="mt-1 text-xs text-red-600">{errors.email}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium" htmlFor="phone">
+                    Телефон (опционально)
+                  </label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    inputMode="tel"
+                    value={form.phone}
+                    onChange={setField("phone")}
+                    onBlur={() => {
+                      const digits = form.phone.replace(/[^\d]/g, "");
+                      if (form.phone.trim() && digits.length < 7) {
+                        setErrors((p) => ({
+                          ...p,
+                          phone: "Похоже, телефон слишком короткий",
+                        }));
+                      }
+                    }}
+                    className={cn(
+                      "mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2",
+                      errors.phone
+                        ? "border-red-300 focus:ring-red-100"
+                        : "border-gray-200 focus:ring-rose-100",
+                    )}
+                    placeholder="+972 50-123-4567"
+                    autoComplete="tel"
+                  />
+                  {errors.phone && (
+                    <p className="mt-1 text-xs text-red-600">{errors.phone}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium" htmlFor="message">
+                    Сообщение <span className="text-red-600">*</span>
+                  </label>
+                  <textarea
+                    id="message"
+                    rows={5}
+                    value={form.message}
+                    onChange={setField("message")}
+                    onBlur={() => {
+                      if (!form.message.trim()) {
+                        setErrors((p) => ({
+                          ...p,
+                          message: "Напишите сообщение",
+                        }));
+                      }
+                    }}
+                    className={cn(
+                      "mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 resize-none",
+                      errors.message
+                        ? "border-red-300 focus:ring-red-100"
+                        : "border-gray-200 focus:ring-rose-100",
+                    )}
+                    placeholder="Например: хочу торт на день рождения, 19.5 см, на 25 человек…"
+                  />
+                  {errors.message && (
+                    <p className="mt-1 text-xs text-red-600">
+                      {errors.message}
+                    </p>
+                  )}
+                </div>
+
+                {serverError && (
+                  <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                    {serverError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={!canSubmit}
+                  className="w-full rounded-lg bg-rose-500 px-4 py-3 text-sm font-medium text-white hover:bg-rose-600 disabled:opacity-50"
+                >
+                  {status === "loading" ? "Отправляю..." : "Отправить 🍰"}
+                </button>
+
+                <p className="text-xs text-gray-500">
+                  Нажимая “Отправить”, вы соглашаетесь на обработку данных для
+                  ответа на запрос.
+                </p>
+              </form>
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}

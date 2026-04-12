@@ -21,7 +21,7 @@ import { CategoriesAdmin } from "./admin/pages/CategoriesAdmin";
 import { CategoryProvider } from "./contexts/CategoryContext";
 import { LoginPage } from "./pages/Auth/LoginPage";
 import { AuthProvider } from "./contexts/AuthContext";
-import AccountPage from "./pages/AccountPage";
+import AccountPage from "./pages/AccountPage/AccountPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { DeliveryPayment } from "./pages/DeliveryPage";
 
