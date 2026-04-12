@@ -8,6 +8,26 @@ import { UpdateOrderDto } from './dto/update-order.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Order, Prisma } from '@prisma/client';
 import { OrderStatus } from '@prisma/client';
+import { normalizeRuPhone } from 'src/utils/phone';
+
+function cleanText(value?: string) {
+  const v = value?.trim();
+  return v ? v : null;
+}
+
+function buildStructuredAddress(dto: CreateOrderDto): string | null {
+  const parts = [
+    cleanText(dto.city),
+    cleanText(dto.street),
+    cleanText(dto.house) ? `д. ${cleanText(dto.house)}` : null,
+    cleanText(dto.apartment) ? `кв. ${cleanText(dto.apartment)}` : null,
+    cleanText(dto.entrance) ? `подъезд ${cleanText(dto.entrance)}` : null,
+    cleanText(dto.floor) ? `этаж ${cleanText(dto.floor)}` : null,
+  ].filter(Boolean);
+
+  if (!parts.length) return null;
+  return parts.join(', ');
+}
 
 @Injectable()
 export class OrdersService {
@@ -17,9 +37,15 @@ export class OrdersService {
     if (!dto.items?.length) {
       throw new BadRequestException('Корзина пустая');
     }
-    const address = dto.address?.trim();
+    const address = cleanText(dto.address) ?? buildStructuredAddress(dto);
     if (!address) {
       throw new BadRequestException('Адрес обязателен');
+    }
+    const recipientPhone = cleanText(dto.phone)
+      ? normalizeRuPhone(dto.phone)
+      : null;
+    if (dto.phone && !recipientPhone) {
+      throw new BadRequestException('Некорректный номер телефона получателя');
     }
 
     // 1) Берём продукты из БД
@@ -114,6 +140,24 @@ export class OrdersService {
           toStatus: order.status,
           reason: 'Order created',
           changedByUserId: userId ?? null,
+        },
+      });
+      await (tx as any).orderAddress.create({
+        data: {
+          orderId: order.id,
+          country: cleanText(dto.country) ?? 'Россия',
+          city: cleanText(dto.city),
+          street: cleanText(dto.street),
+          house: cleanText(dto.house),
+          apartment: cleanText(dto.apartment),
+          entrance: cleanText(dto.entrance),
+          floor: cleanText(dto.floor),
+          intercom: cleanText(dto.intercom),
+          postalCode: cleanText(dto.postalCode),
+          comment: cleanText(dto.comment),
+          recipientName: cleanText(dto.fullName),
+          recipientPhone,
+          fullAddress: address,
         },
       });
 
