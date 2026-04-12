@@ -17,6 +17,10 @@ export class OrdersService {
     if (!dto.items?.length) {
       throw new BadRequestException('Корзина пустая');
     }
+    const address = dto.address?.trim();
+    if (!address) {
+      throw new BadRequestException('Адрес обязателен');
+    }
 
     // 1) Берём продукты из БД
     const productIds = dto.items.map((i) => i.productId);
@@ -75,7 +79,7 @@ export class OrdersService {
       const order = await tx.order.create({
         data: {
           userId: userId ?? undefined,
-
+          address,
           totalPrice,
           items: {
             create: dto.items.map((item) => {
