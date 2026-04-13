@@ -34,10 +34,39 @@ model User {
   cart Cart?
 
   orders        Order[]
+  addresses     UserAddress[]
   orderStatusChanges OrderStatusHistory[] @relation("OrderStatusChangedBy")
   refreshTokens RefreshToken[]
 
   @@map("users")
+}
+
+model UserAddress {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @map("user_id")
+  label          String?
+  country        String   @default("Россия")
+  city           String?
+  street         String?
+  house          String?
+  apartment      String?
+  entrance       String?
+  floor          String?
+  intercom       String?
+  postalCode     String?  @map("postal_code")
+  comment        String?
+  recipientName  String?  @map("recipient_name")
+  recipientPhone String?  @map("recipient_phone")
+  fullAddress    String   @map("full_address")
+  isDefault      Boolean  @default(false) @map("is_default")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, isDefault])
+  @@map("user_addresses")
 }
 
 model Cart {

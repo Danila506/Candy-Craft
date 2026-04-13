@@ -161,6 +161,55 @@ export class OrdersService {
         },
       });
 
+      if (userId) {
+        const existingUserAddress = await (tx as any).userAddress.findFirst({
+          where: {
+            userId,
+            fullAddress: address,
+          },
+          select: { id: true },
+        });
+
+        if (existingUserAddress) {
+          await (tx as any).userAddress.update({
+            where: { id: existingUserAddress.id },
+            data: {
+              city: cleanText(dto.city),
+              street: cleanText(dto.street),
+              house: cleanText(dto.house),
+              apartment: cleanText(dto.apartment),
+              entrance: cleanText(dto.entrance),
+              floor: cleanText(dto.floor),
+              intercom: cleanText(dto.intercom),
+              postalCode: cleanText(dto.postalCode),
+              comment: cleanText(dto.comment),
+              recipientName: cleanText(dto.fullName),
+              recipientPhone,
+            },
+          });
+        } else {
+          await (tx as any).userAddress.create({
+            data: {
+              userId,
+              country: cleanText(dto.country) ?? 'Россия',
+              city: cleanText(dto.city),
+              street: cleanText(dto.street),
+              house: cleanText(dto.house),
+              apartment: cleanText(dto.apartment),
+              entrance: cleanText(dto.entrance),
+              floor: cleanText(dto.floor),
+              intercom: cleanText(dto.intercom),
+              postalCode: cleanText(dto.postalCode),
+              comment: cleanText(dto.comment),
+              recipientName: cleanText(dto.fullName),
+              recipientPhone,
+              fullAddress: address,
+              isDefault: false,
+            },
+          });
+        }
+      }
+
       return order;
     });
   }

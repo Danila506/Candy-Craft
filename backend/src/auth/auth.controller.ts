@@ -1,9 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
+  Param,
+  ParseIntPipe,
   Patch,
   Post,
   Req,
@@ -20,6 +23,8 @@ import { Roles } from './decorators/roles.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CreateUserAddressDto } from './dto/create-user-address.dto';
+import { UpdateUserAddressDto } from './dto/update-user-address.dto';
 
 function cookieBaseOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -145,5 +150,47 @@ export class AuthController {
   async updateMe(@Req() req: Request, @Body() dto: UpdateProfileDto) {
     const userId = (req as any).user?.userId as number | undefined;
     return this.auth.updateMe(userId ?? 0, dto);
+  }
+
+  @Get('me/addresses')
+  @UseGuards(JwtAuthGuard)
+  async getMyAddresses(@Req() req: Request) {
+    const userId = (req as any).user?.userId as number | undefined;
+    if (!userId) throw new UnauthorizedException();
+    return this.auth.listMyAddresses(userId);
+  }
+
+  @Post('me/addresses')
+  @UseGuards(JwtAuthGuard)
+  async createMyAddress(
+    @Req() req: Request,
+    @Body() dto: CreateUserAddressDto,
+  ) {
+    const userId = (req as any).user?.userId as number | undefined;
+    if (!userId) throw new UnauthorizedException();
+    return this.auth.createMyAddress(userId, dto);
+  }
+
+  @Patch('me/addresses/:addressId')
+  @UseGuards(JwtAuthGuard)
+  async updateMyAddress(
+    @Req() req: Request,
+    @Param('addressId', ParseIntPipe) addressId: number,
+    @Body() dto: UpdateUserAddressDto,
+  ) {
+    const userId = (req as any).user?.userId as number | undefined;
+    if (!userId) throw new UnauthorizedException();
+    return this.auth.updateMyAddress(userId, addressId, dto);
+  }
+
+  @Delete('me/addresses/:addressId')
+  @UseGuards(JwtAuthGuard)
+  async deleteMyAddress(
+    @Req() req: Request,
+    @Param('addressId', ParseIntPipe) addressId: number,
+  ) {
+    const userId = (req as any).user?.userId as number | undefined;
+    if (!userId) throw new UnauthorizedException();
+    return this.auth.deleteMyAddress(userId, addressId);
   }
 }
