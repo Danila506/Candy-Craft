@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
 import Header from "./components/header/Header";
 import { Main } from "./components/Main";
 import { Cart } from "./pages/CartPage";
@@ -24,6 +24,26 @@ import { AuthProvider } from "./contexts/AuthContext";
 import AccountPage from "./pages/AccountPage/AccountPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { DeliveryPayment } from "./pages/DeliveryPage";
+import { PaymentResultPage } from "./pages/PaymentResultPage";
+
+function PublicLayout() {
+  return (
+    <>
+      <Header />
+      <Outlet />
+      <Footer />
+    </>
+  );
+}
+
+function HeaderOnlyLayout() {
+  return (
+    <>
+      <Header />
+      <Outlet />
+    </>
+  );
+}
 
 function App() {
   return (
@@ -32,72 +52,21 @@ function App() {
         <CartProvider>
           <BrowserRouter>
             <Routes>
-              <Route
-                path="/*"
-                element={
-                  <>
-                    <Header />
-                    <Routes>
-                      <Route path="/" element={<Main />} />
-                    </Routes>
-                    <Footer />
-                  </>
-                }
-              />
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<Main />} />
+                <Route path="/product/:id" element={<ProductPage />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/account" element={<AccountPage />} />
+                <Route path="/delivery" element={<DeliveryPayment />} />
+                <Route path="/contacts" element={<ContactsPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/payment/result" element={<PaymentResultPage />} />
+              </Route>
 
-              <Route
-                path="/product/:id"
-                element={
-                  <>
-                    <Header />
-                    <ProductPage />
-                  </>
-                }
-              />
-
-              <Route
-                path="/cart"
-                element={
-                  <>
-                    <Cart />
-                  </>
-                }
-              />
-              <Route
-                path="/account"
-                element={
-                  <>
-                    <AccountPage />
-                  </>
-                }
-              />
-              <Route
-                path="/account/login"
-                element={
-                  <>
-                    <Header />
-                    <LoginPage />
-                  </>
-                }
-              />
-              <Route
-                path="/account/register"
-                element={
-                  <>
-                    <Header />
-                    <RegisterPage />
-                  </>
-                }
-              />
-              <Route
-                path="/delivery"
-                element={
-                  <>
-                    <Header />
-                    <DeliveryPayment />
-                  </>
-                }
-              />
+              <Route element={<HeaderOnlyLayout />}>
+                <Route path="/account/login" element={<LoginPage />} />
+                <Route path="/account/register" element={<RegisterPage />} />
+              </Route>
 
               <Route
                 path="/checkout"
@@ -109,25 +78,7 @@ function App() {
                   </OrderProvider>
                 }
               />
-              <Route
-                path="/contacts"
-                element={
-                  <>
-                    <Header />
-                    <ContactsPage />
-                  </>
-                }
-              />
-              <Route
-                path="/privacy"
-                element={
-                  <>
-                    <PrivacyPage />
-                  </>
-                }
-              />
 
-              {/* === АДМИН-СТРАНИЦЫ (БЕЗ Header и Footer) === */}
               <Route
                 path="/admin"
                 element={

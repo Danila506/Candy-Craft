@@ -62,7 +62,7 @@ export function CheckoutProvider({ children }: { children: React.ReactNode }) {
   const { cartItems } = useCart();
 
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.inStock,
+    (sum, item) => sum + item.price * item.quantity,
     0,
   );
 

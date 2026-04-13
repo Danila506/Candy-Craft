@@ -6,17 +6,18 @@ import {
   type ReactNode,
 } from "react";
 import type { CartType } from "../types/CartType";
-import { API_URL } from "../api/config";
+import { http } from "../api/http";
 import { useAuth } from "./AuthContext";
 
 interface CartContextType {
   cartCount: number;
-  cartItems: CartType[]; // Добавляем массив товаров
+  cartItems: CartType[];
   refreshCart: () => void;
-  isItemInCart: (productId: number) => boolean; // Функция проверки
+  isItemInCart: (productId: number) => boolean;
   clearCart: () => void;
   addToCart: (productId: number) => Promise<void>;
-  removeItem: (itemId: number) => Promise<void>;
+  removeItem: (productId: number) => Promise<void>;
+  updateItemQuantity: (productId: number, quantity: number) => Promise<void>;
   showAuthWarn: boolean;
   setShowAuthWarn: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -26,7 +27,7 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 export const CartProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [cartItems, setCartItems] = useState<CartType[]>([]); // Сохраняем товары
+  const [cartItems, setCartItems] = useState<CartType[]>([]);
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const { user } = useAuth();
   const userId = user?.id;
@@ -36,15 +37,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   const fetchCartItems = async () => {
     if (!userId) {
       setCartItems([]);
-
       return;
     }
     try {
-      const response = await fetch(`${API_URL}/cart/${userId}`, {
-        credentials: "include",
-      });
-      const data: CartType[] = await response.json();
-      setCartItems(data); // Сохраняем ВЕСЬ массив товаров
+      const data = await http.get<CartType[]>(`/cart/${userId}`);
+      setCartItems(data ?? []);
     } catch (error) {
       console.error("Ошибка загрузки корзины: ", error);
     }
@@ -53,12 +50,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
   const clearCart = async () => {
     try {
       if (!userId) return;
-
-      const res = await fetch(`${API_URL}/cart/${userId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error("Не удалось очистить корзину");
+      await http.del(`/cart/${userId}`);
       setCartItems([]);
     } catch (err) {
       console.error(err);
@@ -79,20 +71,12 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
         throw new Error("Пользователь не авторизован");
       }
 
-      const response = await fetch(`${API_URL}/cart/${userId}/items`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ productId }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "Ошибка сервера");
-        throw new Error(`Ошибка ${response.status}: ${errorText}`);
-      }
-
-      const data: { item: CartType } = await response.json();
-      console.log(data);
+      const data = await http.post<{ item: CartType }>(
+        `/cart/${userId}/items`,
+        {
+          productId,
+        },
+      );
       setCartItems((prevItems) => {
         const existingIndex = prevItems.findIndex(
           (item) => item.id === data.item.id,
@@ -111,15 +95,26 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const updateItemQuantity = async (productId: number, quantity: number) => {
+    try {
+      if (!userId) return;
+      await http.patch(`/cart/${userId}/items/${productId}`, {
+        quantity,
+      });
+      await fetchCartItems();
+    } catch (error) {
+      console.error("Ошибка обновления количества:", error);
+      throw error;
+    }
+  };
+
   const removeItem = async (productId: number) => {
     try {
       if (!userId) return;
-
-      await fetch(`${API_URL}/cart/${userId}/items/${productId}`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      refreshCart();
+      await http.del(`/cart/${userId}/items/${productId}`);
+      setCartItems((prev) =>
+        prev.filter((item) => item.productId !== productId),
+      );
     } catch (error) {
       console.error("Ошибка удаления:", error);
     }
@@ -137,6 +132,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     clearCart,
     addToCart,
     removeItem,
+    updateItemQuantity,
     showAuthWarn,
     setShowAuthWarn,
   };

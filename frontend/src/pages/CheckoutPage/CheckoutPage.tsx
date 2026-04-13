@@ -11,9 +11,9 @@ import {
   RefreshCw,
   ArrowLeft,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import confetti from "canvas-confetti";
-import { useOrders } from "../../admin/context/OrderContext";
+import { http, ApiError } from "../../api/http";
 
 import { Step1 } from "./Step1";
 import { useCheckout } from "../../contexts/CheckoutContext";
@@ -41,42 +41,17 @@ export interface GiftOption {
   available: boolean;
 }
 
-type OrderItemFromCart = {
-  productId: number;
-  quantity: number;
-  price: number;
-};
-
-export type CheckoutFormData = {
-  address: string;
-};
-
 export function CheckoutPage() {
-  const { cartCount, refreshCart, clearCart } = useCart();
+  const { cartCount, refreshCart, clearCart, cartItems } = useCart();
 
   const [step, setStep] = useState(1);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   const { selectedDelivery, totalAmount } = useCheckout();
   const [isAnimating, setIsAnimating] = useState(false);
-  const { createOrder } = useOrders();
+  const [submitError, setSubmitError] = useState("");
+  const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
   const { user } = useAuth();
   const userId = user?.id;
-
-  const location = useLocation();
-  const orderItems = (location.state?.orderItems as OrderItemFromCart[]) || [];
-
-  const handleCreateOrder = () => {
-    // здесь ты вызываешь createOrder, например:
-    createOrder({
-      userId: userId!, // берём текущего пользователя
-      items: orderItems.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-      })),
-    });
-    clearCart();
-    refreshCart();
-  };
 
   const { formData } = useCheckout();
 
@@ -90,23 +65,65 @@ export function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    setSubmitError("");
     if (!selectedDelivery) {
-      alert("Выберите способ доставки");
+      setSubmitError("Выберите способ доставки");
+      return;
+    }
+    if (!userId) {
+      setSubmitError("Нужно войти в аккаунт перед оплатой");
+      return;
+    }
+    if (!cartItems.length) {
+      setSubmitError("Корзина пуста");
       return;
     }
 
     setIsAnimating(true);
+    try {
+      const createdOrder = await http.post<{ id: number }>(
+        `/orders/${userId}`,
+        {
+          fullName: formData.name,
+          phone: formData.phone,
+          address: formData.address,
+          apartment: formData.apartment,
+          entrance: formData.entrance,
+          floor: formData.floor,
+          intercom: formData.intercom,
+          items: cartItems.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        },
+      );
+      setCreatedOrderId(createdOrder.id);
 
-    setTimeout(() => {
-      launchConfetti();
-      setOrderConfirmed(true);
-      setIsAnimating(false);
+      const payment = await http.post<{
+        confirmationUrl?: string | null;
+        status: string;
+      }>(`/payments/orders/${createdOrder.id}/yookassa`);
 
-      // Очистка корзины после оформления
-      setTimeout(() => {
+      if (payment.confirmationUrl) {
+        window.location.href = payment.confirmationUrl;
+        return;
+      }
+
+      if (payment.status === "SUCCEEDED") {
+        launchConfetti();
+        setOrderConfirmed(true);
+        clearCart();
         refreshCart();
-      }, 2000);
-    }, 1500);
+      } else {
+        setSubmitError("Платеж создан, но ссылка на оплату не получена");
+      }
+    } catch (e) {
+      setSubmitError(
+        e instanceof ApiError ? e.message : "Не удалось создать заказ/платеж",
+      );
+    } finally {
+      setIsAnimating(false);
+    }
   };
 
   // Проверка готовности к оформлению
@@ -137,7 +154,7 @@ export function CheckoutPage() {
       <div className="space-y-8 max-w-2xl mx-auto">
         <div className="p-6 bg-linear-to-r from-green-50/80 via-emerald-50/80 to-teal-50/80 backdrop-blur-sm rounded-2xl border-2 border-green-200/50 shadow-xl">
           <div className="font-bold text-2xl text-green-800 mb-3">
-            Номер заказа: #{Math.floor(Math.random() * 10000) + 1000}
+            Номер заказа: #{createdOrderId ?? "—"}
           </div>
           <p className="text-green-700 text-lg">
             Ожидайте звонка от нашего курьера в течение 30 минут
@@ -319,10 +336,7 @@ export function CheckoutPage() {
                       </>
                     ) : (
                       <>
-                        <div
-                          onClick={() => handleCreateOrder()}
-                          className="flex flex-col items-center gap-1 relative z-10"
-                        >
+                        <div className="flex flex-col items-center gap-1 relative z-10">
                           <span className="flex items-center gap-2">
                             <Sparkles className="w-6 h-6" />
                             Завершить заказ
@@ -336,6 +350,11 @@ export function CheckoutPage() {
                   </button>
                 )}
               </div>
+              {submitError && (
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {submitError}
+                </div>
+              )}
             </div>
           </div>
         )}

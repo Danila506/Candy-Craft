@@ -64,12 +64,14 @@ export class CartController {
   // Обновить количество товара в корзине
   @Patch(':userId/items/:productId')
   updateCartItem(
+    @Req() req: Request,
     @Param('userId', ParseIntPipe) userId: number,
     @Param('productId', ParseIntPipe) productId: number,
     @Body() updateCartItemDto: UpdateCartItemDto,
   ) {
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
     return this.cartService.updateCartItem(
-      userId,
+      authorizedUserId,
       productId,
       updateCartItemDto.quantity,
     );
