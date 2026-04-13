@@ -7,9 +7,21 @@ import { OrderModal } from "../components/OrderModal"; // модальное о�
 import type { Order, OrderItem } from "../../types/OrderType";
 import { OrderStatusLabels } from "../../types/OrderType";
 
+function formatOrderAmount(order: Order) {
+  if (typeof order.finalAmountMinor !== "number") return "—";
+  const currency = order.currency || "RUB";
+  const minor = order.finalAmountMinor;
+
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(minor / 100);
+}
+
 export function OrdersAdmin() {
   const { orders, updateOrder, deleteOrder } = useOrders();
-  console.log(orders);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
@@ -60,7 +72,7 @@ export function OrdersAdmin() {
                     ]
                   }
                 </td>
-                <td className="px-6 py-4">{order.totalPrice} ₽</td>
+                <td className="px-6 py-4">{formatOrderAmount(order)}</td>
                 <td className="px-6 py-4">
                   <ul>
                     {order.items?.map((item: OrderItem) => (

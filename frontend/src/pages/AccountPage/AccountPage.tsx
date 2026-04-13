@@ -24,7 +24,8 @@ type OrderStatus =
 type MyOrderDto = {
   id: number;
   status: OrderStatus;
-  totalPrice: number;
+  currency?: string;
+  finalAmountMinor?: number;
   createdAt: string;
 };
 
@@ -34,12 +35,17 @@ function cn(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
 }
 
-function moneyRUB(value: number) {
+function formatOrderAmount(order: MyOrderDto) {
+  if (typeof order.finalAmountMinor !== "number") return "—";
+  const currency = order.currency || "RUB";
+  const amountMinor = order.finalAmountMinor;
+
   return new Intl.NumberFormat("ru-RU", {
     style: "currency",
-    currency: "RUB",
-    maximumFractionDigits: 0,
-  }).format(value);
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amountMinor / 100);
 }
 
 function formatRuPhoneInput(input: string) {
@@ -583,7 +589,7 @@ export default function AccountPage() {
                           </span>
                         </td>
                         <td className="py-3 font-semibold">
-                          {moneyRUB(o.totalPrice)}
+                          {formatOrderAmount(o)}
                         </td>
                         <td className="py-3 text-right">
                           {/* если будет страница заказа — включишь */}

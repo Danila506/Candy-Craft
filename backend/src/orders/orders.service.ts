@@ -62,8 +62,7 @@ export class OrdersService {
         quantity: true,
       },
     });
-    const sourceItems =
-      dto.items && dto.items.length > 0 ? dto.items : cartSnapshotItems;
+    const sourceItems = cartSnapshotItems;
     if (!sourceItems.length) {
       throw new BadRequestException('Корзина пуста');
     }
@@ -130,7 +129,12 @@ export class OrdersService {
     if (finalAmountMinor <= 0) {
       throw new BadRequestException('Сумма заказа должна быть больше нуля');
     }
-    const totalPrice = Math.round(finalAmountMinor / 100);
+    if (finalAmountMinor % 100 !== 0) {
+      throw new BadRequestException(
+        'Некорректная сумма заказа: finalAmountMinor должен быть кратен 100',
+      );
+    }
+    const totalPrice = finalAmountMinor / 100;
     const currency = cleanText(dto.currency)?.toUpperCase() || 'RUB';
 
     // 4) Транзакция: создаём заказ + резервируем остатки
@@ -316,6 +320,8 @@ export class OrdersService {
       select: {
         status: true,
         totalPrice: true,
+        currency: true,
+        finalAmountMinor: true,
         createdAt: true,
         id: true,
         publicOrderNumber: true,
@@ -352,25 +358,43 @@ export class OrdersService {
         });
 
         // Потом создаём новые
-        data.items = {
-          create: await Promise.all(
-            dto.items.map(async (i) => {
-              const product = await tx.product.findUnique({
-                where: { id: i.productId },
-              });
-              if (!product)
-                throw new NotFoundException(
-                  `Product #${i.productId} not found`,
-                );
+        const nextItems = await Promise.all(
+          dto.items.map(async (i) => {
+            const product = await tx.product.findUnique({
+              where: { id: i.productId },
+            });
+            if (!product)
+              throw new NotFoundException(`Product #${i.productId} not found`);
 
-              return {
-                product: { connect: { id: i.productId } },
-                productName: product.name,
-                quantity: i.quantity,
-                price: product.price,
-              };
-            }),
-          ),
+            return {
+              product: { connect: { id: i.productId } },
+              productName: product.name,
+              quantity: i.quantity,
+              price: product.price,
+            };
+          }),
+        );
+        const subtotalMinor = nextItems.reduce(
+          (sum, item) => sum + item.price * item.quantity * 100,
+          0,
+        );
+        const finalAmountMinor =
+          subtotalMinor -
+          (order.discountTotalMinor ?? 0) +
+          (order.taxTotalMinor ?? 0) +
+          (order.deliveryFeeMinor ?? 0) +
+          ((order as any).giftTotalMinor ?? 0);
+        if (finalAmountMinor <= 0 || finalAmountMinor % 100 !== 0) {
+          throw new BadRequestException(
+            'Некорректная итоговая сумма после обновления состава заказа',
+          );
+        }
+        data.subtotalMinor = subtotalMinor;
+        data.finalAmountMinor = finalAmountMinor;
+        data.totalPrice = finalAmountMinor / 100;
+
+        data.items = {
+          create: nextItems,
         };
       }
 
