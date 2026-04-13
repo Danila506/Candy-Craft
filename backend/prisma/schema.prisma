@@ -118,10 +118,81 @@ model Order {
   user  User        @relation(fields: [userId], references: [id])
   items OrderItem[]
   orderAddress OrderAddress?
+  payments Payment[]
   statusHistory OrderStatusHistory[]
 
   @@index([userId])
   @@map("orders")
+}
+
+enum PaymentProvider {
+  YOOKASSA
+}
+
+enum PaymentStatus {
+  PENDING
+  WAITING_FOR_CAPTURE
+  SUCCEEDED
+  CANCELED
+  FAILED
+}
+
+model Payment {
+  id                Int             @id @default(autoincrement())
+  orderId           Int             @map("order_id")
+  provider          PaymentProvider
+  status            PaymentStatus   @default(PENDING)
+  amountMinor       Int             @map("amount_minor")
+  currency          String
+  providerPaymentId String?         @unique @map("provider_payment_id")
+  idempotencyKey    String?         @unique @map("idempotency_key")
+  confirmationUrl   String?         @map("confirmation_url")
+  paidAt            DateTime?       @map("paid_at")
+  createdAt         DateTime        @default(now()) @map("created_at")
+  updatedAt         DateTime        @updatedAt @map("updated_at")
+
+  order         Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  attempts      PaymentAttempt[]
+  webhookEvents PaymentWebhookEvent[]
+
+  @@index([orderId])
+  @@index([status])
+  @@map("payments")
+}
+
+model PaymentAttempt {
+  id              Int      @id @default(autoincrement())
+  paymentId       Int      @map("payment_id")
+  requestPayload  Json?    @map("request_payload")
+  responsePayload Json?    @map("response_payload")
+  httpStatus      Int?     @map("http_status")
+  errorMessage    String?  @map("error_message")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@map("payment_attempts")
+}
+
+model PaymentWebhookEvent {
+  id              Int             @id @default(autoincrement())
+  paymentId       Int?            @map("payment_id")
+  provider        PaymentProvider
+  eventType       String          @map("event_type")
+  providerEventId String?         @unique @map("provider_event_id")
+  payload         Json
+  isProcessed     Boolean         @default(false) @map("is_processed")
+  processingError String?         @map("processing_error")
+  receivedAt      DateTime        @default(now()) @map("received_at")
+  processedAt     DateTime?       @map("processed_at")
+
+  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+
+  @@index([paymentId])
+  @@index([eventType])
+  @@index([receivedAt])
+  @@map("payment_webhook_events")
 }
 
 model OrderAddress {

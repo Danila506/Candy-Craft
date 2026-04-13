@@ -1,5 +1,5 @@
 import { Breadcrumb } from "../components/ui/Breadcrumb";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { H2 } from "../components/ui/H2";
 import { useCart } from "../contexts/CartContext";
 import { Link, useNavigate } from "react-router-dom";
@@ -16,70 +16,49 @@ import {
 } from "lucide-react";
 
 export function Cart() {
-  const { cartItems, removeItem } = useCart();
+  const { cartItems, removeItem, updateItemQuantity } = useCart();
+  const [busyItemId, setBusyItemId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
-  const [loading, setLoading] = useState(true);
-
-  const [itemQuantities, setItemQuantities] = useState<Record<number, number>>(
-    {},
-  );
-
-  useEffect(() => {
-    const initialQuantities: Record<number, number> = {};
-    cartItems.forEach((item) => {
-      initialQuantities[Number(item.id)] = item.quantity;
-    });
-    setItemQuantities(initialQuantities);
-    setLoading(false);
-  }, [cartItems]);
-
-  const incrementQuantity = (itemId: number) => {
-    setItemQuantities((prev) => ({
-      ...prev,
-      [itemId]: (prev[itemId] || 0) + 1,
-    }));
+  const incrementQuantity = async (
+    productId: number,
+    currentQuantity: number,
+  ) => {
+    setBusyItemId(productId);
+    try {
+      await updateItemQuantity(productId, currentQuantity + 1);
+    } finally {
+      setBusyItemId(null);
+    }
   };
 
-  const decrementQuantity = (itemId: number) => {
-    setItemQuantities((prev) => ({
-      ...prev,
-      [itemId]: Math.max((prev[itemId] || 0) - 1, 1),
-    }));
+  const decrementQuantity = async (
+    productId: number,
+    currentQuantity: number,
+  ) => {
+    if (currentQuantity <= 1) return;
+    setBusyItemId(productId);
+    try {
+      await updateItemQuantity(productId, currentQuantity - 1);
+    } finally {
+      setBusyItemId(null);
+    }
   };
 
-  const navigate = useNavigate(); // <-- вот здесь
   const handleCheckout = () => {
-    // Формируем товары с правильными количествами
-    const orderItems = cartItems.map((item) => ({
-      productId: item.id,
-      quantity: itemQuantities[item.id] ?? item.quantity,
-      price: item.price,
-    }));
-
-    // Переходим на CheckoutPage и передаем state
-    navigate("/checkout", { state: { orderItems } });
+    navigate("/checkout");
   };
 
   const totalPrice = useMemo(() => {
-    return cartItems.reduce((sum, item) => {
-      const quantity = itemQuantities[Number(item.id)] ?? item.quantity;
-      return sum + Number(item.price) * quantity;
-    }, 0);
-  }, [cartItems, itemQuantities]);
+    return cartItems.reduce(
+      (sum, item) => sum + Number(item.price) * item.quantity,
+      0,
+    );
+  }, [cartItems]);
 
   const totalItems = useMemo(() => {
-    return Object.values(itemQuantities).reduce((sum, qty) => sum + qty, 0);
-  }, [itemQuantities]);
-
-  if (loading)
-    return (
-      <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/20 to-purple-50/20 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-300 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-600 font-medium">Загрузка...</p>
-        </div>
-      </div>
-    );
+    return cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  }, [cartItems]);
 
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/20 to-purple-50/20 relative overflow-hidden">
@@ -132,9 +111,9 @@ export function Cart() {
             {/* Список товаров */}
             <div className="flex-1 space-y-4">
               {cartItems.map((item) => {
-                const quantity =
-                  itemQuantities[Number(item.id)] ?? item.quantity;
+                const quantity = item.quantity;
                 const itemTotal = Number(item.price) * quantity;
+                const isBusy = busyItemId === item.productId;
 
                 return (
                   <div
@@ -164,8 +143,10 @@ export function Cart() {
 
                         <div className="flex items-center gap-3 mb-4">
                           <button
-                            onClick={() => decrementQuantity(Number(item.id))}
-                            disabled={quantity <= 1}
+                            onClick={() =>
+                              decrementQuantity(item.productId, quantity)
+                            }
+                            disabled={quantity <= 1 || isBusy}
                             className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
                             title="Уменьшить"
                           >
@@ -177,8 +158,10 @@ export function Cart() {
                             </span>
                           </div>
                           <button
-                            onClick={() => incrementQuantity(Number(item.id))}
-                            disabled={quantity >= item.inStock}
+                            onClick={() =>
+                              incrementQuantity(item.productId, quantity)
+                            }
+                            disabled={quantity >= item.inStock || isBusy}
                             className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
                             title="Увеличить"
                           >
@@ -202,7 +185,7 @@ export function Cart() {
 
                       <div className="flex flex-col items-end gap-4">
                         <button
-                          onClick={() => removeItem(Number(item.id))}
+                          onClick={() => removeItem(item.productId)}
                           className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100 transition-all duration-200"
                           title="Удалить товар"
                         >

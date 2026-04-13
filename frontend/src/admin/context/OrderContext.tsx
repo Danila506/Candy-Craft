@@ -45,7 +45,6 @@ export const OrderProvider = ({ children }: Props) => {
   const fetchOrders = async () => {
     try {
       const data = await http.get<Order[]>(`/orders`);
-      console.log(data);
       setOrders(data ?? []);
     } catch (err) {
       console.error(err);
@@ -54,9 +53,11 @@ export const OrderProvider = ({ children }: Props) => {
 
   const createOrder = async (data: OrderCreateDto) => {
     try {
-      const created = await http.post<Order>("/orders", data);
+      const targetUserId = data.userId ?? user?.id;
+      if (!targetUserId)
+        throw new Error("userId is required for order creation");
+      const created = await http.post<Order>(`/orders/${targetUserId}`, data);
       setOrders((prev) => [...prev, created]);
-      console.log(created);
     } catch (err) {
       console.error(err);
     }
