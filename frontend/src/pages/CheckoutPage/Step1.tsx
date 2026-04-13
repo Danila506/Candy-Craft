@@ -1,10 +1,70 @@
+import { useEffect, useState } from "react";
 import { MapPin, Sparkles } from "lucide-react";
 import { useCheckout } from "../../contexts/CheckoutContext";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { API_URL } from "../../api/config";
+import { useAuth } from "../../contexts/AuthContext";
+import { http } from "../../api/http";
+
+type UserAddress = {
+  id: number;
+  label?: string | null;
+  city?: string | null;
+  street?: string | null;
+  house?: string | null;
+  apartment?: string | null;
+  entrance?: string | null;
+  floor?: string | null;
+  intercom?: string | null;
+  recipientName?: string | null;
+  recipientPhone?: string | null;
+  fullAddress: string;
+  isDefault: boolean;
+};
 
 export const Step1 = () => {
   const { formData, setFormData } = useCheckout();
+  const { user } = useAuth();
+  const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string>("");
+
+  useEffect(() => {
+    let isActive = true;
+    const loadAddresses = async () => {
+      if (!user?.id) {
+        setSavedAddresses([]);
+        return;
+      }
+      try {
+        const data = await http.get<UserAddress[]>("/auth/me/addresses");
+        if (!isActive) return;
+        setSavedAddresses(data ?? []);
+      } catch {
+        if (!isActive) return;
+        setSavedAddresses([]);
+      }
+    };
+    loadAddresses();
+    return () => {
+      isActive = false;
+    };
+  }, [user?.id]);
+
+  const handleSelectSavedAddress = (id: string) => {
+    setSelectedAddressId(id);
+    const found = savedAddresses.find((a) => String(a.id) === id);
+    if (!found) return;
+    setFormData((prev) => ({
+      ...prev,
+      name: found.recipientName || prev.name,
+      phone: found.recipientPhone || prev.phone,
+      address: found.fullAddress || prev.address,
+      apartment: found.apartment || "",
+      entrance: found.entrance || "",
+      floor: found.floor || "",
+      intercom: found.intercom || "",
+    }));
+  };
 
   return (
     <div className="space-y-8">
@@ -21,6 +81,26 @@ export const Step1 = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {savedAddresses.length > 0 && (
+          <div className="md:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Сохранённые адреса
+            </label>
+            <select
+              value={selectedAddressId}
+              onChange={(e) => handleSelectSavedAddress(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-200"
+            >
+              <option value="">Выберите адрес</option>
+              {savedAddresses.map((address) => (
+                <option key={address.id} value={address.id}>
+                  {(address.label || "Адрес") + ": " + address.fullAddress}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="md:col-span-2 group">
           <label className="block text-sm font-semibold text-gray-700 mb-3">
             <span className="flex items-center gap-2">

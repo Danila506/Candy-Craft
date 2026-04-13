@@ -3,6 +3,8 @@ import {
   Get,
   Post,
   Body,
+  ForbiddenException,
+  Headers,
   Patch,
   Param,
   Delete,
@@ -23,8 +25,29 @@ export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
   @Post(':id')
-  create(@Param('id') userId: string, @Body() createOrderDto: CreateOrderDto) {
-    return this.ordersService.create(createOrderDto, +userId);
+  @UseGuards(JwtAuthGuard)
+  create(
+    @Param('id') userId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
+    @Req() req: Request,
+    @Body() createOrderDto: CreateOrderDto,
+  ) {
+    const requestedUserId = +userId;
+    const currentUserId = (req as any).user?.userId as number | undefined;
+    const role = (req as any).user?.role as Role | undefined;
+    if (!currentUserId) {
+      throw new ForbiddenException('Unauthorized');
+    }
+    if (role !== Role.ADMIN && currentUserId !== requestedUserId) {
+      throw new ForbiddenException(
+        'Нельзя создавать заказ для другого пользователя',
+      );
+    }
+    return this.ordersService.create(
+      createOrderDto,
+      requestedUserId,
+      idempotencyKey,
+    );
   }
 
   @Get()

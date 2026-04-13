@@ -8,6 +8,7 @@ import {
 } from "react";
 import type { CreateProductDto, ProductType } from "../types/ProductType";
 import { http } from "../api/http";
+import { useAuth } from "./AuthContext";
 
 interface ProductsContextType {
   products: ProductType[];
@@ -28,6 +29,7 @@ const ProductsContext = createContext<ProductsContextType | undefined>(
 export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
+  const { user } = useAuth();
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,16 +58,16 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
   const updateProduct = async (id: number, updatedData: CreateProductDto) => {
     setLoading(true);
     try {
-      const updatedProduct = await http.put<ProductType>(
-        `/products/${id}`,
-        updatedData,
-      );
-      console.log("Товар успешно обновлен:", updatedProduct);
+      const updatedResponse = await http.put<{
+        message: string;
+        changedProduct: ProductType;
+      }>(`/products/${id}`, updatedData);
+      const updatedProduct = updatedResponse.changedProduct;
 
       // Обновляем товар в локальном состоянии
       setProducts((prevProducts) =>
         prevProducts.map((product) =>
-          product.id === id ? { ...product, ...updatedData } : product,
+          product.id === id ? { ...product, ...updatedProduct } : product,
         ),
       );
 
@@ -110,8 +112,10 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const data = await http.get<ProductType[]>("/products");
-      setProducts(data);
+      const query =
+        user?.role === "ADMIN" ? "/products?includeInactive=true" : "/products";
+      const data = await http.get<ProductType[]>(query);
+      setProducts(data ?? []);
       setError(null);
     } catch (err) {
       setError("Не удалось загрузить товары");
@@ -123,7 +127,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [user?.role]);
 
   // Получить товар по ID
   const getProductById = (id: number): ProductType | undefined => {

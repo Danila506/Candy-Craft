@@ -33,7 +33,24 @@ function buildStructuredAddress(dto: CreateOrderDto): string | null {
 export class OrdersService {
   constructor(private prisma: PrismaService) {}
 
-  async create(dto: CreateOrderDto, userId: number) {
+  private buildPublicOrderNumber(id: number, createdAt: Date) {
+    const year = createdAt.getFullYear();
+    return `ORD-${year}-${String(id).padStart(6, '0')}`;
+  }
+
+  async create(dto: CreateOrderDto, userId: number, idempotencyKey?: string) {
+    const normalizedIdempotencyKey = cleanText(idempotencyKey ?? undefined);
+    if (normalizedIdempotencyKey) {
+      const existing = await (this.prisma as any).order.findFirst({
+        where: {
+          userId,
+          idempotencyKey: normalizedIdempotencyKey,
+        },
+        include: { items: true },
+      });
+      if (existing) return existing;
+    }
+
     if (!dto.items?.length) {
       throw new BadRequestException('Корзина пустая');
     }
@@ -65,9 +82,13 @@ export class OrdersService {
       if (item.quantity <= 0) {
         throw new BadRequestException('Количество должно быть больше 0');
       }
-      if (product.inStock < item.quantity) {
+      const available = Math.max(
+        0,
+        product.inStock - ((product as any).reservedQty ?? 0),
+      );
+      if (available < item.quantity) {
         throw new BadRequestException(
-          `Недостаточно товара "${product.name}". В наличии: ${product.inStock}, нужно: ${item.quantity}`,
+          `Недостаточно товара "${product.name}". Доступно: ${available}, нужно: ${item.quantity}`,
         );
       }
     }
@@ -84,33 +105,31 @@ export class OrdersService {
     const finalAmountMinor =
       subtotalMinor - discountTotalMinor + taxTotalMinor + deliveryFeeMinor;
 
-    // 4) Транзакция: создаём заказ + списываем остатки
+    // 4) Транзакция: создаём заказ + резервируем остатки
     return this.prisma.$transaction(async (tx) => {
-      // 4.1) Списываем остатки безопасно (условием inStock >= quantity)
+      // 4.1) Резервируем остатки атомарно (in_stock - reserved_qty >= quantity)
       for (const item of dto.items) {
-        const updated = await tx.product.updateMany({
-          where: {
-            id: item.productId,
-            inStock: { gte: item.quantity },
-          },
-          data: {
-            inStock: { decrement: item.quantity },
-          },
-        });
+        const updated = await tx.$executeRaw`
+          UPDATE "products"
+          SET "reserved_qty" = "reserved_qty" + ${item.quantity}
+          WHERE "id" = ${item.productId}
+            AND ("in_stock" - "reserved_qty") >= ${item.quantity}
+        `;
 
-        // Если кто-то успел купить раньше — updateMany вернёт 0
-        if (updated.count === 0) {
+        // Если кто-то успел зарезервировать раньше — updated = 0
+        if (updated === 0) {
           const p = products.find((x) => x.id === item.productId);
           throw new BadRequestException(
-            `Товар "${p?.name ?? item.productId}" закончился или не хватает остатка`,
+            `Товар "${p?.name ?? item.productId}" закончился или не хватает доступного остатка`,
           );
         }
       }
 
       // 4.2) Создаём заказ (и сохраняем snapshot цен/названий)
-      const order = await tx.order.create({
+      const order = await (tx as any).order.create({
         data: {
           userId: userId ?? undefined,
+          idempotencyKey: normalizedIdempotencyKey,
           address,
           totalPrice,
           currency: 'RUB',
@@ -133,6 +152,15 @@ export class OrdersService {
         },
         include: { items: true },
       });
+      const publicOrderNumber = this.buildPublicOrderNumber(
+        order.id,
+        order.createdAt,
+      );
+      const orderWithPublicNumber = await (tx as any).order.update({
+        where: { id: order.id },
+        data: { publicOrderNumber },
+        include: { items: true },
+      });
       await tx.orderStatusHistory.create({
         data: {
           orderId: order.id,
@@ -141,6 +169,15 @@ export class OrdersService {
           reason: 'Order created',
           changedByUserId: userId ?? null,
         },
+      });
+      await (tx as any).inventoryMovement.createMany({
+        data: dto.items.map((item) => ({
+          productId: item.productId,
+          orderId: order.id,
+          type: 'RESERVE',
+          quantity: item.quantity,
+          note: 'Reserved on order creation',
+        })),
       });
       await (tx as any).orderAddress.create({
         data: {
@@ -161,7 +198,56 @@ export class OrdersService {
         },
       });
 
-      return order;
+      if (userId) {
+        const existingUserAddress = await (tx as any).userAddress.findFirst({
+          where: {
+            userId,
+            fullAddress: address,
+          },
+          select: { id: true },
+        });
+
+        if (existingUserAddress) {
+          await (tx as any).userAddress.update({
+            where: { id: existingUserAddress.id },
+            data: {
+              city: cleanText(dto.city),
+              street: cleanText(dto.street),
+              house: cleanText(dto.house),
+              apartment: cleanText(dto.apartment),
+              entrance: cleanText(dto.entrance),
+              floor: cleanText(dto.floor),
+              intercom: cleanText(dto.intercom),
+              postalCode: cleanText(dto.postalCode),
+              comment: cleanText(dto.comment),
+              recipientName: cleanText(dto.fullName),
+              recipientPhone,
+            },
+          });
+        } else {
+          await (tx as any).userAddress.create({
+            data: {
+              userId,
+              country: cleanText(dto.country) ?? 'Россия',
+              city: cleanText(dto.city),
+              street: cleanText(dto.street),
+              house: cleanText(dto.house),
+              apartment: cleanText(dto.apartment),
+              entrance: cleanText(dto.entrance),
+              floor: cleanText(dto.floor),
+              intercom: cleanText(dto.intercom),
+              postalCode: cleanText(dto.postalCode),
+              comment: cleanText(dto.comment),
+              recipientName: cleanText(dto.fullName),
+              recipientPhone,
+              fullAddress: address,
+              isDefault: false,
+            },
+          });
+        }
+      }
+
+      return orderWithPublicNumber;
     });
   }
 
@@ -179,6 +265,7 @@ export class OrdersService {
     });
     return orders.map((order) => ({
       id: order.id,
+      publicOrderNumber: (order as any).publicOrderNumber ?? null,
       totalPrice: order.totalPrice,
       currency: order.currency,
       subtotalMinor: order.subtotalMinor,
@@ -194,9 +281,15 @@ export class OrdersService {
   }
 
   async findOrders(userId: number) {
-    const orders = await this.prisma.order.findMany({
+    const orders = await (this.prisma as any).order.findMany({
       where: { userId: userId },
-      select: { status: true, totalPrice: true, createdAt: true, id: true },
+      select: {
+        status: true,
+        totalPrice: true,
+        createdAt: true,
+        id: true,
+        publicOrderNumber: true,
+      },
     });
     if (!orders) throw new NotFoundException(`User with #${userId} not found`);
     return orders;
@@ -258,6 +351,23 @@ export class OrdersService {
       });
 
       if (dto.status && dto.status !== order.status) {
+        if (dto.status === 'PAID') {
+          await this.consumeReservedStock(
+            tx,
+            order.items,
+            order.id,
+            'Reserved stock consumed on manual PAID status',
+          );
+        }
+        if (dto.status === 'CANCELED' && order.status !== 'PAID') {
+          await this.releaseReservedStock(
+            tx,
+            order.items,
+            order.id,
+            'Reserved stock released on order cancellation',
+          );
+        }
+
         await tx.orderStatusHistory.create({
           data: {
             orderId: id,
@@ -303,5 +413,72 @@ export class OrdersService {
 
   async remove(id: number) {
     return await this.prisma.order.delete({ where: { id } });
+  }
+
+  private async consumeReservedStock(
+    tx: any,
+    items: Array<{ productId: number | null; quantity: number }>,
+    orderId: number,
+    note: string,
+  ) {
+    for (const item of items) {
+      if (!item.productId) continue;
+      const updated = await (tx as any).product.updateMany({
+        where: {
+          id: item.productId,
+          inStock: { gte: item.quantity },
+          reservedQty: { gte: item.quantity },
+        },
+        data: {
+          inStock: { decrement: item.quantity },
+          reservedQty: { decrement: item.quantity },
+        },
+      });
+      if (updated.count === 0) {
+        throw new BadRequestException(
+          `Не удалось списать резерв по товару #${item.productId}`,
+        );
+      }
+      await (tx as any).inventoryMovement.create({
+        data: {
+          productId: item.productId,
+          orderId,
+          type: 'OUT',
+          quantity: item.quantity,
+          note,
+        },
+      });
+    }
+  }
+
+  private async releaseReservedStock(
+    tx: any,
+    items: Array<{ productId: number | null; quantity: number }>,
+    orderId: number,
+    note: string,
+  ) {
+    for (const item of items) {
+      if (!item.productId) continue;
+      const updated = await (tx as any).product.updateMany({
+        where: {
+          id: item.productId,
+          reservedQty: { gte: item.quantity },
+        },
+        data: {
+          reservedQty: { decrement: item.quantity },
+        },
+      });
+      if (updated.count > 0) {
+        await (tx as any).inventoryMovement.create({
+          data: {
+            productId: item.productId,
+            orderId,
+            type: 'RELEASE',
+            quantity: item.quantity,
+            note,
+          },
+        });
+      }
+    }
   }
 }

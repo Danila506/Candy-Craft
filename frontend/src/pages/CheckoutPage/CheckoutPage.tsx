@@ -1,5 +1,5 @@
 // pages/CheckoutPage.tsx
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useCart } from "../../contexts/CartContext";
 import {
   Package,
@@ -50,6 +50,10 @@ export function CheckoutPage() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
+  const [createdPublicOrderNumber, setCreatedPublicOrderNumber] = useState<
+    string | null
+  >(null);
+  const orderIdempotencyKeyRef = useRef<string | null>(null);
   const { user } = useAuth();
   const userId = user?.id;
 
@@ -81,7 +85,16 @@ export function CheckoutPage() {
 
     setIsAnimating(true);
     try {
-      const createdOrder = await http.post<{ id: number }>(
+      if (!orderIdempotencyKeyRef.current) {
+        orderIdempotencyKeyRef.current =
+          typeof crypto !== "undefined" && "randomUUID" in crypto
+            ? crypto.randomUUID()
+            : `order-${userId}-${Date.now()}`;
+      }
+      const createdOrder = await http.post<{
+        id: number;
+        publicOrderNumber?: string | null;
+      }>(
         `/orders/${userId}`,
         {
           fullName: formData.name,
@@ -96,13 +109,23 @@ export function CheckoutPage() {
             quantity: item.quantity,
           })),
         },
+        {
+          headers: {
+            "Idempotency-Key": orderIdempotencyKeyRef.current,
+          },
+        },
       );
       setCreatedOrderId(createdOrder.id);
+      setCreatedPublicOrderNumber(createdOrder.publicOrderNumber ?? null);
 
       const payment = await http.post<{
         confirmationUrl?: string | null;
         status: string;
-      }>(`/payments/orders/${createdOrder.id}/yookassa`);
+      }>(`/payments/orders/${createdOrder.id}/yookassa`, undefined, {
+        headers: {
+          "Idempotency-Key": `order-${createdOrder.id}-yookassa`,
+        },
+      });
 
       if (payment.confirmationUrl) {
         window.location.href = payment.confirmationUrl;
@@ -154,7 +177,8 @@ export function CheckoutPage() {
       <div className="space-y-8 max-w-2xl mx-auto">
         <div className="p-6 bg-linear-to-r from-green-50/80 via-emerald-50/80 to-teal-50/80 backdrop-blur-sm rounded-2xl border-2 border-green-200/50 shadow-xl">
           <div className="font-bold text-2xl text-green-800 mb-3">
-            Номер заказа: #{createdOrderId ?? "—"}
+            Номер заказа:{" "}
+            {createdPublicOrderNumber ?? `#${createdOrderId ?? "—"}`}
           </div>
           <p className="text-green-700 text-lg">
             Ожидайте звонка от нашего курьера в течение 30 минут

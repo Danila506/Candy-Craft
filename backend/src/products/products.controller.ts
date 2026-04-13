@@ -7,6 +7,7 @@ import {
   Delete,
   ParseIntPipe,
   Put,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -28,8 +29,14 @@ export class ProductsController {
   @Get()
   @ApiOperation({ summary: 'Get all products' })
   @ApiResponse({ status: 200, description: 'Return all products.' })
-  findAll(): Promise<Product[]> {
-    return this.products.findAll();
+  findAll(
+    @Query('includeInactive') includeInactive?: string,
+    @Query('includeDeleted') includeDeleted?: string,
+  ): Promise<Product[]> {
+    return this.products.findAll({
+      includeInactive: includeInactive === 'true' || includeInactive === '1',
+      includeDeleted: includeDeleted === 'true' || includeDeleted === '1',
+    });
   }
   // //! Удаление всех товаров
   @Delete()

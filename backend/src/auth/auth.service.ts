@@ -13,6 +13,8 @@ import { normalizeRuPhone } from 'src/utils/phone';
 import type { StringValue } from 'ms';
 import { randomBytes } from 'crypto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
+import { CreateUserAddressDto } from './dto/create-user-address.dto';
+import { UpdateUserAddressDto } from './dto/update-user-address.dto';
 
 function msFromExpires(expires: string) {
   // простая поддержка 15m/30d/1h
@@ -29,6 +31,30 @@ function msFromExpires(expires: string) {
           ? 3_600_000
           : 86_400_000; // d
   return n * mult;
+}
+
+function cleanText(value?: string) {
+  const v = value?.trim();
+  return v ? v : null;
+}
+
+function buildAddressLine(dto: {
+  city?: string;
+  street?: string;
+  house?: string;
+  apartment?: string;
+  entrance?: string;
+  floor?: string;
+}) {
+  const parts = [
+    cleanText(dto.city),
+    cleanText(dto.street),
+    cleanText(dto.house) ? `д. ${cleanText(dto.house)}` : null,
+    cleanText(dto.apartment) ? `кв. ${cleanText(dto.apartment)}` : null,
+    cleanText(dto.entrance) ? `подъезд ${cleanText(dto.entrance)}` : null,
+    cleanText(dto.floor) ? `этаж ${cleanText(dto.floor)}` : null,
+  ].filter(Boolean);
+  return parts.length ? parts.join(', ') : null;
 }
 
 @Injectable()
@@ -428,5 +454,164 @@ export class AuthService {
       }
       throw e;
     }
+  }
+
+  async listMyAddresses(userId: number) {
+    await this.ensureUserExists(userId);
+    return (this.prisma as any).userAddress.findMany({
+      where: { userId },
+      orderBy: [{ isDefault: 'desc' }, { createdAt: 'desc' }],
+    });
+  }
+
+  async createMyAddress(userId: number, dto: CreateUserAddressDto) {
+    await this.ensureUserExists(userId);
+    const recipientPhoneRaw = cleanText(dto.recipientPhone ?? undefined);
+    const recipientPhone = recipientPhoneRaw
+      ? normalizeRuPhone(recipientPhoneRaw)
+      : null;
+    if (recipientPhoneRaw && !recipientPhone) {
+      throw new BadRequestException('Некорректный телефон получателя');
+    }
+
+    const fullAddress =
+      cleanText(dto.fullAddress ?? undefined) ?? buildAddressLine(dto);
+    if (!fullAddress) {
+      throw new BadRequestException('Адрес обязателен');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (dto.isDefault) {
+        await (tx as any).userAddress.updateMany({
+          where: { userId },
+          data: { isDefault: false },
+        });
+      }
+
+      return (tx as any).userAddress.create({
+        data: {
+          userId,
+          label: cleanText(dto.label ?? undefined),
+          country: cleanText(dto.country ?? undefined) ?? 'Россия',
+          city: cleanText(dto.city ?? undefined),
+          street: cleanText(dto.street ?? undefined),
+          house: cleanText(dto.house ?? undefined),
+          apartment: cleanText(dto.apartment ?? undefined),
+          entrance: cleanText(dto.entrance ?? undefined),
+          floor: cleanText(dto.floor ?? undefined),
+          intercom: cleanText(dto.intercom ?? undefined),
+          postalCode: cleanText(dto.postalCode ?? undefined),
+          comment: cleanText(dto.comment ?? undefined),
+          recipientName: cleanText(dto.recipientName ?? undefined),
+          recipientPhone,
+          fullAddress,
+          isDefault: Boolean(dto.isDefault),
+        },
+      });
+    });
+  }
+
+  async updateMyAddress(
+    userId: number,
+    addressId: number,
+    dto: UpdateUserAddressDto,
+  ) {
+    const existing = await (this.prisma as any).userAddress.findFirst({
+      where: { id: addressId, userId },
+    });
+    if (!existing) {
+      throw new BadRequestException('Адрес не найден');
+    }
+
+    const recipientPhoneRaw = cleanText(dto.recipientPhone ?? undefined);
+    const recipientPhone =
+      recipientPhoneRaw !== null
+        ? normalizeRuPhone(recipientPhoneRaw)
+        : undefined;
+    if (recipientPhoneRaw && !recipientPhone) {
+      throw new BadRequestException('Некорректный телефон получателя');
+    }
+
+    const fullAddressCandidate =
+      cleanText(dto.fullAddress ?? undefined) ?? buildAddressLine(dto);
+    const fullAddress =
+      fullAddressCandidate ??
+      (dto.fullAddress !== undefined ? null : undefined);
+    if (dto.fullAddress !== undefined && !fullAddress) {
+      throw new BadRequestException('Адрес обязателен');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (dto.isDefault) {
+        await (tx as any).userAddress.updateMany({
+          where: { userId },
+          data: { isDefault: false },
+        });
+      }
+
+      return (tx as any).userAddress.update({
+        where: { id: addressId },
+        data: {
+          ...(dto.label !== undefined
+            ? { label: cleanText(dto.label ?? undefined) }
+            : {}),
+          ...(dto.country !== undefined
+            ? { country: cleanText(dto.country ?? undefined) ?? 'Россия' }
+            : {}),
+          ...(dto.city !== undefined
+            ? { city: cleanText(dto.city ?? undefined) }
+            : {}),
+          ...(dto.street !== undefined
+            ? { street: cleanText(dto.street ?? undefined) }
+            : {}),
+          ...(dto.house !== undefined
+            ? { house: cleanText(dto.house ?? undefined) }
+            : {}),
+          ...(dto.apartment !== undefined
+            ? { apartment: cleanText(dto.apartment ?? undefined) }
+            : {}),
+          ...(dto.entrance !== undefined
+            ? { entrance: cleanText(dto.entrance ?? undefined) }
+            : {}),
+          ...(dto.floor !== undefined
+            ? { floor: cleanText(dto.floor ?? undefined) }
+            : {}),
+          ...(dto.intercom !== undefined
+            ? { intercom: cleanText(dto.intercom ?? undefined) }
+            : {}),
+          ...(dto.postalCode !== undefined
+            ? { postalCode: cleanText(dto.postalCode ?? undefined) }
+            : {}),
+          ...(dto.comment !== undefined
+            ? { comment: cleanText(dto.comment ?? undefined) }
+            : {}),
+          ...(dto.recipientName !== undefined
+            ? { recipientName: cleanText(dto.recipientName ?? undefined) }
+            : {}),
+          ...(dto.recipientPhone !== undefined ? { recipientPhone } : {}),
+          ...(fullAddress !== undefined ? { fullAddress } : {}),
+          ...(dto.isDefault !== undefined ? { isDefault: dto.isDefault } : {}),
+        },
+      });
+    });
+  }
+
+  async deleteMyAddress(userId: number, addressId: number) {
+    const existing = await (this.prisma as any).userAddress.findFirst({
+      where: { id: addressId, userId },
+      select: { id: true },
+    });
+    if (!existing) throw new BadRequestException('Адрес не найден');
+    await (this.prisma as any).userAddress.delete({ where: { id: addressId } });
+    return { ok: true };
+  }
+
+  private async ensureUserExists(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!user) throw new UnauthorizedException('User not found');
+    return user;
   }
 }

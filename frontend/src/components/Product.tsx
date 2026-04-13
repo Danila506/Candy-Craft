@@ -10,11 +10,21 @@ export function Product(product: ProductType) {
   const { user } = useAuth();
   const userId = user?.id;
   const { isItemInCart, addToCart } = useCart();
-  const { imageUrl, name, description, price, id, inStock, category } = product;
+  const {
+    imageUrl,
+    name,
+    description,
+    price,
+    id,
+    inStock,
+    reservedQty,
+    category,
+  } = product;
 
   const [imageBroken, setImageBroken] = useState(!imageUrl);
   const isInCart = isItemInCart(id);
-  const isOutOfStock = inStock < 1;
+  const availableStock = Math.max(0, inStock - (reservedQty ?? 0));
+  const isOutOfStock = availableStock < 1;
   const { setShowAuthWarn } = useCart();
 
   const handleAddToCart = async () => {
@@ -60,7 +70,9 @@ export function Product(product: ProductType) {
                     : "bg-white/85 text-emerald-700 border-emerald-100"
                 }`}
               >
-                {isOutOfStock ? "Нет в наличии" : `В наличии: ${inStock}`}
+                {isOutOfStock
+                  ? "Нет в наличии"
+                  : `В наличии: ${availableStock}`}
               </span>
             </div>
 

@@ -35,10 +35,11 @@ export class CartService {
       },
     });
 
-    return cartItems.map((item) => ({
+    return (cartItems as any[]).map((item) => ({
       ...item.product,
       productId: item.productId,
       quantity: item.quantity,
+      reservedQty: item.product?.reservedQty ?? 0,
     }));
   }
 
@@ -115,9 +116,10 @@ export class CartService {
     });
     return {
       item: {
-        ...result.cartItem.product,
+        ...(result.cartItem as any).product,
         productId: result.cartItem.productId,
         quantity: result.cartItem.quantity,
+        reservedQty: (result.cartItem as any).product?.reservedQty ?? 0,
       },
       count: result.count,
     };
@@ -154,9 +156,11 @@ export class CartService {
     }
 
     // Проверяем наличие на складе
-    if (cartItem.product.inStock < quantity) {
+    const reservedQty = (cartItem.product as any).reservedQty ?? 0;
+    const available = Math.max(0, cartItem.product.inStock - reservedQty);
+    if (available < quantity) {
       throw new BadRequestException(
-        `Not enough stock. Available: ${cartItem.product.inStock}`,
+        `Not enough stock. Available: ${available}`,
       );
     }
 
