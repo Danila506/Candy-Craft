@@ -1,9 +1,7 @@
 import {
   BadRequestException,
-  Body,
   ConflictException,
   Injectable,
-  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 
@@ -16,17 +14,80 @@ import { UpdateProductDto } from './dto/update-product.dto';
 @Injectable()
 export class ProductsService {
   constructor(private prisma: PrismaService) {}
+
+  private normalizeSlug(value: string): string {
+    return value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+  }
+
+  private normalizeSku(value: string): string {
+    return value.toUpperCase().replace(/[^A-Z0-9_-]/g, '-');
+  }
+
+  private async ensureUniqueSlug(baseInput: string, excludeId?: number) {
+    const base = this.normalizeSlug(baseInput) || 'product';
+    let candidate = base;
+    let suffix = 1;
+
+    while (true) {
+      const existing = await this.prisma.product.findFirst({
+        where: {
+          slug: candidate,
+          ...(excludeId ? { id: { not: excludeId } } : {}),
+        },
+        select: { id: true },
+      });
+      if (!existing) return candidate;
+      suffix += 1;
+      candidate = `${base}-${suffix}`;
+    }
+  }
+
+  private async ensureUniqueSku(baseInput: string, excludeId?: number) {
+    const base = this.normalizeSku(baseInput) || 'SKU';
+    let candidate = base;
+    let suffix = 1;
+
+    while (true) {
+      const existing = await this.prisma.product.findFirst({
+        where: {
+          sku: candidate,
+          ...(excludeId ? { id: { not: excludeId } } : {}),
+        },
+        select: { id: true },
+      });
+      if (!existing) return candidate;
+      suffix += 1;
+      candidate = `${base}-${suffix}`;
+    }
+  }
+
   // //todo Поиск всех товаров
-  async findAll(): Promise<Product[]> {
+  async findAll(options?: {
+    includeInactive?: boolean;
+    includeDeleted?: boolean;
+  }): Promise<Product[]> {
+    const includeInactive = options?.includeInactive ?? false;
+    const includeDeleted = options?.includeDeleted ?? false;
     return await this.prisma.product.findMany({
+      where: {
+        ...(includeInactive ? {} : { isActive: true }),
+        ...(includeDeleted ? {} : { deletedAt: null }),
+      },
+      orderBy: { createdAt: 'desc' },
       include: { category: { select: { name: true } } },
     });
   }
 
   //todo Удаление всех товаров
   async removeAll(): Promise<string> {
-    await this.prisma.product.deleteMany();
-    return 'Все товары удалены';
+    await this.prisma.product.updateMany({
+      where: { deletedAt: null },
+      data: { deletedAt: new Date(), isActive: false },
+    });
+    return 'Все товары архивированы';
   }
   //todo Создание нового товара
   // Метод 1: Используем только categoryId (если в схеме есть поле categoryId)
@@ -44,6 +105,18 @@ export class ProductsService {
       }
     }
 
+    const normalizedName = dto.name.trim();
+    if (!normalizedName) {
+      throw new BadRequestException('Название товара обязательно');
+    }
+
+    const slug = await this.ensureUniqueSlug(
+      dto.slug?.trim() || normalizedName,
+    );
+    const sku = await this.ensureUniqueSku(
+      dto.sku?.trim() || `SKU-${normalizedName}`,
+    );
+
     // Создаем продукт
     //     const exists = await this.prisma.product.findFirst({
     //   where: { categoryId: dto.categoryId },
@@ -51,7 +124,13 @@ export class ProductsService {
     // if (exists) throw new ConflictException("Товар уже существует");
     try {
       return await this.prisma.product.create({
-        data: dto,
+        data: {
+          ...dto,
+          name: normalizedName,
+          sku,
+          slug,
+          isActive: dto.isActive ?? true,
+        },
         include: {
           category: true,
         },
@@ -61,7 +140,9 @@ export class ProductsService {
         e instanceof Prisma.PrismaClientKnownRequestError &&
         e.code === 'P2002'
       ) {
-        throw new ConflictException('Товар с таким названием уже существует');
+        throw new ConflictException(
+          'Товар с таким SKU или slug уже существует',
+        );
       }
       throw e;
     }
@@ -78,14 +159,14 @@ export class ProductsService {
     }
 
     return this.prisma.product.findMany({
-      where: { category: { id: categoryId } },
+      where: { category: { id: categoryId }, isActive: true, deletedAt: null },
     });
   }
 
   //todo Поиск товара по id
   async findById(id: number): Promise<Product> {
     const productId = await this.prisma.product.findFirst({
-      where: { id },
+      where: { id, deletedAt: null, isActive: true },
     });
     if (!productId) {
       throw new NotFoundException(`Продукт с ID ${id} не найден`);
@@ -109,12 +190,18 @@ export class ProductsService {
       where: { productId: id },
     });
 
-    // 3. УДАЛЯЕМ сам товар
-    await this.prisma.product.delete({
+    // 3. Архивируем товар (soft-delete)
+    await this.prisma.product.update({
       where: { id },
+      data: {
+        deletedAt: new Date(),
+        isActive: false,
+      },
     });
 
-    return { message: 'Товар успешно удален вместе со связанными записями' };
+    return {
+      message: 'Товар успешно архивирован вместе со связанными записями',
+    };
   }
 
   //todo Обновление товара
@@ -126,9 +213,24 @@ export class ProductsService {
     if (!product) {
       throw new NotFoundException(`Product with ID ${id} not found`);
     }
+    const data: Prisma.ProductUpdateInput = { ...dto };
+    if (dto.name !== undefined) {
+      const normalizedName = dto.name.trim();
+      if (!normalizedName) {
+        throw new BadRequestException('Название товара обязательно');
+      }
+      data.name = normalizedName;
+    }
+    if (dto.slug !== undefined) {
+      data.slug = await this.ensureUniqueSlug(dto.slug.trim(), id);
+    }
+    if (dto.sku !== undefined) {
+      data.sku = await this.ensureUniqueSku(dto.sku.trim(), id);
+    }
+
     const updatedProduct = await this.prisma.product.update({
       where: { id },
-      data: dto,
+      data,
     });
     return { message: 'Товар изменен', changedProduct: updatedProduct };
   }

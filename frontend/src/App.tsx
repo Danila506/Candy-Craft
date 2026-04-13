@@ -47,8 +47,8 @@ function HeaderOnlyLayout() {
 
 function App() {
   return (
-    <ProductsProvider>
-      <AuthProvider>
+    <AuthProvider>
+      <ProductsProvider>
         <CartProvider>
           <BrowserRouter>
             <Routes>
@@ -120,8 +120,8 @@ function App() {
             </Routes>
           </BrowserRouter>
         </CartProvider>
-      </AuthProvider>
-    </ProductsProvider>
+      </ProductsProvider>
+    </AuthProvider>
   );
 }
 

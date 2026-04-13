@@ -13,6 +13,14 @@ const TEST_ADMIN_EMAIL = 'admin@candycraft.test';
 const TEST_USER_PHONE = '+79990000001';
 const TEST_ADMIN_PHONE = '+79990000002';
 
+function slugify(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+  return normalized || 'product';
+}
+
 async function main() {
   const userPasswordHash = await argon2.hash('TestUser123!');
   const adminPasswordHash = await argon2.hash('TestAdmin123!');
@@ -79,15 +87,20 @@ async function main() {
   ];
 
   for (const item of productFixtures) {
+    const baseSlug = slugify(item.name);
+    const baseSku = `SKU-${baseSlug}`.toUpperCase();
+
     const existing = await prisma.product.findFirst({
       where: { name: item.name, categoryId: item.categoryId },
-      select: { id: true },
+      select: { id: true, slug: true, sku: true },
     });
 
     if (existing) {
       await prisma.product.update({
         where: { id: existing.id },
         data: {
+          sku: existing.sku || `${baseSku}-${existing.id}`,
+          slug: existing.slug || `${baseSlug}-${existing.id}`,
           description: item.description,
           price: item.price,
           inStock: item.inStock,
@@ -97,7 +110,13 @@ async function main() {
       continue;
     }
 
-    await prisma.product.create({ data: item });
+    await prisma.product.create({
+      data: {
+        ...item,
+        sku: `${baseSku}-${item.categoryId}`,
+        slug: `${baseSlug}-${item.categoryId}`,
+      },
+    });
   }
 
   const testUser = await prisma.user.upsert({

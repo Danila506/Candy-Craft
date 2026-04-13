@@ -71,9 +71,13 @@ model CartItem {
 
 model Product {
   id          Int      @id @default(autoincrement())
+  sku         String   @unique
+  slug        String   @unique
   name        String
   description String
   price       Int
+  isActive    Boolean  @default(true) @map("is_active")
+  deletedAt   DateTime? @map("deleted_at")
   inStock     Int      @default(0) @map("in_stock")
   imageUrl    String
   categoryId  Int
@@ -86,6 +90,7 @@ model Product {
   orderItems OrderItem[]
 
   @@index([name, categoryId])
+  @@index([isActive, deletedAt])
   @@map("products")
 }
 

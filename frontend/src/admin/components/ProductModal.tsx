@@ -21,12 +21,15 @@ export function ProductModal({
   product,
 }: ProductModalProps) {
   const [formData, setFormData] = useState<CreateProductDto & { id?: number }>({
+    sku: "",
+    slug: "",
     name: "",
     price: 0,
     inStock: 1,
     categoryId: 1,
     description: "",
     imageUrl: "",
+    isActive: true,
   });
 
   const [loading, setLoading] = useState(false);
@@ -42,21 +45,27 @@ export function ProductModal({
       if (product) {
         setFormData({
           id: product.id,
+          sku: product.sku,
+          slug: product.slug,
           name: product.name,
           price: product.price,
           inStock: product.inStock,
           categoryId: product.categoryId,
           description: product.description,
           imageUrl: product.imageUrl,
+          isActive: product.isActive ?? true,
         });
       } else {
         setFormData({
+          sku: "",
+          slug: "",
           name: "",
           price: 0,
           inStock: 1,
           categoryId: 1,
           description: "",
           imageUrl: "",
+          isActive: true,
         });
       }
 
@@ -152,6 +161,35 @@ export function ProductModal({
           <form onSubmit={handleSubmit} className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      SKU
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.sku ?? ""}
+                      onChange={(e) => handleChange("sku", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
+                      placeholder="SKU-000123"
+                      disabled={loading}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Slug
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.slug ?? ""}
+                      onChange={(e) => handleChange("slug", e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
+                      placeholder="tort-napoleon"
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Название товара *
@@ -241,6 +279,16 @@ export function ProductModal({
                     ))}
                   </select>
                 </div>
+
+                <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(formData.isActive)}
+                    onChange={(e) => handleChange("isActive", e.target.checked)}
+                    disabled={loading}
+                  />
+                  Активен на витрине
+                </label>
               </div>
 
               <div className="space-y-4">

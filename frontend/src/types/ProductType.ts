@@ -1,9 +1,13 @@
 export type ProductType = {
   categoryId: number;
   id: number;
+  sku: string;
+  slug: string;
   name: string;
   description: string;
   price: number;
+  isActive: boolean;
+  deletedAt?: string | null;
   inStock: number;
   imageUrl: string;
   category: {
@@ -14,12 +18,15 @@ export type ProductType = {
 
 // DTO для создания (без ID)
 export interface CreateProductDto {
+  sku?: string;
+  slug?: string;
   name: string;
   price: number;
   categoryId: number;
   description: string;
   imageUrl: string;
   inStock: number;
+  isActive?: boolean;
 }
 
 // DTO для обновления (с ID)
