@@ -51,8 +51,21 @@ export class OrdersService {
       if (existing) return existing;
     }
 
-    if (!dto.items?.length) {
-      throw new BadRequestException('Корзина пустая');
+    const cartSnapshotItems = await this.prisma.cartItem.findMany({
+      where: {
+        cart: {
+          userId,
+        },
+      },
+      select: {
+        productId: true,
+        quantity: true,
+      },
+    });
+    const sourceItems =
+      dto.items && dto.items.length > 0 ? dto.items : cartSnapshotItems;
+    if (!sourceItems.length) {
+      throw new BadRequestException('Корзина пуста');
     }
     const address = cleanText(dto.address) ?? buildStructuredAddress(dto);
     if (!address) {
@@ -66,15 +79,21 @@ export class OrdersService {
     }
 
     // 1) Берём продукты из БД
-    const productIds = dto.items.map((i) => i.productId);
+    const productIds = sourceItems.map((i) => i.productId);
 
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds } },
-      select: { id: true, name: true, price: true, inStock: true },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        inStock: true,
+        reservedQty: true,
+      },
     });
 
     // 2) Проверка наличия
-    for (const item of dto.items) {
+    for (const item of sourceItems) {
       const product = products.find((p) => p.id === item.productId);
       if (!product) {
         throw new BadRequestException(`Товар ${item.productId} не найден`);
@@ -94,21 +113,30 @@ export class OrdersService {
     }
 
     // 3) Считаем totalPrice на бэке (лучше так)
-    const totalPrice = dto.items.reduce((sum, item) => {
+    const subtotalMinor = sourceItems.reduce((sum, item) => {
       const product = products.find((p) => p.id === item.productId)!;
-      return sum + product.price * item.quantity;
+      return sum + product.price * item.quantity * 100;
     }, 0);
-    const subtotalMinor = totalPrice * 100;
-    const discountTotalMinor = 0;
-    const taxTotalMinor = 0;
-    const deliveryFeeMinor = 0;
+    const discountTotalMinor = Math.max(0, dto.discountTotalMinor ?? 0);
+    const taxTotalMinor = Math.max(0, dto.taxTotalMinor ?? 0);
+    const deliveryFeeMinor = Math.max(0, dto.deliveryFeeMinor ?? 0);
+    const giftTotalMinor = Math.max(0, dto.giftTotalMinor ?? 0);
     const finalAmountMinor =
-      subtotalMinor - discountTotalMinor + taxTotalMinor + deliveryFeeMinor;
+      subtotalMinor -
+      discountTotalMinor +
+      taxTotalMinor +
+      deliveryFeeMinor +
+      giftTotalMinor;
+    if (finalAmountMinor <= 0) {
+      throw new BadRequestException('Сумма заказа должна быть больше нуля');
+    }
+    const totalPrice = Math.round(finalAmountMinor / 100);
+    const currency = cleanText(dto.currency)?.toUpperCase() || 'RUB';
 
     // 4) Транзакция: создаём заказ + резервируем остатки
     return this.prisma.$transaction(async (tx) => {
       // 4.1) Резервируем остатки атомарно (in_stock - reserved_qty >= quantity)
-      for (const item of dto.items) {
+      for (const item of sourceItems) {
         const updated = await tx.$executeRaw`
           UPDATE "products"
           SET "reserved_qty" = "reserved_qty" + ${item.quantity}
@@ -132,14 +160,15 @@ export class OrdersService {
           idempotencyKey: normalizedIdempotencyKey,
           address,
           totalPrice,
-          currency: 'RUB',
+          currency,
           subtotalMinor,
           discountTotalMinor,
           taxTotalMinor,
           deliveryFeeMinor,
+          giftTotalMinor,
           finalAmountMinor,
           items: {
-            create: dto.items.map((item) => {
+            create: sourceItems.map((item) => {
               const product = products.find((p) => p.id === item.productId)!;
               return {
                 productId: product.id,
@@ -171,7 +200,7 @@ export class OrdersService {
         },
       });
       await (tx as any).inventoryMovement.createMany({
-        data: dto.items.map((item) => ({
+        data: sourceItems.map((item) => ({
           productId: item.productId,
           orderId: order.id,
           type: 'RESERVE',
@@ -272,6 +301,7 @@ export class OrdersService {
       discountTotalMinor: order.discountTotalMinor,
       taxTotalMinor: order.taxTotalMinor,
       deliveryFeeMinor: order.deliveryFeeMinor,
+      giftTotalMinor: (order as any).giftTotalMinor ?? 0,
       finalAmountMinor: order.finalAmountMinor,
       status: order.status,
       createdAt: order.createdAt,

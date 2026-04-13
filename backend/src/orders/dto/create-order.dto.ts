@@ -3,6 +3,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Length,
   MaxLength,
   Min,
   ValidateNested,
@@ -84,8 +85,34 @@ export class CreateOrderDto {
   @MaxLength(500)
   comment?: string;
 
+  @IsOptional()
+  @IsString()
+  @Length(3, 3)
+  currency?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  discountTotalMinor?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  taxTotalMinor?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  deliveryFeeMinor?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  giftTotalMinor?: number;
+
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
-  items: CreateOrderItemDto[];
+  items?: CreateOrderItemDto[];
 }

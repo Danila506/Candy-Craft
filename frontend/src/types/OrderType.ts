@@ -23,6 +23,13 @@ export type Order = {
   userId: number;
   status: OrderStatusKey;
   totalPrice: number;
+  currency?: string;
+  subtotalMinor?: number;
+  discountTotalMinor?: number;
+  taxTotalMinor?: number;
+  deliveryFeeMinor?: number;
+  giftTotalMinor?: number;
+  finalAmountMinor?: number;
   createdAt: string;
   updatedAt: string;
   items: OrderItem[];
@@ -36,5 +43,31 @@ export type CreateOrderItemDto = {
 
 export type OrderCreateDto = {
   userId: number;
-  items: CreateOrderItemDto[];
+  fullName?: string;
+  phone?: string;
+  address?: string;
+  apartment?: string;
+  entrance?: string;
+  floor?: string;
+  intercom?: string;
+  comment?: string;
+  currency?: string;
+  discountTotalMinor?: number;
+  taxTotalMinor?: number;
+  deliveryFeeMinor?: number;
+  giftTotalMinor?: number;
+  items?: CreateOrderItemDto[];
+};
+
+export type OrderCreateResponseV2 = {
+  id: number;
+  publicOrderNumber?: string | null;
+  totalPrice: number;
+  currency: string;
+  subtotalMinor: number;
+  discountTotalMinor: number;
+  taxTotalMinor: number;
+  deliveryFeeMinor: number;
+  giftTotalMinor: number;
+  finalAmountMinor: number;
 };

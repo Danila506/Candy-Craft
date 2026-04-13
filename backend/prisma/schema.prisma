@@ -173,6 +173,7 @@ model Order {
   discountTotalMinor Int         @default(0) @map("discount_total_minor")
   taxTotalMinor      Int         @default(0) @map("tax_total_minor")
   deliveryFeeMinor   Int         @default(0) @map("delivery_fee_minor")
+  giftTotalMinor     Int         @default(0) @map("gift_total_minor")
   finalAmountMinor   Int         @default(0) @map("final_amount_minor")
   address            String
   createdAt          DateTime    @default(now()) @map("created_at")

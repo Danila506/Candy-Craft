@@ -21,6 +21,7 @@ import { Step2 } from "./Step2";
 import { Step3 } from "./Step3";
 import { Step4 } from "./Step4";
 import { useAuth } from "../../contexts/AuthContext";
+import type { OrderCreateResponseV2 } from "../../types/OrderType";
 
 // Типы для оформления заказа
 export interface DeliveryOption {
@@ -46,7 +47,8 @@ export function CheckoutPage() {
 
   const [step, setStep] = useState(1);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
-  const { selectedDelivery, totalAmount } = useCheckout();
+  const { selectedDelivery, selectedGift, totalAmount, customerNote } =
+    useCheckout();
   const [isAnimating, setIsAnimating] = useState(false);
   const [submitError, setSubmitError] = useState("");
   const [createdOrderId, setCreatedOrderId] = useState<number | null>(null);
@@ -91,10 +93,7 @@ export function CheckoutPage() {
             ? crypto.randomUUID()
             : `order-${userId}-${Date.now()}`;
       }
-      const createdOrder = await http.post<{
-        id: number;
-        publicOrderNumber?: string | null;
-      }>(
+      const createdOrder = await http.post<OrderCreateResponseV2>(
         `/orders/${userId}`,
         {
           fullName: formData.name,
@@ -104,10 +103,10 @@ export function CheckoutPage() {
           entrance: formData.entrance,
           floor: formData.floor,
           intercom: formData.intercom,
-          items: cartItems.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
+          comment: customerNote.trim() || undefined,
+          currency: "RUB",
+          deliveryFeeMinor: (selectedDelivery?.price ?? 0) * 100,
+          giftTotalMinor: (selectedGift?.price ?? 0) * 100,
         },
         {
           headers: {
