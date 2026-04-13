@@ -16,7 +16,6 @@ import { useAuth } from "../../contexts/AuthContext";
 
 export type OrderUpdateDto = {
   status?: OrderStatusKey;
-  totalPrice?: number;
   items?: { productId: number; quantity: number }[];
 };
 

@@ -23,6 +23,26 @@ function formatMoneyRU(value: number) {
   }).format(value);
 }
 
+function getOrderAmountMinor(order: { finalAmountMinor?: number }) {
+  return typeof order.finalAmountMinor === "number"
+    ? order.finalAmountMinor
+    : 0;
+}
+
+function formatOrderAmount(order: {
+  currency?: string;
+  finalAmountMinor?: number;
+}) {
+  const currency = order.currency || "RUB";
+  const amountMinor = getOrderAmountMinor(order);
+  return new Intl.NumberFormat("ru-RU", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amountMinor / 100);
+}
+
 type PopularProductRow = {
   id: number;
   name: string;
@@ -41,8 +61,7 @@ export function Dashboard() {
   const outOfStock = products.filter((p) => p.inStock <= 0).length;
 
   const totalRevenue = orders.reduce((sum, o: any) => {
-    // totalPrice у тебя есть в таблице, используем его
-    const val = Number(o.totalPrice ?? 0);
+    const val = getOrderAmountMinor(o) / 100;
     return sum + (Number.isFinite(val) ? val : 0);
   }, 0);
 
@@ -221,7 +240,7 @@ export function Dashboard() {
                         {order.createdAt ? formatDate(order.createdAt) : "—"}
                       </td>
                       <td className="py-3 text-gray-500">
-                        {formatMoneyRU(Number(order.totalPrice ?? 0))}
+                        {formatOrderAmount(order)}
                       </td>
                       <td className="py-3 font-medium">
                         {OrderStatusLabels[

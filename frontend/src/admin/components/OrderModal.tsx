@@ -14,7 +14,6 @@ type Props = {
 
 export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
   const [status, setStatus] = useState<OrderStatusKey>(order.status);
-  const [totalPrice, setTotalPrice] = useState<number>(order.totalPrice);
   const [items, setItems] = useState<OrderItem[]>([]);
 
   useEffect(() => {
@@ -23,19 +22,24 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
     }
   }, [order]);
 
-  // Автоматический пересчёт totalPrice при изменении товаров
-  useEffect(() => {
-    const sum = items.reduce(
-      (acc, item) => acc + item.price * item.quantity,
+  const totalAmountMinor = useMemo(() => {
+    return items.reduce(
+      (sum, item) => sum + item.price * item.quantity * 100,
       0,
     );
-    setTotalPrice(sum);
   }, [items]);
+  const amountLabel = useMemo(() => {
+    return new Intl.NumberFormat("ru-RU", {
+      style: "currency",
+      currency: order.currency || "RUB",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(totalAmountMinor / 100);
+  }, [order.currency, totalAmountMinor]);
 
   const handleSave = async () => {
     await onUpdate(order.id, {
       status,
-      totalPrice,
       items: items.map(({ productId, quantity }) => ({
         productId,
         quantity,
@@ -78,7 +82,7 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
 
         <div className="mb-4">
           <p className="font-semibold">Пользователь ID: {order.userId}</p>
-          <p className="font-semibold">Сумма: {totalPrice} ₽</p>
+          <p className="font-semibold">Сумма: {amountLabel}</p>
         </div>
 
         <div className="mb-4">

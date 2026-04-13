@@ -22,7 +22,7 @@ export type Order = {
   publicOrderNumber?: string | null;
   userId: number;
   status: OrderStatusKey;
-  totalPrice: number;
+  totalPrice?: number; // legacy compatibility
   currency?: string;
   subtotalMinor?: number;
   discountTotalMinor?: number;
@@ -62,7 +62,6 @@ export type OrderCreateDto = {
 export type OrderCreateResponseV2 = {
   id: number;
   publicOrderNumber?: string | null;
-  totalPrice: number;
   currency: string;
   subtotalMinor: number;
   discountTotalMinor: number;
