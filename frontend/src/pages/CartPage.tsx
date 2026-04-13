@@ -114,6 +114,10 @@ export function Cart() {
                 const quantity = item.quantity;
                 const itemTotal = Number(item.price) * quantity;
                 const isBusy = busyItemId === item.productId;
+                const availableStock = Math.max(
+                  0,
+                  item.inStock - (item.reservedQty ?? 0),
+                );
 
                 return (
                   <div
@@ -136,7 +140,7 @@ export function Cart() {
                         <div className="flex items-center gap-2 mb-4">
                           <div className="px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-100">
                             <span className="text-xs font-medium text-emerald-700">
-                              В наличии: {item.inStock} шт
+                              Доступно: {availableStock} шт
                             </span>
                           </div>
                         </div>
@@ -161,7 +165,7 @@ export function Cart() {
                             onClick={() =>
                               incrementQuantity(item.productId, quantity)
                             }
-                            disabled={quantity >= item.inStock || isBusy}
+                            disabled={quantity >= availableStock || isBusy}
                             className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
                             title="Увеличить"
                           >

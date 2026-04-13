@@ -53,6 +53,7 @@ export class PaymentsService {
     orderId: number,
     currentUserId: number,
     currentUserRole?: Role,
+    clientIdempotencyKey?: string,
   ) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -62,6 +63,12 @@ export class PaymentsService {
         status: true,
         currency: true,
         finalAmountMinor: true,
+        items: {
+          select: {
+            productId: true,
+            quantity: true,
+          },
+        },
       },
     });
     if (!order) throw new NotFoundException(`Order #${orderId} not found`);
@@ -74,6 +81,38 @@ export class PaymentsService {
       throw new BadRequestException('Заказ уже оплачен');
     }
 
+    if (clientIdempotencyKey) {
+      const existingByKey = await (this.prisma as any).payment.findUnique({
+        where: { idempotencyKey: clientIdempotencyKey },
+      });
+      if (existingByKey) {
+        return {
+          paymentId: existingByKey.id,
+          status: existingByKey.status,
+          confirmationUrl: existingByKey.confirmationUrl,
+          providerPaymentId: existingByKey.providerPaymentId,
+        };
+      }
+    }
+
+    const existingForOrder = await (this.prisma as any).payment.findFirst({
+      where: {
+        orderId,
+        status: {
+          in: ['PENDING', 'WAITING_FOR_CAPTURE', 'SUCCEEDED'],
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (existingForOrder) {
+      return {
+        paymentId: existingForOrder.id,
+        status: existingForOrder.status,
+        confirmationUrl: existingForOrder.confirmationUrl,
+        providerPaymentId: existingForOrder.providerPaymentId,
+      };
+    }
+
     const { shopId, secretKey, returnUrl } = this.getYooKassaConfig();
 
     const amountMinor = order.finalAmountMinor > 0 ? order.finalAmountMinor : 0;
@@ -82,7 +121,7 @@ export class PaymentsService {
     }
 
     const amountValue = (amountMinor / 100).toFixed(2);
-    const idempotencyKey = randomUUID();
+    const idempotencyKey = clientIdempotencyKey || randomUUID();
     const requestPayload = {
       amount: {
         value: amountValue,
@@ -147,6 +186,12 @@ export class PaymentsService {
 
     if (mappedStatus === 'SUCCEEDED' && (order.status as string) !== 'PAID') {
       await this.prisma.$transaction(async (tx) => {
+        await this.consumeReservedStock(
+          tx,
+          order.items,
+          order.id,
+          'Reserved stock consumed on payment success',
+        );
         await tx.order.update({
           where: { id: order.id },
           data: { status: 'PAID' },
@@ -188,7 +233,16 @@ export class PaymentsService {
           },
           include: {
             order: {
-              select: { id: true, status: true },
+              select: {
+                id: true,
+                status: true,
+                items: {
+                  select: {
+                    productId: true,
+                    quantity: true,
+                  },
+                },
+              },
             },
           },
         })
@@ -234,6 +288,12 @@ export class PaymentsService {
       });
 
       if (mappedStatus === 'SUCCEEDED' && payment.order.status !== 'PAID') {
+        await this.consumeReservedStock(
+          tx,
+          payment.order.items,
+          payment.order.id,
+          'Reserved stock consumed on payment success (webhook)',
+        );
         await tx.order.update({
           where: { id: payment.order.id },
           data: { status: 'PAID' },
@@ -288,5 +348,43 @@ export class PaymentsService {
         createdAt: true,
       },
     });
+  }
+
+  private async consumeReservedStock(
+    tx: any,
+    items: Array<{ productId: number | null; quantity: number }>,
+    orderId: number,
+    note: string,
+  ) {
+    for (const item of items) {
+      if (!item.productId) continue;
+
+      const updated = await (tx as any).product.updateMany({
+        where: {
+          id: item.productId,
+          inStock: { gte: item.quantity },
+          reservedQty: { gte: item.quantity },
+        },
+        data: {
+          inStock: { decrement: item.quantity },
+          reservedQty: { decrement: item.quantity },
+        },
+      });
+      if (updated.count === 0) {
+        throw new BadRequestException(
+          `Не удалось списать резерв по товару #${item.productId}`,
+        );
+      }
+
+      await (tx as any).inventoryMovement.create({
+        data: {
+          productId: item.productId,
+          orderId,
+          type: 'OUT',
+          quantity: item.quantity,
+          note,
+        },
+      });
+    }
   }
 }

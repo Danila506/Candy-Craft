@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Headers,
   Param,
   Post,
   Req,
@@ -20,6 +21,7 @@ export class PaymentsController {
   @UseGuards(JwtAuthGuard)
   createYooKassaPayment(
     @Param('orderId') orderId: string,
+    @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() req: Request,
   ) {
     const currentUserId = (req as any).user?.userId as number;
@@ -28,6 +30,7 @@ export class PaymentsController {
       +orderId,
       currentUserId,
       role,
+      idempotencyKey,
     );
   }
 

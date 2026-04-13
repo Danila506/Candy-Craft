@@ -19,6 +19,7 @@ export type OrderItem = {
 
 export type Order = {
   id: number;
+  publicOrderNumber?: string | null;
   userId: number;
   status: OrderStatusKey;
   totalPrice: number;

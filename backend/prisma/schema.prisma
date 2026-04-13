@@ -108,6 +108,7 @@ model Product {
   isActive    Boolean  @default(true) @map("is_active")
   deletedAt   DateTime? @map("deleted_at")
   inStock     Int      @default(0) @map("in_stock")
+  reservedQty Int      @default(0) @map("reserved_qty")
   imageUrl    String
   categoryId  Int
   createdAt   DateTime @default(now())
@@ -117,10 +118,37 @@ model Product {
   cartItems  CartItem[]
   category   Category    @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
+  inventoryMovements InventoryMovement[]
 
   @@index([name, categoryId])
   @@index([isActive, deletedAt])
+  @@index([inStock, reservedQty])
   @@map("products")
+}
+
+enum InventoryMovementType {
+  RESERVE
+  RELEASE
+  OUT
+  IN
+  ADJUSTMENT
+}
+
+model InventoryMovement {
+  id        Int                   @id @default(autoincrement())
+  productId Int                   @map("product_id")
+  orderId   Int?                  @map("order_id")
+  type      InventoryMovementType
+  quantity  Int
+  note      String?
+  createdAt DateTime              @default(now()) @map("created_at")
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([productId, createdAt])
+  @@index([orderId])
+  @@map("inventory_movements")
 }
 
 model Category {
@@ -136,6 +164,8 @@ model Category {
 model Order {
   id                 Int         @id @default(autoincrement())
   userId             Int         @map("user_id")
+  publicOrderNumber  String?     @unique @map("public_order_number")
+  idempotencyKey     String?     @map("idempotency_key")
   status             OrderStatus @default(PENDING)
   totalPrice         Int         @map("total_price")
   currency           String      @default("RUB")
@@ -154,8 +184,10 @@ model Order {
   orderAddress OrderAddress?
   payments Payment[]
   statusHistory OrderStatusHistory[]
+  inventoryMovements InventoryMovement[]
 
   @@index([userId])
+  @@unique([userId, idempotencyKey])
   @@map("orders")
 }
 

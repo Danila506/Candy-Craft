@@ -9,6 +9,7 @@ export type ProductType = {
   isActive: boolean;
   deletedAt?: string | null;
   inStock: number;
+  reservedQty?: number;
   imageUrl: string;
   category: {
     name: string;
