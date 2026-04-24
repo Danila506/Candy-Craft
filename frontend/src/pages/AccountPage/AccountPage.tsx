@@ -137,7 +137,6 @@ export default function AccountPage() {
   const [error, setError] = useState<string>("");
 
   const { user } = useAuth();
-  const userId = user?.id;
 
   // форма профиля
   const [profile, setProfile] = useState({
@@ -206,13 +205,13 @@ export default function AccountPage() {
   useEffect(() => {
     let alive = true;
 
-    async function loadOrders(id: number | undefined) {
+    async function loadOrders() {
       if (tab !== "orders") return;
       setLoadingOrders(true);
       setError("");
 
       try {
-        const data = await http.get<MyOrderDto[]>(`/orders/${id}`);
+        const data = await http.get<MyOrderDto[]>("/orders/me");
         if (!alive) return;
         setOrders(data);
       } catch (e) {
@@ -230,11 +229,11 @@ export default function AccountPage() {
       }
     }
 
-    loadOrders(userId);
+    loadOrders();
     return () => {
       alive = false;
     };
-  }, [tab, navigate, userId]);
+  }, [tab, navigate]);
 
   const onProfileChange =
     (key: "firstName" | "lastName" | "phone" | "email") =>

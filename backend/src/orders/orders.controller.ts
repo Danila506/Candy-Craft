@@ -61,6 +61,16 @@ export class OrdersController {
     return this.ordersService.findAll();
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  findMyOrders(@Req() req: Request) {
+    const currentUserId = (req as any).user?.userId as number | undefined;
+    if (!currentUserId) {
+      throw new ForbiddenException('Unauthorized');
+    }
+    return this.ordersService.findOrders(currentUserId);
+  }
+
   @Get(':id')
   @UseGuards(JwtAuthGuard)
   findOne(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
