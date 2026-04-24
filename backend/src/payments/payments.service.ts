@@ -3,6 +3,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -15,6 +16,18 @@ type PaymentStatusKey =
   | 'SUCCEEDED'
   | 'CANCELED'
   | 'FAILED';
+
+type WebhookRejectReason =
+  | 'MISSING_PAYMENT_ID'
+  | 'VERIFY_FAILED'
+  | 'STATUS_MISMATCH'
+  | 'AMOUNT_MISMATCH'
+  | 'CURRENCY_MISMATCH';
+
+type WebhookAuditContext = {
+  ip?: string | null;
+  userAgent?: string | null;
+};
 
 function toYooKassaStatus(status?: string): PaymentStatusKey {
   switch (status) {
@@ -33,6 +46,8 @@ function toYooKassaStatus(status?: string): PaymentStatusKey {
 
 @Injectable()
 export class PaymentsService {
+  private readonly logger = new Logger(PaymentsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   private getYooKassaApiCredentials() {
@@ -79,6 +94,28 @@ export class PaymentsService {
     }
 
     return data;
+  }
+
+  private rejectWebhook(
+    reason: WebhookRejectReason,
+    message: string,
+    details: Record<string, unknown> = {},
+    type: 'bad_request' | 'forbidden' = 'forbidden',
+  ): never {
+    this.logger.warn(
+      JSON.stringify({
+        event: 'yookassa_webhook_rejected',
+        reason,
+        message,
+        at: new Date().toISOString(),
+        ...details,
+      }),
+    );
+
+    if (type === 'bad_request') {
+      throw new BadRequestException(message);
+    }
+    throw new ForbiddenException(message);
   }
 
   async createYooKassaPayment(
@@ -249,32 +286,74 @@ export class PaymentsService {
     };
   }
 
-  async handleYooKassaWebhook(payload: any) {
+  async handleYooKassaWebhook(payload: any, audit?: WebhookAuditContext) {
     const eventType = payload?.event ?? 'unknown';
     const object = payload?.object ?? {};
     const providerPaymentId: string | undefined =
       typeof object?.id === 'string' ? object.id : undefined;
     if (!providerPaymentId) {
-      throw new BadRequestException('Некорректный webhook YooKassa');
+      this.rejectWebhook(
+        'MISSING_PAYMENT_ID',
+        'Некорректный webhook YooKassa',
+        {
+          eventType,
+          ip: audit?.ip ?? null,
+          userAgent: audit?.userAgent ?? null,
+        },
+        'bad_request',
+      );
     }
 
-    const verifiedPayment = await this.verifyYooKassaPayment(providerPaymentId);
+    let verifiedPayment: any;
+    try {
+      verifiedPayment = await this.verifyYooKassaPayment(providerPaymentId);
+    } catch {
+      this.rejectWebhook(
+        'VERIFY_FAILED',
+        'Не удалось верифицировать webhook YooKassa',
+        {
+          eventType,
+          providerPaymentId,
+          ip: audit?.ip ?? null,
+          userAgent: audit?.userAgent ?? null,
+        },
+      );
+    }
+
     if (object?.status && object.status !== verifiedPayment.status) {
-      throw new ForbiddenException('Webhook payload mismatch');
+      this.rejectWebhook('STATUS_MISMATCH', 'Webhook payload mismatch', {
+        eventType,
+        providerPaymentId,
+        providedStatus: object.status,
+        verifiedStatus: verifiedPayment.status,
+        ip: audit?.ip ?? null,
+      });
     }
     if (
       object?.amount?.value &&
       verifiedPayment?.amount?.value &&
       object.amount.value !== verifiedPayment.amount.value
     ) {
-      throw new ForbiddenException('Webhook amount mismatch');
+      this.rejectWebhook('AMOUNT_MISMATCH', 'Webhook amount mismatch', {
+        eventType,
+        providerPaymentId,
+        providedAmount: object.amount.value,
+        verifiedAmount: verifiedPayment.amount.value,
+        ip: audit?.ip ?? null,
+      });
     }
     if (
       object?.amount?.currency &&
       verifiedPayment?.amount?.currency &&
       object.amount.currency !== verifiedPayment.amount.currency
     ) {
-      throw new ForbiddenException('Webhook currency mismatch');
+      this.rejectWebhook('CURRENCY_MISMATCH', 'Webhook currency mismatch', {
+        eventType,
+        providerPaymentId,
+        providedCurrency: object.amount.currency,
+        verifiedCurrency: verifiedPayment.amount.currency,
+        ip: audit?.ip ?? null,
+      });
     }
 
     const mappedStatus = toYooKassaStatus(verifiedPayment.status);
