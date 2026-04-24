@@ -10,6 +10,7 @@ import {
   Delete,
   Req,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -24,30 +25,33 @@ import type { Request } from 'express';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+  private getAuthorizedUserId(req: Request, requestedUserId: number) {
+    const currentUserId = (req as any).user?.userId as number | undefined;
+    const role = (req as any).user?.role as Role | undefined;
+
+    if (!currentUserId) {
+      throw new ForbiddenException('Unauthorized');
+    }
+
+    if (role !== Role.ADMIN && currentUserId !== requestedUserId) {
+      throw new ForbiddenException(
+        'Нельзя просматривать заказы другого пользователя',
+      );
+    }
+
+    return currentUserId;
+  }
+
   @Post(':id')
   @UseGuards(JwtAuthGuard)
   create(
-    @Param('id') userId: string,
+    @Param('id', ParseIntPipe) userId: number,
     @Headers('idempotency-key') idempotencyKey: string | undefined,
     @Req() req: Request,
     @Body() createOrderDto: CreateOrderDto,
   ) {
-    const requestedUserId = +userId;
-    const currentUserId = (req as any).user?.userId as number | undefined;
-    const role = (req as any).user?.role as Role | undefined;
-    if (!currentUserId) {
-      throw new ForbiddenException('Unauthorized');
-    }
-    if (role !== Role.ADMIN && currentUserId !== requestedUserId) {
-      throw new ForbiddenException(
-        'Нельзя создавать заказ для другого пользователя',
-      );
-    }
-    return this.ordersService.create(
-      createOrderDto,
-      requestedUserId,
-      idempotencyKey,
-    );
+    this.getAuthorizedUserId(req, userId);
+    return this.ordersService.create(createOrderDto, userId, idempotencyKey);
   }
 
   @Get()
@@ -58,8 +62,10 @@ export class OrdersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.ordersService.findOrders(+id);
+  @UseGuards(JwtAuthGuard)
+  findOne(@Param('id', ParseIntPipe) id: number, @Req() req: Request) {
+    this.getAuthorizedUserId(req, id);
+    return this.ordersService.findOrders(id);
   }
 
   @Get(':id/history')

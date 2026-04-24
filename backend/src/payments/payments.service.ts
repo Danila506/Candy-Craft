@@ -35,18 +35,50 @@ function toYooKassaStatus(status?: string): PaymentStatusKey {
 export class PaymentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private getYooKassaConfig() {
+  private getYooKassaApiCredentials() {
     const shopId = process.env.YOOKASSA_SHOP_ID;
     const secretKey = process.env.YOOKASSA_SECRET_KEY;
-    const returnUrl = process.env.YOOKASSA_RETURN_URL;
 
-    if (!shopId || !secretKey || !returnUrl) {
+    if (!shopId || !secretKey) {
       throw new BadRequestException(
-        'YOOKASSA_SHOP_ID / YOOKASSA_SECRET_KEY / YOOKASSA_RETURN_URL are required',
+        'YOOKASSA_SHOP_ID / YOOKASSA_SECRET_KEY are required',
       );
     }
 
-    return { shopId, secretKey, returnUrl };
+    return { shopId, secretKey };
+  }
+
+  private getYooKassaReturnUrl() {
+    const returnUrl = process.env.YOOKASSA_RETURN_URL;
+    if (!returnUrl) {
+      throw new BadRequestException('YOOKASSA_RETURN_URL is required');
+    }
+    return returnUrl;
+  }
+
+  private async verifyYooKassaPayment(providerPaymentId: string) {
+    const { shopId, secretKey } = this.getYooKassaApiCredentials();
+    const auth = Buffer.from(`${shopId}:${secretKey}`).toString('base64');
+
+    const response = await fetch(
+      `https://api.yookassa.ru/v3/payments/${providerPaymentId}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Basic ${auth}`,
+          'Content-Type': 'application/json',
+        },
+      },
+    );
+
+    const data = await response.json().catch(() => null);
+    if (!response.ok || !data?.id) {
+      throw new ForbiddenException(
+        'Не удалось верифицировать webhook YooKassa',
+      );
+    }
+
+    return data;
   }
 
   async createYooKassaPayment(
@@ -113,7 +145,8 @@ export class PaymentsService {
       };
     }
 
-    const { shopId, secretKey, returnUrl } = this.getYooKassaConfig();
+    const { shopId, secretKey } = this.getYooKassaApiCredentials();
+    const returnUrl = this.getYooKassaReturnUrl();
 
     const amountMinor = order.finalAmountMinor > 0 ? order.finalAmountMinor : 0;
     if (amountMinor <= 0) {
@@ -219,8 +252,32 @@ export class PaymentsService {
   async handleYooKassaWebhook(payload: any) {
     const eventType = payload?.event ?? 'unknown';
     const object = payload?.object ?? {};
-    const providerPaymentId: string | undefined = object?.id;
-    const mappedStatus = toYooKassaStatus(object?.status);
+    const providerPaymentId: string | undefined =
+      typeof object?.id === 'string' ? object.id : undefined;
+    if (!providerPaymentId) {
+      throw new BadRequestException('Некорректный webhook YooKassa');
+    }
+
+    const verifiedPayment = await this.verifyYooKassaPayment(providerPaymentId);
+    if (object?.status && object.status !== verifiedPayment.status) {
+      throw new ForbiddenException('Webhook payload mismatch');
+    }
+    if (
+      object?.amount?.value &&
+      verifiedPayment?.amount?.value &&
+      object.amount.value !== verifiedPayment.amount.value
+    ) {
+      throw new ForbiddenException('Webhook amount mismatch');
+    }
+    if (
+      object?.amount?.currency &&
+      verifiedPayment?.amount?.currency &&
+      object.amount.currency !== verifiedPayment.amount.currency
+    ) {
+      throw new ForbiddenException('Webhook currency mismatch');
+    }
+
+    const mappedStatus = toYooKassaStatus(verifiedPayment.status);
     const providerEventId = providerPaymentId
       ? `${eventType}:${providerPaymentId}`
       : null;
