@@ -13,6 +13,7 @@ import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import type { Request } from 'express';
 import type { Role } from '@prisma/client';
 import { YooKassaWebhookRateLimitGuard } from './guards/yookassa-webhook-rate-limit.guard';
+import { YooKassaWebhookIpAllowlistGuard } from './guards/yookassa-webhook-ip-allowlist.guard';
 
 @Controller('payments')
 export class PaymentsController {
@@ -44,7 +45,7 @@ export class PaymentsController {
   }
 
   @Post('webhooks/yookassa')
-  @UseGuards(YooKassaWebhookRateLimitGuard)
+  @UseGuards(YooKassaWebhookIpAllowlistGuard, YooKassaWebhookRateLimitGuard)
   async handleYooKassaWebhook(@Body() payload: any, @Req() req: Request) {
     return this.paymentsService.handleYooKassaWebhook(payload, {
       ip: req.ip,

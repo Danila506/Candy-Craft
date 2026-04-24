@@ -7,18 +7,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request } from 'express';
-
-type Bucket = {
-  count: number;
-  windowStart: number;
-};
+import { RedisRateLimitStore } from './redis-rate-limit.store';
 
 @Injectable()
 export class YooKassaWebhookRateLimitGuard implements CanActivate {
-  private static readonly buckets = new Map<string, Bucket>();
   private readonly logger = new Logger(YooKassaWebhookRateLimitGuard.name);
+  constructor(private readonly rateLimitStore: RedisRateLimitStore) {}
 
-  canActivate(context: ExecutionContext): boolean {
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
     const ip = this.extractIp(req);
     const now = Date.now();
@@ -28,23 +24,21 @@ export class YooKassaWebhookRateLimitGuard implements CanActivate {
     const windowMs =
       Number(process.env.YOOKASSA_WEBHOOK_RATE_LIMIT_WINDOW_MS) || 60_000;
 
-    const current = YooKassaWebhookRateLimitGuard.buckets.get(ip);
-    if (!current || now - current.windowStart >= windowMs) {
-      YooKassaWebhookRateLimitGuard.buckets.set(ip, {
-        count: 1,
-        windowStart: now,
-      });
-      return true;
-    }
+    const rateKey = `yookassa:webhook:rl:${ip}`;
+    const { count, storage } = await this.rateLimitStore.incrementWithWindow(
+      rateKey,
+      windowMs,
+    );
 
-    if (current.count >= maxRequests) {
+    if (count > maxRequests) {
       this.logger.warn(
         JSON.stringify({
           event: 'yookassa_webhook_rate_limited',
           ip,
-          count: current.count,
+          count,
           maxRequests,
           windowMs,
+          storage,
           at: new Date(now).toISOString(),
         }),
       );
@@ -54,7 +48,6 @@ export class YooKassaWebhookRateLimitGuard implements CanActivate {
       );
     }
 
-    current.count += 1;
     return true;
   }
 

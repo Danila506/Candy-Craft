@@ -47,6 +47,10 @@ function toYooKassaStatus(status?: string): PaymentStatusKey {
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
+  private static readonly rejectCounters = new Map<
+    WebhookRejectReason,
+    { count: number; windowStart: number }
+  >();
 
   constructor(private readonly prisma: PrismaService) {}
 
@@ -111,11 +115,47 @@ export class PaymentsService {
         ...details,
       }),
     );
+    this.trackWebhookRejectSpike(reason);
 
     if (type === 'bad_request') {
       throw new BadRequestException(message);
     }
     throw new ForbiddenException(message);
+  }
+
+  private trackWebhookRejectSpike(reason: WebhookRejectReason) {
+    if (reason !== 'VERIFY_FAILED' && reason !== 'STATUS_MISMATCH') {
+      return;
+    }
+
+    const windowMs =
+      Number(process.env.YOOKASSA_WEBHOOK_ALERT_WINDOW_MS) || 300_000;
+    const threshold =
+      Number(process.env.YOOKASSA_WEBHOOK_ALERT_THRESHOLD) || 20;
+    const now = Date.now();
+
+    const current = PaymentsService.rejectCounters.get(reason);
+    if (!current || now - current.windowStart >= windowMs) {
+      PaymentsService.rejectCounters.set(reason, {
+        count: 1,
+        windowStart: now,
+      });
+      return;
+    }
+
+    current.count += 1;
+    if (current.count === threshold) {
+      this.logger.error(
+        JSON.stringify({
+          event: 'yookassa_webhook_rejected_spike',
+          reason,
+          threshold,
+          windowMs,
+          count: current.count,
+          at: new Date(now).toISOString(),
+        }),
+      );
+    }
   }
 
   async createYooKassaPayment(
@@ -327,6 +367,7 @@ export class PaymentsService {
         providedStatus: object.status,
         verifiedStatus: verifiedPayment.status,
         ip: audit?.ip ?? null,
+        userAgent: audit?.userAgent ?? null,
       });
     }
     if (
@@ -340,6 +381,7 @@ export class PaymentsService {
         providedAmount: object.amount.value,
         verifiedAmount: verifiedPayment.amount.value,
         ip: audit?.ip ?? null,
+        userAgent: audit?.userAgent ?? null,
       });
     }
     if (
@@ -353,6 +395,7 @@ export class PaymentsService {
         providedCurrency: object.amount.currency,
         verifiedCurrency: verifiedPayment.amount.currency,
         ip: audit?.ip ?? null,
+        userAgent: audit?.userAgent ?? null,
       });
     }
 

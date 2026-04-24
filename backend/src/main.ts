@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.set('trust proxy', process.env.TRUST_PROXY || 'loopback');
   app.use(cookieParser());
   // Включение CORS с правильными настройками
   app.enableCors({
