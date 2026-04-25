@@ -1,7 +1,14 @@
 import { BadRequestException } from '@nestjs/common';
 import { OrdersService } from './orders.service';
+import { OrderOptionsService } from './order-options.service';
 
 describe('OrdersService commercial totals and stock reservations', () => {
+  function createOrderOptionsMock() {
+    return new OrderOptionsService({
+      get: jest.fn().mockReturnValue(undefined),
+    } as any);
+  }
+
   function createPrismaMock() {
     const tx = {
       $executeRaw: jest.fn().mockResolvedValue(1),
@@ -52,7 +59,7 @@ describe('OrdersService commercial totals and stock reservations', () => {
 
   it('calculates order fees on the server and ignores spoofed money fields', async () => {
     const { prisma, tx } = createPrismaMock();
-    const service = new OrdersService(prisma as any);
+    const service = new OrdersService(prisma as any, createOrderOptionsMock());
 
     prisma.cartItem.findMany.mockResolvedValue([
       { productId: 10, quantity: 2 },
@@ -104,7 +111,7 @@ describe('OrdersService commercial totals and stock reservations', () => {
 
   it('rejects unknown delivery options instead of trusting client fees', async () => {
     const { prisma } = createPrismaMock();
-    const service = new OrdersService(prisma as any);
+    const service = new OrdersService(prisma as any, createOrderOptionsMock());
 
     prisma.cartItem.findMany.mockResolvedValue([
       { productId: 10, quantity: 1 },
@@ -126,7 +133,7 @@ describe('OrdersService commercial totals and stock reservations', () => {
 
   it('reconciles reserved stock and consumes updated items when admin changes items and marks paid', async () => {
     const { prisma, tx } = createPrismaMock();
-    const service = new OrdersService(prisma as any);
+    const service = new OrdersService(prisma as any, createOrderOptionsMock());
 
     tx.order.findUnique.mockResolvedValue({
       id: 42,

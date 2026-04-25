@@ -25,6 +25,8 @@ import { RolesGuard } from './guards/roles.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserAddressDto } from './dto/create-user-address.dto';
 import { UpdateUserAddressDto } from './dto/update-user-address.dto';
+import { RateLimit } from 'src/security/rate-limit.decorator';
+import { RateLimitGuard } from 'src/security/rate-limit.guard';
 
 function cookieBaseOptions() {
   const isProd = process.env.NODE_ENV === 'production';
@@ -56,11 +58,27 @@ export class AuthController {
   }
 
   @Post('register')
+  @UseGuards(RateLimitGuard)
+  @RateLimit({
+    keyPrefix: 'auth:register',
+    maxEnv: 'AUTH_REGISTER_RATE_LIMIT_MAX',
+    windowMsEnv: 'AUTH_REGISTER_RATE_LIMIT_WINDOW_MS',
+    defaultMax: 10,
+    defaultWindowMs: 15 * 60 * 1000,
+  })
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createUserDto: CreateUserDto) {
     return this.auth.register(createUserDto);
   }
   @Post('login')
+  @UseGuards(RateLimitGuard)
+  @RateLimit({
+    keyPrefix: 'auth:login',
+    maxEnv: 'AUTH_LOGIN_RATE_LIMIT_MAX',
+    windowMsEnv: 'AUTH_LOGIN_RATE_LIMIT_WINDOW_MS',
+    defaultMax: 10,
+    defaultWindowMs: 15 * 60 * 1000,
+  })
   async login(
     @Body() dto: LoginDto,
     @Res({ passthrough: true }) res: Response,
@@ -113,6 +131,14 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @UseGuards(RateLimitGuard)
+  @RateLimit({
+    keyPrefix: 'auth:refresh',
+    maxEnv: 'AUTH_REFRESH_RATE_LIMIT_MAX',
+    windowMsEnv: 'AUTH_REFRESH_RATE_LIMIT_WINDOW_MS',
+    defaultMax: 30,
+    defaultWindowMs: 15 * 60 * 1000,
+  })
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,

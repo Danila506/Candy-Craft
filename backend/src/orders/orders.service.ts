@@ -9,19 +9,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Order, Prisma } from '@prisma/client';
 import { OrderStatus } from '@prisma/client';
 import { normalizeRuPhone } from 'src/utils/phone';
-
-const DELIVERY_OPTIONS_MINOR = new Map<number, number>([
-  [1, 50_000],
-  [2, 30_000],
-  [3, 40_000],
-]);
-
-const GIFT_OPTIONS_MINOR = new Map<number, number>([
-  [1, 20_000],
-  [2, 15_000],
-  [3, 10_000],
-  [4, 18_000],
-]);
+import { OrderOptionsService } from './order-options.service';
 
 function cleanText(value?: string) {
   const v = value?.trim();
@@ -44,7 +32,10 @@ function buildStructuredAddress(dto: CreateOrderDto): string | null {
 
 @Injectable()
 export class OrdersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private readonly orderOptions: OrderOptionsService,
+  ) {}
 
   private buildPublicOrderNumber(id: number, createdAt: Date) {
     const year = createdAt.getFullYear();
@@ -52,21 +43,11 @@ export class OrdersService {
   }
 
   private getDeliveryFeeMinor(deliveryOptionId?: number) {
-    if (!deliveryOptionId) return 0;
-    const fee = DELIVERY_OPTIONS_MINOR.get(deliveryOptionId);
-    if (fee === undefined) {
-      throw new BadRequestException('Некорректный способ доставки');
-    }
-    return fee;
+    return this.orderOptions.getDeliveryFeeMinor(deliveryOptionId);
   }
 
   private getGiftTotalMinor(giftOptionId?: number) {
-    if (!giftOptionId) return 0;
-    const fee = GIFT_OPTIONS_MINOR.get(giftOptionId);
-    if (fee === undefined) {
-      throw new BadRequestException('Некорректная подарочная опция');
-    }
-    return fee;
+    return this.orderOptions.getGiftTotalMinor(giftOptionId);
   }
 
   private calculateCommercialTotals(

@@ -35,4 +35,24 @@ describe('AppController (e2e)', () => {
       .expect(200)
       .expect('Hello World!');
   });
+
+  it('/orders/options (GET)', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/orders/options')
+      .expect(200);
+
+    expect(response.body).toMatchObject({
+      delivery: [
+        { id: 1, price: 500, priceMinor: 50_000 },
+        { id: 2, price: 300, priceMinor: 30_000 },
+        { id: 3, price: 400, priceMinor: 40_000 },
+      ],
+      gifts: [
+        { id: 1, price: 200, priceMinor: 20_000 },
+        { id: 2, price: 150, priceMinor: 15_000 },
+        { id: 3, price: 100, priceMinor: 10_000 },
+        { id: 4, price: 180, priceMinor: 18_000 },
+      ],
+    });
+  });
 });

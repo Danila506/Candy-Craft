@@ -12,6 +12,7 @@ import { OrdersModule } from './orders/orders.module';
 import { AuthModule } from './auth/auth.module';
 import { SuggestModule } from './suggest/suggest.module';
 import { PaymentsModule } from './payments/payments.module';
+import { SecurityModule } from './security/security.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { PaymentsModule } from './payments/payments.module';
       isGlobal: true,
     }),
     PrismaModule,
+    SecurityModule,
     CartModule,
     CategoriesModule,
     ProductsModule,
