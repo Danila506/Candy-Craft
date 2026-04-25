@@ -92,23 +92,13 @@ export class CreateOrderDto {
 
   @IsOptional()
   @IsInt()
-  @Min(0)
-  discountTotalMinor?: number;
+  @Min(1)
+  deliveryOptionId?: number;
 
   @IsOptional()
   @IsInt()
-  @Min(0)
-  taxTotalMinor?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  deliveryFeeMinor?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(0)
-  giftTotalMinor?: number;
+  @Min(1)
+  giftOptionId?: number;
 
   @IsOptional()
   @IsArray()

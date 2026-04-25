@@ -39,10 +39,6 @@ export class UpdateOrderDto {
   statusReason?: string;
 
   @IsOptional()
-  @IsInt()
-  totalPrice?: number;
-
-  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UpdateOrderItemDto)

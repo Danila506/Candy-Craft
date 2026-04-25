@@ -52,10 +52,8 @@ export type OrderCreateDto = {
   intercom?: string;
   comment?: string;
   currency?: string;
-  discountTotalMinor?: number;
-  taxTotalMinor?: number;
-  deliveryFeeMinor?: number;
-  giftTotalMinor?: number;
+  deliveryOptionId?: number;
+  giftOptionId?: number;
   items?: CreateOrderItemDto[];
 };
 

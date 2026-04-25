@@ -105,8 +105,8 @@ export function CheckoutPage() {
           intercom: formData.intercom,
           comment: customerNote.trim() || undefined,
           currency: "RUB",
-          deliveryFeeMinor: (selectedDelivery?.price ?? 0) * 100,
-          giftTotalMinor: (selectedGift?.price ?? 0) * 100,
+          deliveryOptionId: selectedDelivery.id,
+          giftOptionId: selectedGift?.id,
         },
         {
           headers: {
