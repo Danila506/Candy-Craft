@@ -13,6 +13,7 @@ import { ROLES_KEY } from '../src/auth/decorators/roles.decorator';
 import { RolesGuard } from '../src/auth/guards/roles.guard';
 import { JwtAuthGuard } from '../src/auth/jwt-auth.guard';
 import { OrdersController } from '../src/orders/orders.controller';
+import { OrderOptionsService } from '../src/orders/order-options.service';
 import { OrdersService } from '../src/orders/orders.service';
 import { UsersController } from '../src/users/users.controller';
 import { UserService } from '../src/users/users.service';
@@ -74,11 +75,16 @@ const ordersServiceMock = {
   remove: jest.fn(),
 };
 
+const orderOptionsServiceMock = {
+  getPublicOptions: jest.fn().mockReturnValue({ delivery: [], gifts: [] }),
+};
+
 @Module({
   controllers: [UsersController, OrdersController],
   providers: [
     { provide: UserService, useValue: usersServiceMock },
     { provide: OrdersService, useValue: ordersServiceMock },
+    { provide: OrderOptionsService, useValue: orderOptionsServiceMock },
   ],
 })
 class TestSecurityModule {}

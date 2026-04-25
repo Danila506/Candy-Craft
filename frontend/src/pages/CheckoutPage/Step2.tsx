@@ -1,36 +1,53 @@
+import { useEffect, useState } from "react";
 import { Clock, Truck, Zap } from "lucide-react";
 import { type DeliveryOption } from "./CheckoutPage";
 import { useCheckout } from "../../contexts/CheckoutContext";
-// Опции доставки
-const deliveryOptions: DeliveryOption[] = [
-  {
-    id: 1,
-    name: "🚀 Экспресс доставка",
-    description: "Доставим в течение 2 часов",
-    price: 500,
-    time: "2 часа",
-    icon: <Zap className="w-5 h-5" />,
-  },
-  {
-    id: 2,
-    name: "📦 Стандартная доставка",
-    description: "Доставим сегодня до 22:00",
-    price: 300,
-    time: "4-6 часов",
-    icon: <Truck className="w-5 h-5" />,
-  },
-  {
-    id: 3,
-    name: "📅 Доставка ко времени",
-    description: "Выберите удобное время",
-    price: 400,
-    time: "Ко времени",
-    icon: <Clock className="w-5 h-5" />,
-  },
-];
+import { getCheckoutOptions } from "../../api/checkoutOptions";
+
+const deliveryIcons: Record<number, React.ReactNode> = {
+  1: <Zap className="w-5 h-5" />,
+  2: <Truck className="w-5 h-5" />,
+  3: <Clock className="w-5 h-5" />,
+};
 
 export const Step2 = () => {
   const { selectedDelivery, setSelectedDelivery } = useCheckout();
+  const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getCheckoutOptions()
+      .then((options) => {
+        if (cancelled) return;
+        setDeliveryOptions(
+          options.delivery
+            .filter((option) => option.available !== false)
+            .map((option) => ({
+              id: option.id,
+              name: option.name,
+              description: option.description,
+              price: option.price,
+              time: option.time ?? "",
+              icon: deliveryIcons[option.id] ?? <Truck className="w-5 h-5" />,
+            })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLoadError("Не удалось загрузить способы доставки");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -46,7 +63,20 @@ export const Step2 = () => {
         </p>
       </div>
 
+      {loadError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {loadError}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {isLoading &&
+          [1, 2, 3].map((id) => (
+            <div
+              key={id}
+              className="h-48 animate-pulse rounded-2xl border-2 border-gray-100 bg-gray-50"
+            />
+          ))}
         {deliveryOptions.map((option) => (
           <button
             key={option.id}

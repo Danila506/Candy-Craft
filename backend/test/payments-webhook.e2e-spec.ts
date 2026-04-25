@@ -8,6 +8,7 @@ import { YooKassaWebhookIpAllowlistGuard } from '../src/payments/guards/yookassa
 import { YooKassaWebhookRateLimitGuard } from '../src/payments/guards/yookassa-webhook-rate-limit.guard';
 import { PaymentsService } from '../src/payments/payments.service';
 import { PrismaService } from '../src/prisma/prisma.service';
+import { ObservabilityService } from '../src/observability/observability.service';
 
 const prismaMock = {
   paymentWebhookEvent: {
@@ -39,6 +40,7 @@ const prismaMock = {
     YooKassaWebhookIpAllowlistGuard,
     YooKassaWebhookRateLimitGuard,
     RedisRateLimitStore,
+    ObservabilityService,
     { provide: PrismaService, useValue: prismaMock },
   ],
 })

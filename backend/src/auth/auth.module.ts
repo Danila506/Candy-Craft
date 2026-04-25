@@ -8,6 +8,8 @@ import { GoogleStrategy } from './google.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import type { Secret } from 'jsonwebtoken';
 import type { StringValue } from 'ms';
+import { RateLimitGuard } from 'src/security/rate-limit.guard';
+import { SimpleRateLimitStore } from 'src/security/simple-rate-limit.store';
 
 @Module({
   imports: [
@@ -23,7 +25,14 @@ import type { StringValue } from 'ms';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, PrismaService, JwtStrategy, GoogleStrategy],
+  providers: [
+    AuthService,
+    PrismaService,
+    JwtStrategy,
+    GoogleStrategy,
+    RateLimitGuard,
+    SimpleRateLimitStore,
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}

@@ -15,6 +15,7 @@ import {
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
+import { OrderOptionsService } from './order-options.service';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
@@ -23,7 +24,10 @@ import type { Request } from 'express';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly orderOptions: OrderOptionsService,
+  ) {}
 
   private getAuthorizedUserId(req: Request, requestedUserId: number) {
     const currentUserId = (req as any).user?.userId as number | undefined;
@@ -69,6 +73,11 @@ export class OrdersController {
       throw new ForbiddenException('Unauthorized');
     }
     return this.ordersService.findOrders(currentUserId);
+  }
+
+  @Get('options')
+  getOptions() {
+    return this.orderOptions.getPublicOptions();
   }
 
   @Get(':id')

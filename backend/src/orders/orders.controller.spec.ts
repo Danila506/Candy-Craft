@@ -11,12 +11,18 @@ describe('OrdersController access', () => {
     update: jest.fn(),
     remove: jest.fn(),
   };
+  const orderOptions = {
+    getPublicOptions: jest.fn(),
+  };
 
   let controller: OrdersController;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    controller = new OrdersController(ordersService as any);
+    controller = new OrdersController(
+      ordersService as any,
+      orderOptions as any,
+    );
   });
 
   it('should allow user to request own orders', async () => {
@@ -68,5 +74,17 @@ describe('OrdersController access', () => {
 
     expect(() => controller.findMyOrders(req)).toThrow(ForbiddenException);
     expect(ordersService.findOrders).not.toHaveBeenCalled();
+  });
+
+  it('should expose checkout commercial options', () => {
+    orderOptions.getPublicOptions.mockReturnValue({
+      delivery: [{ id: 1, price: 500, priceMinor: 50_000 }],
+      gifts: [{ id: 2, price: 150, priceMinor: 15_000 }],
+    });
+
+    expect(controller.getOptions()).toEqual({
+      delivery: [{ id: 1, price: 500, priceMinor: 50_000 }],
+      gifts: [{ id: 2, price: 150, priceMinor: 15_000 }],
+    });
   });
 });

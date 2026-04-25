@@ -12,13 +12,17 @@ import { OrdersModule } from './orders/orders.module';
 import { AuthModule } from './auth/auth.module';
 import { SuggestModule } from './suggest/suggest.module';
 import { PaymentsModule } from './payments/payments.module';
+import { SecurityModule } from './security/security.module';
+import { ObservabilityModule } from './observability/observability.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ObservabilityModule,
     PrismaModule,
+    SecurityModule,
     CartModule,
     CategoriesModule,
     ProductsModule,

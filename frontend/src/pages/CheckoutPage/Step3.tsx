@@ -1,45 +1,53 @@
+import { useEffect, useState } from "react";
 import { Gift, Heart, MessageSquare, Sparkles, Star } from "lucide-react";
 import type { GiftOption } from "./CheckoutPage";
 import { useCheckout } from "../../contexts/CheckoutContext";
+import { getCheckoutOptions } from "../../api/checkoutOptions";
 
-const giftOptions: GiftOption[] = [
-  {
-    id: 1,
-    name: "🎀 Подарочная упаковка",
-    description: "Премиальная коробка с лентой",
-    price: 200,
-    icon: <Gift className="w-5 h-5" />,
-    available: true,
-  },
-  {
-    id: 2,
-    name: "💝 Поздравительная открытка",
-    description: "Ручная работа с теплыми пожеланиями",
-    price: 150,
-    icon: <Heart className="w-5 h-5" />,
-    available: true,
-  },
-  {
-    id: 3,
-    name: "✨ Волшебная пыль",
-    description: "Съедобные блестки для торта",
-    price: 100,
-    icon: <Sparkles className="w-5 h-5" />,
-    available: true,
-  },
-  {
-    id: 4,
-    name: "👑 Корона для именинника",
-    description: "Золотая картонная корона",
-    price: 180,
-    icon: <Star className="w-5 h-5" />,
-    available: true,
-  },
-];
+const giftIcons: Record<number, React.ReactNode> = {
+  1: <Gift className="w-5 h-5" />,
+  2: <Heart className="w-5 h-5" />,
+  3: <Sparkles className="w-5 h-5" />,
+  4: <Star className="w-5 h-5" />,
+};
 
 export const Step3 = () => {
   const { selectedGift, setSelectedGift, customerNote, setCustomerNote } =
     useCheckout();
+  const [giftOptions, setGiftOptions] = useState<GiftOption[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getCheckoutOptions()
+      .then((options) => {
+        if (cancelled) return;
+        setGiftOptions(
+          options.gifts.map((option) => ({
+            id: option.id,
+            name: option.name,
+            description: option.description,
+            price: option.price,
+            icon: giftIcons[option.id] ?? <Gift className="w-5 h-5" />,
+            available: option.available !== false,
+          })),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setLoadError("Не удалось загрузить дополнительные опции");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -55,7 +63,20 @@ export const Step3 = () => {
         </p>
       </div>
 
+      {loadError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {loadError}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+        {isLoading &&
+          [1, 2, 3, 4].map((id) => (
+            <div
+              key={id}
+              className="h-48 animate-pulse rounded-2xl border-2 border-gray-100 bg-gray-50"
+            />
+          ))}
         {giftOptions.map((option) => (
           <button
             key={option.id}
