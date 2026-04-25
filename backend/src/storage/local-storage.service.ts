@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { existsSync, mkdirSync, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class LocalStorageService {
@@ -27,7 +27,9 @@ export class LocalStorageService {
     // Проверяем тип файла (только изображения)
     const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedMimes.includes(file.mimetype)) {
-      throw new BadRequestException('Разрешены только изображения: JPEG, PNG, GIF, WebP');
+      throw new BadRequestException(
+        'Разрешены только изображения: JPEG, PNG, GIF, WebP',
+      );
     }
 
     // Проверяем размер (макс 5MB)
@@ -38,7 +40,7 @@ export class LocalStorageService {
 
     // Генерируем уникальное имя файла
     const fileExtension = file.originalname.split('.').pop();
-    const fileName = `${uuidv4()}.${fileExtension}`;
+    const fileName = `${randomUUID()}.${fileExtension}`;
     const filePath = join(this.uploadsDir, fileName);
 
     // Сохраняем файл
