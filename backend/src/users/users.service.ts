@@ -12,6 +12,52 @@ import { UpdateUsersDto } from './dto/update-users.dto';
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private readonly safeUserWithCartSelect = {
+    id: true,
+    firstName: true,
+    lastName: true,
+    email: true,
+    phone: true,
+    role: true,
+    createdAt: true,
+    updatedAt: true,
+    cart: {
+      select: {
+        id: true,
+        userId: true,
+        createdAt: true,
+        updatedAt: true,
+        items: {
+          select: {
+            id: true,
+            cartId: true,
+            productId: true,
+            quantity: true,
+            product: {
+              select: {
+                id: true,
+                sku: true,
+                slug: true,
+                name: true,
+                description: true,
+                price: true,
+                isActive: true,
+                deletedAt: true,
+                inStock: true,
+                reservedQty: true,
+                imageUrl: true,
+                categoryId: true,
+                createdAt: true,
+                updatedAt: true,
+                category: true,
+              },
+            },
+          },
+        },
+      },
+    },
+  } as const;
+
   // Получить всех пользователей
   async findAll(page = 1, limit = 50) {
     const safeLimit = Math.min(Math.max(limit, 1), 100);
@@ -32,21 +78,7 @@ export class UserService {
   async findOne(id: number) {
     const users = await this.prisma.user.findUnique({
       where: { id },
-      include: {
-        cart: {
-          include: {
-            items: {
-              include: {
-                product: {
-                  include: {
-                    category: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-      },
+      select: this.safeUserWithCartSelect,
     });
 
     if (!users) {
@@ -77,17 +109,7 @@ export class UserService {
   async findByEmail(email: string) {
     const users = await this.prisma.user.findUnique({
       where: { email },
-      include: {
-        cart: {
-          include: {
-            items: {
-              include: {
-                product: true,
-              },
-            },
-          },
-        },
-      },
+      select: this.safeUserWithCartSelect,
     });
 
     if (!users) {
@@ -123,17 +145,7 @@ export class UserService {
     return this.prisma.user.update({
       where: { id },
       data: updateUserDto,
-      include: {
-        cart: {
-          include: {
-            items: {
-              include: {
-                product: true,
-              },
-            },
-          },
-        },
-      },
+      select: this.safeUserWithCartSelect,
     });
   }
 
