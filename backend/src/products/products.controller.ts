@@ -1,5 +1,6 @@
 import {
   Controller,
+  ForbiddenException,
   Get,
   Post,
   Body,
@@ -8,6 +9,7 @@ import {
   ParseIntPipe,
   Put,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -20,6 +22,8 @@ import { Product, Role } from '@prisma/client';
 import { Roles } from 'src/auth/decorators/roles.decorator';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from 'src/auth/optional-jwt-auth.guard';
+import type { Request } from 'express';
 
 @ApiTags('products')
 @Controller('products')
@@ -29,13 +33,25 @@ export class ProductsController {
   @Get()
   @ApiOperation({ summary: 'Get all products' })
   @ApiResponse({ status: 200, description: 'Return all products.' })
+  @UseGuards(OptionalJwtAuthGuard)
   findAll(
     @Query('includeInactive') includeInactive?: string,
     @Query('includeDeleted') includeDeleted?: string,
+    @Req() req?: Request,
   ): Promise<Product[]> {
+    const wantsInactive = includeInactive === 'true' || includeInactive === '1';
+    const wantsDeleted = includeDeleted === 'true' || includeDeleted === '1';
+    const role = (req as any)?.user?.role as Role | undefined;
+
+    if ((wantsInactive || wantsDeleted) && role !== Role.ADMIN) {
+      throw new ForbiddenException(
+        'Только администратор может просматривать скрытые или удаленные товары',
+      );
+    }
+
     return this.products.findAll({
-      includeInactive: includeInactive === 'true' || includeInactive === '1',
-      includeDeleted: includeDeleted === 'true' || includeDeleted === '1',
+      includeInactive: wantsInactive,
+      includeDeleted: wantsDeleted,
     });
   }
   // //! Удаление всех товаров
