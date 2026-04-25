@@ -9,6 +9,7 @@ import {
 import { PrismaService } from 'src/prisma/prisma.service';
 import type { Role } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { ObservabilityService } from 'src/observability/observability.service';
 
 type PaymentStatusKey =
   | 'PENDING'
@@ -52,7 +53,10 @@ export class PaymentsService {
     { count: number; windowStart: number }
   >();
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly observability: ObservabilityService,
+  ) {}
 
   private getYooKassaApiCredentials() {
     const shopId = process.env.YOOKASSA_SHOP_ID;
@@ -106,6 +110,10 @@ export class PaymentsService {
     details: Record<string, unknown> = {},
     type: 'bad_request' | 'forbidden' = 'forbidden',
   ): never {
+    this.observability.incrementCounter('webhook_rejected_total', {
+      provider: 'YOOKASSA',
+      reason,
+    });
     this.logger.warn(
       JSON.stringify({
         event: 'yookassa_webhook_rejected',

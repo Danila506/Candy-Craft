@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
+import { ObservabilityService } from 'src/observability/observability.service';
 
 describe('PaymentsService webhook validation', () => {
   const prisma = {
@@ -11,12 +12,14 @@ describe('PaymentsService webhook validation', () => {
   };
 
   let service: PaymentsService;
+  let observability: ObservabilityService;
 
   beforeEach(() => {
     jest.clearAllMocks();
     process.env.YOOKASSA_SHOP_ID = 'shop-id';
     process.env.YOOKASSA_SECRET_KEY = 'secret-key';
-    service = new PaymentsService(prisma as any);
+    observability = new ObservabilityService();
+    service = new PaymentsService(prisma as any, observability);
     (service as any).prisma.payment = { findFirst: jest.fn() };
   });
 
@@ -24,6 +27,12 @@ describe('PaymentsService webhook validation', () => {
     await expect(service.handleYooKassaWebhook({})).rejects.toThrow(
       BadRequestException,
     );
+    expect(
+      observability.getCounterValue('webhook_rejected_total', {
+        provider: 'YOOKASSA',
+        reason: 'MISSING_PAYMENT_ID',
+      }),
+    ).toBe(1);
   });
 
   it('should reject webhook when payload status mismatches verified payment', async () => {

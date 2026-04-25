@@ -86,8 +86,11 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
         </div>
 
         <div className="mb-4">
-          <label className="block font-semibold mb-1">Статус:</label>
+          <label htmlFor="order-status" className="block font-semibold mb-1">
+            Статус:
+          </label>
           <select
+            id="order-status"
             className="w-full border rounded px-2 py-1"
             value={status}
             onChange={(e) => setStatus(e.target.value as OrderStatusKey)}

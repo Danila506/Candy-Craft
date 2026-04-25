@@ -98,12 +98,14 @@ export function ProductsAdmin() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleEdit(product)}
+                      aria-label={`Редактировать товар ${product.name}`}
                       className="p-2 text-blue-600 hover:bg-blue-50 rounded"
                     >
                       <Edit size={16} />
                     </button>
                     <button
                       onClick={() => handleDelete(product.id)}
+                      aria-label={`Удалить товар ${product.name}`}
                       className="p-2 text-red-600 hover:bg-red-50 rounded"
                     >
                       <Trash2 size={16} />

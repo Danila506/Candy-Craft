@@ -36,6 +36,15 @@ describe('AppController (e2e)', () => {
       .expect('Hello World!');
   });
 
+  it('echoes incoming x-request-id', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/')
+      .set('x-request-id', 'test-request-id')
+      .expect(200);
+
+    expect(response.headers['x-request-id']).toBe('test-request-id');
+  });
+
   it('/orders/options (GET)', async () => {
     const response = await request(app.getHttpServer())
       .get('/orders/options')

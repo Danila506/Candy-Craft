@@ -6,6 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request } from 'express';
+import { ObservabilityService } from 'src/observability/observability.service';
 
 const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:5173',
@@ -48,6 +49,8 @@ function getOriginFromReferer(referer?: string) {
 export class CsrfOriginGuard implements CanActivate {
   private readonly logger = new Logger(CsrfOriginGuard.name);
 
+  constructor(private readonly observability: ObservabilityService) {}
+
   canActivate(context: ExecutionContext): boolean {
     const req = context.switchToHttp().getRequest<Request>();
     if (this.isSafeMethod(req.method)) return true;
@@ -61,9 +64,14 @@ export class CsrfOriginGuard implements CanActivate {
       return true;
     }
 
+    this.observability.incrementCounter('csrf_origin_rejected_total', {
+      method: req.method,
+      path: req.path,
+    });
     this.logger.warn(
       JSON.stringify({
         event: 'csrf_origin_rejected',
+        requestId: req.requestId ?? null,
         method: req.method,
         path: req.path,
         origin: origin ?? null,

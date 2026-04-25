@@ -163,10 +163,14 @@ export function ProductModal({
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="product-sku"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       SKU
                     </label>
                     <input
+                      id="product-sku"
                       type="text"
                       value={formData.sku ?? ""}
                       onChange={(e) => handleChange("sku", e.target.value)}
@@ -176,10 +180,14 @@ export function ProductModal({
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="product-slug"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Slug
                     </label>
                     <input
+                      id="product-slug"
                       type="text"
                       value={formData.slug ?? ""}
                       onChange={(e) => handleChange("slug", e.target.value)}
@@ -191,10 +199,14 @@ export function ProductModal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="product-name"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Название товара *
                   </label>
                   <input
+                    id="product-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleChange("name", e.target.value)}
@@ -211,10 +223,14 @@ export function ProductModal({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="product-price"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Цена (₽) *
                     </label>
                     <input
+                      id="product-price"
                       type="number"
                       step="0.01"
                       min="0"
@@ -236,10 +252,14 @@ export function ProductModal({
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label
+                      htmlFor="product-stock"
+                      className="block text-sm font-medium text-gray-700 mb-2"
+                    >
                       Количество *
                     </label>
                     <input
+                      id="product-stock"
                       type="number"
                       min="0"
                       value={formData.inStock}
@@ -261,10 +281,14 @@ export function ProductModal({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="product-category"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Категория *
                   </label>
                   <select
+                    id="product-category"
                     value={formData.categoryId}
                     onChange={(e) =>
                       handleChange("categoryId", parseInt(e.target.value))
@@ -299,10 +323,14 @@ export function ProductModal({
                   folder="products"
                 />
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="product-description"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     Описание *
                   </label>
                   <textarea
+                    id="product-description"
                     value={formData.description}
                     onChange={(e) =>
                       handleChange("description", e.target.value)

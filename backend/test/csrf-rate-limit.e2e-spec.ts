@@ -7,6 +7,7 @@ import cookieParser from 'cookie-parser';
 import { AuthController } from '../src/auth/auth.controller';
 import { AuthService } from '../src/auth/auth.service';
 import { CsrfOriginGuard } from '../src/security/csrf-origin.guard';
+import { ObservabilityService } from '../src/observability/observability.service';
 import { RateLimitGuard } from '../src/security/rate-limit.guard';
 import { SimpleRateLimitStore } from '../src/security/simple-rate-limit.store';
 import { SuggestController } from '../src/suggest/suggest.controller';
@@ -41,6 +42,7 @@ const suggestServiceMock = {
   providers: [
     RateLimitGuard,
     SimpleRateLimitStore,
+    ObservabilityService,
     { provide: APP_GUARD, useClass: CsrfOriginGuard },
     { provide: AuthService, useValue: authServiceMock },
     { provide: SuggestService, useValue: suggestServiceMock },
@@ -51,6 +53,7 @@ class TestSecurityControlsModule {}
 describe('CSRF and rate limits (e2e)', () => {
   let app: INestApplication<App>;
   let rateLimitStore: SimpleRateLimitStore;
+  let observability: ObservabilityService;
 
   beforeAll(async () => {
     process.env.FRONTEND_URL = 'https://shop.example.test';
@@ -71,6 +74,7 @@ describe('CSRF and rate limits (e2e)', () => {
     app.use(cookieParser());
     await app.init();
     rateLimitStore = app.get(SimpleRateLimitStore);
+    observability = app.get(ObservabilityService);
   });
 
   afterAll(async () => {
@@ -80,6 +84,7 @@ describe('CSRF and rate limits (e2e)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     rateLimitStore.clearForTests();
+    observability.clearForTests();
   });
 
   it('rejects unsafe auth requests without a trusted Origin', async () => {
@@ -89,6 +94,12 @@ describe('CSRF and rate limits (e2e)', () => {
       .expect(403);
 
     expect(authServiceMock.logout).not.toHaveBeenCalled();
+    expect(
+      observability.getCounterValue('csrf_origin_rejected_total', {
+        method: 'POST',
+        path: '/auth/logout',
+      }),
+    ).toBe(1);
   });
 
   it('allows unsafe auth requests from the configured frontend origin', async () => {
@@ -120,6 +131,12 @@ describe('CSRF and rate limits (e2e)', () => {
       .set('Origin', 'https://shop.example.test')
       .send(payload)
       .expect(429);
+    expect(
+      observability.getCounterValue('rate_limit_rejected_total', {
+        keyPrefix: 'auth:login',
+        path: '/auth/login',
+      }),
+    ).toBe(1);
   });
 
   it('rate limits auth register attempts', async () => {

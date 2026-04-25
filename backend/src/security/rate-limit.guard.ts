@@ -10,6 +10,7 @@ import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import { RATE_LIMIT_KEY, type RateLimitOptions } from './rate-limit.decorator';
 import { SimpleRateLimitStore } from './simple-rate-limit.store';
+import { ObservabilityService } from 'src/observability/observability.service';
 
 function getHeaderValue(value: string | string[] | undefined) {
   if (Array.isArray(value)) return value[0];
@@ -30,6 +31,7 @@ export class RateLimitGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly store: SimpleRateLimitStore,
+    private readonly observability: ObservabilityService,
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
@@ -49,9 +51,14 @@ export class RateLimitGuard implements CanActivate {
     const bucket = this.store.increment(key, windowMs);
 
     if (bucket.count > max) {
+      this.observability.incrementCounter('rate_limit_rejected_total', {
+        keyPrefix: options.keyPrefix,
+        path: req.path,
+      });
       this.logger.warn(
         JSON.stringify({
           event: 'rate_limit_exceeded',
+          requestId: req.requestId ?? null,
           keyPrefix: options.keyPrefix,
           ip,
           path: req.path,
