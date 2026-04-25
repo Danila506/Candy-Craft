@@ -10,6 +10,19 @@ import { Order, Prisma } from '@prisma/client';
 import { OrderStatus } from '@prisma/client';
 import { normalizeRuPhone } from 'src/utils/phone';
 
+const DELIVERY_OPTIONS_MINOR = new Map<number, number>([
+  [1, 50_000],
+  [2, 30_000],
+  [3, 40_000],
+]);
+
+const GIFT_OPTIONS_MINOR = new Map<number, number>([
+  [1, 20_000],
+  [2, 15_000],
+  [3, 10_000],
+  [4, 18_000],
+]);
+
 function cleanText(value?: string) {
   const v = value?.trim();
   return v ? v : null;
@@ -38,6 +51,103 @@ export class OrdersService {
     return `ORD-${year}-${String(id).padStart(6, '0')}`;
   }
 
+  private getDeliveryFeeMinor(deliveryOptionId?: number) {
+    if (!deliveryOptionId) return 0;
+    const fee = DELIVERY_OPTIONS_MINOR.get(deliveryOptionId);
+    if (fee === undefined) {
+      throw new BadRequestException('Некорректный способ доставки');
+    }
+    return fee;
+  }
+
+  private getGiftTotalMinor(giftOptionId?: number) {
+    if (!giftOptionId) return 0;
+    const fee = GIFT_OPTIONS_MINOR.get(giftOptionId);
+    if (fee === undefined) {
+      throw new BadRequestException('Некорректная подарочная опция');
+    }
+    return fee;
+  }
+
+  private calculateCommercialTotals(
+    items: Array<{ price: number; quantity: number }>,
+    options: {
+      deliveryOptionId?: number;
+      giftOptionId?: number;
+      deliveryFeeMinor?: number;
+      giftTotalMinor?: number;
+    } = {},
+  ) {
+    const subtotalMinor = items.reduce(
+      (sum, item) => sum + item.price * item.quantity * 100,
+      0,
+    );
+    const discountTotalMinor = 0;
+    const taxTotalMinor = 0;
+    const deliveryFeeMinor =
+      options.deliveryFeeMinor ??
+      this.getDeliveryFeeMinor(options.deliveryOptionId);
+    const giftTotalMinor =
+      options.giftTotalMinor ?? this.getGiftTotalMinor(options.giftOptionId);
+    const finalAmountMinor =
+      subtotalMinor -
+      discountTotalMinor +
+      taxTotalMinor +
+      deliveryFeeMinor +
+      giftTotalMinor;
+
+    if (finalAmountMinor <= 0) {
+      throw new BadRequestException('Сумма заказа должна быть больше нуля');
+    }
+    if (finalAmountMinor % 100 !== 0) {
+      throw new BadRequestException(
+        'Некорректная сумма заказа: finalAmountMinor должен быть кратен 100',
+      );
+    }
+
+    return {
+      subtotalMinor,
+      discountTotalMinor,
+      taxTotalMinor,
+      deliveryFeeMinor,
+      giftTotalMinor,
+      finalAmountMinor,
+      totalPrice: finalAmountMinor / 100,
+    };
+  }
+
+  private assertCanChangeItems(orderStatus: OrderStatus) {
+    if (
+      orderStatus === 'PAID' ||
+      orderStatus === 'SHIPPED' ||
+      orderStatus === 'COMPLETED' ||
+      orderStatus === 'CANCELED'
+    ) {
+      throw new BadRequestException(
+        'Нельзя менять состав заказа после оплаты, отправки, завершения или отмены',
+      );
+    }
+  }
+
+  private aggregateItems(
+    items: Array<{ productId: number; quantity: number }>,
+  ) {
+    const totals = new Map<number, number>();
+    for (const item of items) {
+      if (!item.productId || item.quantity <= 0) {
+        throw new BadRequestException('Количество должно быть больше 0');
+      }
+      totals.set(
+        item.productId,
+        (totals.get(item.productId) ?? 0) + item.quantity,
+      );
+    }
+    return Array.from(totals.entries()).map(([productId, quantity]) => ({
+      productId,
+      quantity,
+    }));
+  }
+
   async create(dto: CreateOrderDto, userId: number, idempotencyKey?: string) {
     const normalizedIdempotencyKey = cleanText(idempotencyKey ?? undefined);
     if (normalizedIdempotencyKey) {
@@ -62,7 +172,7 @@ export class OrdersService {
         quantity: true,
       },
     });
-    const sourceItems = cartSnapshotItems;
+    const sourceItems = this.aggregateItems(cartSnapshotItems);
     if (!sourceItems.length) {
       throw new BadRequestException('Корзина пуста');
     }
@@ -112,29 +222,14 @@ export class OrdersService {
     }
 
     // 3) Считаем totalPrice на бэке (лучше так)
-    const subtotalMinor = sourceItems.reduce((sum, item) => {
+    const pricedItems = sourceItems.map((item) => {
       const product = products.find((p) => p.id === item.productId)!;
-      return sum + product.price * item.quantity * 100;
-    }, 0);
-    const discountTotalMinor = Math.max(0, dto.discountTotalMinor ?? 0);
-    const taxTotalMinor = Math.max(0, dto.taxTotalMinor ?? 0);
-    const deliveryFeeMinor = Math.max(0, dto.deliveryFeeMinor ?? 0);
-    const giftTotalMinor = Math.max(0, dto.giftTotalMinor ?? 0);
-    const finalAmountMinor =
-      subtotalMinor -
-      discountTotalMinor +
-      taxTotalMinor +
-      deliveryFeeMinor +
-      giftTotalMinor;
-    if (finalAmountMinor <= 0) {
-      throw new BadRequestException('Сумма заказа должна быть больше нуля');
-    }
-    if (finalAmountMinor % 100 !== 0) {
-      throw new BadRequestException(
-        'Некорректная сумма заказа: finalAmountMinor должен быть кратен 100',
-      );
-    }
-    const totalPrice = finalAmountMinor / 100;
+      return { ...item, price: product.price };
+    });
+    const totals = this.calculateCommercialTotals(pricedItems, {
+      deliveryOptionId: dto.deliveryOptionId,
+      giftOptionId: dto.giftOptionId,
+    });
     const currency = cleanText(dto.currency)?.toUpperCase() || 'RUB';
 
     // 4) Транзакция: создаём заказ + резервируем остатки
@@ -163,14 +258,14 @@ export class OrdersService {
           userId: userId ?? undefined,
           idempotencyKey: normalizedIdempotencyKey,
           address,
-          totalPrice,
+          totalPrice: totals.totalPrice,
           currency,
-          subtotalMinor,
-          discountTotalMinor,
-          taxTotalMinor,
-          deliveryFeeMinor,
-          giftTotalMinor,
-          finalAmountMinor,
+          subtotalMinor: totals.subtotalMinor,
+          discountTotalMinor: totals.discountTotalMinor,
+          taxTotalMinor: totals.taxTotalMinor,
+          deliveryFeeMinor: totals.deliveryFeeMinor,
+          giftTotalMinor: totals.giftTotalMinor,
+          finalAmountMinor: totals.finalAmountMinor,
           items: {
             create: sourceItems.map((item) => {
               const product = products.find((p) => p.id === item.productId)!;
@@ -341,61 +436,71 @@ export class OrdersService {
       if (!order) throw new NotFoundException(`Order #${id} not found`);
 
       const data: Prisma.OrderUpdateInput = {};
+      let stockItems: Array<{ productId: number | null; quantity: number }> =
+        order.items;
 
       if (dto.status) data.status = dto.status;
-      if (dto.totalPrice !== undefined) {
-        const subtotalMinor = dto.totalPrice * 100;
-        data.totalPrice = dto.totalPrice;
-        data.subtotalMinor = subtotalMinor;
-        data.finalAmountMinor = subtotalMinor;
-      }
 
       // Если пришли новые items
       if (dto.items) {
+        this.assertCanChangeItems(order.status);
+        const requestedItems = this.aggregateItems(dto.items);
+        if (!requestedItems.length) {
+          throw new BadRequestException(
+            'В заказе должен быть хотя бы один товар',
+          );
+        }
+
+        const productIds = requestedItems.map((i) => i.productId);
+        const products = await tx.product.findMany({
+          where: { id: { in: productIds } },
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        });
+        if (products.length !== productIds.length) {
+          const foundIds = new Set(products.map((p) => p.id));
+          const missingId = productIds.find(
+            (productId) => !foundIds.has(productId),
+          );
+          throw new NotFoundException(`Product #${missingId} not found`);
+        }
+
+        await this.reconcileReservedStock(tx, order.items, requestedItems, id);
+
         // Сначала удаляем старые
         await tx.orderItem.deleteMany({
           where: { orderId: id },
         });
 
         // Потом создаём новые
-        const nextItems = await Promise.all(
-          dto.items.map(async (i) => {
-            const product = await tx.product.findUnique({
-              where: { id: i.productId },
-            });
-            if (!product)
-              throw new NotFoundException(`Product #${i.productId} not found`);
-
-            return {
-              product: { connect: { id: i.productId } },
-              productName: product.name,
-              quantity: i.quantity,
-              price: product.price,
-            };
-          }),
-        );
-        const subtotalMinor = nextItems.reduce(
-          (sum, item) => sum + item.price * item.quantity * 100,
-          0,
-        );
-        const finalAmountMinor =
-          subtotalMinor -
-          (order.discountTotalMinor ?? 0) +
-          (order.taxTotalMinor ?? 0) +
-          (order.deliveryFeeMinor ?? 0) +
-          ((order as any).giftTotalMinor ?? 0);
-        if (finalAmountMinor <= 0 || finalAmountMinor % 100 !== 0) {
-          throw new BadRequestException(
-            'Некорректная итоговая сумма после обновления состава заказа',
-          );
-        }
-        data.subtotalMinor = subtotalMinor;
-        data.finalAmountMinor = finalAmountMinor;
-        data.totalPrice = finalAmountMinor / 100;
+        const nextItems = requestedItems.map((item) => {
+          const product = products.find((p) => p.id === item.productId)!;
+          return {
+            product: { connect: { id: item.productId } },
+            productName: product.name,
+            quantity: item.quantity,
+            price: product.price,
+          };
+        });
+        const totals = this.calculateCommercialTotals(nextItems, {
+          deliveryFeeMinor: order.deliveryFeeMinor ?? 0,
+          giftTotalMinor: (order as any).giftTotalMinor ?? 0,
+        });
+        data.subtotalMinor = totals.subtotalMinor;
+        data.discountTotalMinor = totals.discountTotalMinor;
+        data.taxTotalMinor = totals.taxTotalMinor;
+        data.deliveryFeeMinor = totals.deliveryFeeMinor;
+        data.giftTotalMinor = totals.giftTotalMinor;
+        data.finalAmountMinor = totals.finalAmountMinor;
+        data.totalPrice = totals.totalPrice;
 
         data.items = {
           create: nextItems,
         };
+        stockItems = requestedItems;
       }
 
       const updatedOrder = await tx.order.update({
@@ -408,7 +513,7 @@ export class OrdersService {
         if (dto.status === 'PAID') {
           await this.consumeReservedStock(
             tx,
-            order.items,
+            stockItems,
             order.id,
             'Reserved stock consumed on manual PAID status',
           );
@@ -502,6 +607,76 @@ export class OrdersService {
           note,
         },
       });
+    }
+  }
+
+  private async reserveAdditionalStock(
+    tx: any,
+    productId: number,
+    quantity: number,
+    orderId: number,
+  ) {
+    const updated = await tx.$executeRaw`
+      UPDATE "products"
+      SET "reserved_qty" = "reserved_qty" + ${quantity}
+      WHERE "id" = ${productId}
+        AND ("in_stock" - "reserved_qty") >= ${quantity}
+    `;
+
+    if (updated === 0) {
+      throw new BadRequestException(
+        `Недостаточно доступного остатка для товара #${productId}`,
+      );
+    }
+
+    await (tx as any).inventoryMovement.create({
+      data: {
+        productId,
+        orderId,
+        type: 'RESERVE',
+        quantity,
+        note: 'Reserved stock increased on order item update',
+      },
+    });
+  }
+
+  private async reconcileReservedStock(
+    tx: any,
+    oldItems: Array<{ productId: number | null; quantity: number }>,
+    nextItems: Array<{ productId: number; quantity: number }>,
+    orderId: number,
+  ) {
+    const oldQty = new Map<number, number>();
+    const nextQty = new Map<number, number>();
+
+    for (const item of oldItems) {
+      if (!item.productId) continue;
+      oldQty.set(
+        item.productId,
+        (oldQty.get(item.productId) ?? 0) + item.quantity,
+      );
+    }
+    for (const item of nextItems) {
+      nextQty.set(
+        item.productId,
+        (nextQty.get(item.productId) ?? 0) + item.quantity,
+      );
+    }
+
+    const productIds = new Set([...oldQty.keys(), ...nextQty.keys()]);
+    for (const productId of productIds) {
+      const diff = (nextQty.get(productId) ?? 0) - (oldQty.get(productId) ?? 0);
+      if (diff > 0) {
+        await this.reserveAdditionalStock(tx, productId, diff, orderId);
+      }
+      if (diff < 0) {
+        await this.releaseReservedStock(
+          tx,
+          [{ productId, quantity: Math.abs(diff) }],
+          orderId,
+          'Reserved stock released on order item update',
+        );
+      }
     }
   }
 
