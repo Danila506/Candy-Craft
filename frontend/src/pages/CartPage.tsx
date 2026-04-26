@@ -69,11 +69,11 @@ export function Cart() {
         <div className="absolute bottom-20 left-1/3 w-80 h-80 bg-indigo-200/10 rounded-full blur-3xl"></div>
       </div>
 
-      <div className="container mx-auto px-4 py-8 md:py-12 relative z-10">
+      <div className="container mx-auto px-4 py-6 md:py-12 relative z-10">
         {/* Заголовок */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-linear-to-br from-indigo-200 to-purple-200 rounded-2xl mb-4 shadow-sm">
-            <ShoppingCart className="w-8 h-8 text-indigo-700" />
+        <div className="text-center mb-8 md:mb-10">
+          <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-linear-to-br from-indigo-200 to-purple-200 rounded-2xl mb-4 shadow-sm">
+            <ShoppingCart className="w-7 h-7 md:w-8 md:h-8 text-indigo-700" />
           </div>
           <H2 text="Корзина покупок" />
           <Breadcrumb
@@ -87,7 +87,7 @@ export function Cart() {
         {cartItems.length === 0 ? (
           /* Пустая корзина */
           <div className="max-w-lg mx-auto">
-            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm border border-slate-100 p-12 text-center">
+            <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-sm border border-slate-100 p-6 sm:p-10 md:p-12 text-center">
               <div className="w-24 h-24 bg-linear-to-br from-slate-100 to-slate-50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Package className="w-12 h-12 text-slate-400" />
               </div>
@@ -124,8 +124,8 @@ export function Cart() {
                     key={item.id}
                     className="group bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-md hover:border-slate-200 transition-all duration-300"
                   >
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5 p-5 md:p-6">
-                      <div className="relative w-full sm:w-28 h-28 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-linear-to-br from-slate-50 to-slate-100">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5 p-4 md:p-6">
+                      <div className="relative w-full sm:w-28 h-48 min-[420px]:h-56 sm:h-28 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-linear-to-br from-slate-50 to-slate-100">
                         <img
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           src={item.imageUrl}
@@ -174,8 +174,8 @@ export function Cart() {
                         </div>
 
                         {/* Цена */}
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-2xl font-bold text-indigo-600">
+                        <div className="flex flex-wrap items-baseline gap-2">
+                          <span className="text-xl md:text-2xl font-bold text-indigo-600">
                             {itemTotal.toLocaleString("ru-RU")} ₽
                           </span>
                           {quantity > 1 && (
@@ -187,10 +187,10 @@ export function Cart() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-4">
+                      <div className="flex w-full sm:w-auto sm:flex-col items-end gap-4">
                         <button
                           onClick={() => removeItem(item.productId)}
-                          className="p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100 transition-all duration-200"
+                          className="ml-auto p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100 transition-all duration-200"
                           title="Удалить товар"
                         >
                           <Trash2 className="w-5 h-5" />
@@ -204,7 +204,7 @@ export function Cart() {
 
             <div className="lg:w-100 w-full">
               <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100 overflow-hidden sticky top-8">
-                <div className="p-6 md:p-7">
+                <div className="p-4 sm:p-6 md:p-7">
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-linear-to-br from-indigo-100 to-purple-100 rounded-xl">
                       <CreditCard className="w-5 h-5 text-indigo-600" />
@@ -231,7 +231,7 @@ export function Cart() {
                       <span className="text-slate-500">0 ₽</span>
                     </div>
                     <div className="border-t border-slate-200 pt-4 mt-4">
-                      <div className="flex justify-between items-center">
+                      <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center justify-between gap-2">
                         <span className="text-lg font-semibold text-slate-800">
                           Итого к оплате
                         </span>

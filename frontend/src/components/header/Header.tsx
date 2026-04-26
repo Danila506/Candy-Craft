@@ -23,8 +23,8 @@ function Header() {
         Доставка по Биробиджану • Заказы на сегодня до 18:00
       </div>
 
-      <div className="container mx-auto md:py-15 px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
+      <div className="container mx-auto px-3 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex min-w-0 items-center gap-2">
           <button
             className="lg:hidden p-2 rounded-xl border border-rose-100 text-gray-700 hover:bg-rose-50"
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
@@ -38,7 +38,11 @@ function Header() {
             className="inline-flex items-center"
             aria-label="CandyCraft — на главную"
           >
-            <img src={Logo} alt="CandyCraft" className="h-35 w-auto" />
+            <img
+              src={Logo}
+              alt="CandyCraft"
+              className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto max-w-[150px] sm:max-w-[190px] object-contain"
+            />
           </Link>
         </div>
 
@@ -54,7 +58,7 @@ function Header() {
           </NavLink>
         </nav>
 
-        <ul className="flex items-center gap-1 sm:gap-2">
+        <ul className="flex shrink-0 items-center gap-1 sm:gap-2">
           <li>
             <button
               className="p-2 rounded-xl text-gray-700 hover:bg-rose-50 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b]"
@@ -91,7 +95,7 @@ function Header() {
       </div>
 
       {isMobileMenuOpen && (
-        <nav className="lg:hidden border-t border-rose-100 bg-white px-4 py-3">
+        <nav className="lg:hidden border-t border-rose-100 bg-white px-4 py-3 shadow-sm">
           <ul className="space-y-2 text-sm">
             <li>
               <Link

@@ -45,9 +45,9 @@ export function ProductsAdmin() {
       {/* Кнопка добавления */}
       <button
         onClick={handleAddNew}
-        className="mb-6 flex items-center gap-2 px-4 py-2 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a]"
+        className="mb-6 inline-flex w-full sm:w-auto items-center justify-center gap-2 px-4 py-2 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a]"
       >
-        <Plus size={18} />
+        <Plus size={18} className="shrink-0" />
         <span>Добавить товар</span>
       </button>
 
@@ -62,60 +62,62 @@ export function ProductsAdmin() {
 
       {/* Таблица товаров */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left">Изображение</th>
-              <th className="px-6 py-3 text-left">Название</th>
-              <th className="px-6 py-3 text-left">SKU</th>
-              <th className="px-6 py-3 text-left">Категория</th>
-              <th className="px-6 py-3 text-left">Цена</th>
-              <th className="px-6 py-3 text-left">В наличии</th>
-              <th className="px-6 py-3 text-left">Статус</th>
-              <th className="px-6 py-3 text-left">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product.id} className="border-t hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  {" "}
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-14 h-14 object-cover rounded"
-                  />
-                </td>
-                <td className="px-6 py-4">{product.name}</td>
-                <td className="px-6 py-4">{product.sku}</td>
-                <td className="px-6 py-4">{product.category.name}</td>
-                <td className="px-6 py-4">{product.price} ₽</td>
-                <td className="px-6 py-4">{product.inStock} шт</td>
-                <td className="px-6 py-4">
-                  {product.isActive ? "Активен" : "Скрыт"}
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(product)}
-                      aria-label={`Редактировать товар ${product.name}`}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(product.id)}
-                      aria-label={`Удалить товар ${product.name}`}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[920px]">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left">Изображение</th>
+                <th className="px-6 py-3 text-left">Название</th>
+                <th className="px-6 py-3 text-left">SKU</th>
+                <th className="px-6 py-3 text-left">Категория</th>
+                <th className="px-6 py-3 text-left">Цена</th>
+                <th className="px-6 py-3 text-left">В наличии</th>
+                <th className="px-6 py-3 text-left">Статус</th>
+                <th className="px-6 py-3 text-left">Действия</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {products.map((product) => (
+                <tr key={product.id} className="border-t hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    {" "}
+                    <img
+                      src={product.imageUrl}
+                      alt={product.name}
+                      className="w-14 h-14 object-cover rounded"
+                    />
+                  </td>
+                  <td className="px-6 py-4">{product.name}</td>
+                  <td className="px-6 py-4">{product.sku}</td>
+                  <td className="px-6 py-4">{product.category.name}</td>
+                  <td className="px-6 py-4">{product.price} ₽</td>
+                  <td className="px-6 py-4">{product.inStock} шт</td>
+                  <td className="px-6 py-4">
+                    {product.isActive ? "Активен" : "Скрыт"}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(product)}
+                        aria-label={`Редактировать товар ${product.name}`}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(product.id)}
+                        aria-label={`Удалить товар ${product.name}`}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </AdminLayout>
   );

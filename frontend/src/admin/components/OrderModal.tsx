@@ -69,13 +69,13 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
     <Dialog
       open={isOpen}
       onClose={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center "
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4"
     >
       <div
         className="fixed inset-0 bg-black bg-opacity-30"
         aria-hidden="true"
       />
-      <div className="bg-white rounded-lg shadow p-6 z-10 w-115">
+      <div className="bg-white rounded-lg shadow p-4 sm:p-6 z-10 w-full max-w-xl max-h-[92vh] overflow-y-auto">
         <Dialog.Title className="text-lg font-bold mb-4">
           Заказ #{order.id}
         </Dialog.Title>
@@ -117,7 +117,7 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
               return (
                 <li
                   key={item.id || idx}
-                  className="flex items-center justify-between gap-2 py-1"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-2"
                 >
                   <span className="truncate">
                     {item.productName}
@@ -126,7 +126,7 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
                     </span>
                   </span>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-stretch sm:self-auto">
                     <input
                       type="number"
                       value={item.quantity}
@@ -161,16 +161,16 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
           </ul>
         </div>
 
-        <div className="flex justify-end gap-2">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded border hover:bg-gray-100"
+            className="w-full sm:w-auto px-4 py-2 rounded border hover:bg-gray-100"
           >
             Закрыть
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+            className="w-full sm:w-auto px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
           >
             Сохранить
           </button>

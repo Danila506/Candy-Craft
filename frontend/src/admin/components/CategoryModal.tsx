@@ -77,7 +77,7 @@ export function CategoryModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-3 sm:p-4">
       {/* overlay */}
       <button
         type="button"
@@ -87,8 +87,8 @@ export function CategoryModal({
       />
 
       {/* modal */}
-      <div className="relative z-10 w-full max-w-xl bg-white rounded-lg shadow-lg max-h-[90vh] flex flex-col">
-        <div className="px-6 py-4 border-b flex items-center justify-between">
+      <div className="relative z-10 w-full max-w-xl bg-white rounded-lg shadow-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="px-4 sm:px-6 py-4 border-b flex items-center justify-between gap-4">
           <h2 className="text-lg font-semibold">
             {isEdit ? "Редактировать категорию" : "Добавить категорию"}
           </h2>
@@ -103,7 +103,7 @@ export function CategoryModal({
 
         <form
           onSubmit={handleSubmit}
-          className="px-6 py-5 space-y-4 overflow-y-auto  "
+          className="px-4 sm:px-6 py-5 space-y-4 overflow-y-auto"
         >
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -136,18 +136,18 @@ export function CategoryModal({
             folder="categories"
           />
 
-          <div className="pt-2 flex justify-end gap-2">
+          <div className="pt-2 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg border hover:bg-gray-50"
               disabled={isSaving}
             >
               Отмена
             </button>
             <button
               type="submit"
-              className="px-4 py-2 rounded-lg bg-[#ff398b] text-white hover:bg-[#e0327a] disabled:opacity-60"
+              className="w-full sm:w-auto px-4 py-2 rounded-lg bg-[#ff398b] text-white hover:bg-[#e0327a] disabled:opacity-60"
               disabled={isSaving}
             >
               {isSaving ? "Сохранение..." : isEdit ? "Сохранить" : "Создать"}

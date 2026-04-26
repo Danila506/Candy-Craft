@@ -111,7 +111,7 @@ export function ProductList() {
       <div className="flex flex-col gap-3 md:gap-4">
         <div className="flex flex-col lg:flex-row lg:items-center gap-3">
           {/* Categories */}
-          <div className="overflow-x-auto">
+          <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
             <div className="flex gap-2 min-w-max pb-1">
               <button
                 onClick={() => setSelectedCategory(null)}
@@ -141,7 +141,7 @@ export function ProductList() {
           </div>
 
           {/* Search / Sort */}
-          <div className="lg:ml-auto flex flex-col sm:flex-row gap-2 sm:items-center">
+          <div className="lg:ml-auto flex min-w-0 flex-col sm:flex-row gap-2 sm:items-center">
             <input
               type="search"
               value={searchTerm}
@@ -216,7 +216,7 @@ export function ProductList() {
         </aside>
 
         {/* Grid */}
-        <div className="rounded-2xl bg-rose-50/60 p-3 md:p-4 border border-rose-100">
+        <div className="rounded-2xl bg-rose-50/60 p-2 sm:p-3 md:p-4 border border-rose-100">
           {isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
               {Array.from({ length: 8 }).map((_, idx) => (
@@ -239,7 +239,7 @@ export function ProductList() {
               </button>
             </div>
           ) : (
-            <ul className="grid grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-10">
+            <ul className="grid grid-cols-1 min-[420px]:grid-cols-2 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4 md:gap-6 xl:gap-8">
               {filteredProducts.map((product) => (
                 <Product
                   key={product.id}
