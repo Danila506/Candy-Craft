@@ -94,6 +94,10 @@ JWT_REFRESH_SECRET="replace-with-another-long-random-secret"
 JWT_ACCESS_EXPIRES_IN="15m"
 JWT_REFRESH_EXPIRES_IN="30d"
 
+# Optional fallback for older JWT config paths
+JWT_SECRET="replace-with-long-random-secret"
+JWT_EXPIRES_IN="7d"
+
 # Optional: Google OAuth
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
