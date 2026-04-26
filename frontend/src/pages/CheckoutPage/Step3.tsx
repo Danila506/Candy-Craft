@@ -50,15 +50,15 @@ export const Step3 = () => {
   }, []);
 
   return (
-    <div className="space-y-8">
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-amber-400 to-orange-500 rounded-2xl mb-4 shadow-lg shadow-amber-200/50">
-          <Gift className="w-10 h-10 text-white" />
+    <div className="space-y-6 sm:space-y-8">
+      <div className="text-center mb-6 sm:mb-10">
+        <div className="inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 bg-linear-to-br from-amber-400 to-orange-500 rounded-2xl mb-4 shadow-lg shadow-amber-200/50">
+          <Gift className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
           Дополнительные опции
         </h2>
-        <p className="text-gray-600 text-lg">
+        <p className="text-gray-600 text-base sm:text-lg">
           Добавьте магии в вашу коробку сладостей
         </p>
       </div>
@@ -69,7 +69,7 @@ export const Step3 = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
         {isLoading &&
           [1, 2, 3, 4].map((id) => (
             <div
@@ -81,7 +81,7 @@ export const Step3 = () => {
           <button
             key={option.id}
             onClick={() => option.available && setSelectedGift(option)}
-            className={`group relative p-5 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
+            className={`group relative p-4 sm:p-5 rounded-2xl border-2 transition-all duration-300 overflow-hidden ${
               selectedGift?.id === option.id
                 ? "border-[#ff398b] bg-linear-to-br from-pink-50 via-amber-50/30 to-orange-50 shadow-xl shadow-pink-200/50 scale-105"
                 : option.available
@@ -142,7 +142,7 @@ export const Step3 = () => {
         <textarea
           value={customerNote}
           onChange={(e) => setCustomerNote(e.target.value)}
-          className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#ff398b] focus:ring-4 focus:ring-pink-100 transition-all duration-300 h-32 bg-white/50 backdrop-blur-sm hover:border-pink-200 text-gray-900 placeholder-gray-400 resize-none"
+          className="w-full px-4 sm:px-5 py-3 sm:py-4 border-2 border-gray-200 rounded-2xl focus:border-[#ff398b] focus:ring-4 focus:ring-pink-100 transition-all duration-300 h-32 bg-white/50 backdrop-blur-sm hover:border-pink-200 text-gray-900 placeholder-gray-400 resize-none"
           placeholder="Напишите здесь ваши пожелания, аллергии, особые указания..."
         />
       </div>

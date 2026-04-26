@@ -143,10 +143,10 @@ export function ProductModal({
         onClick={onClose}
       />
 
-      <div className="flex items-center justify-center min-h-screen p-4">
-        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl">
-          <div className="flex items-center justify-between p-6 border-b">
-            <h2 className="text-2xl font-bold text-gray-900">
+      <div className="flex items-end sm:items-center justify-center min-h-screen p-3 sm:p-4">
+        <div className="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-hidden flex flex-col">
+          <div className="flex items-center justify-between gap-4 p-4 sm:p-6 border-b">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
               {product ? "Редактировать товар" : "Создать новый товар"}
             </h2>
             <button
@@ -158,10 +158,10 @@ export function ProductModal({
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
                       htmlFor="product-sku"
@@ -221,7 +221,7 @@ export function ProductModal({
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label
                       htmlFor="product-price"
@@ -351,18 +351,18 @@ export function ProductModal({
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-6 mt-6 border-t">
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-6 mt-6 border-t">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+                className="w-full sm:w-auto px-6 py-3 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors font-medium"
                 disabled={loading}
               >
                 Отмена
               </button>
               <button
                 type="submit"
-                className="px-6 py-3 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a] transition-colors font-medium disabled:opacity-50"
+                className="w-full sm:w-auto px-6 py-3 bg-[#ff398b] text-white rounded-lg hover:bg-[#e0327a] transition-colors font-medium disabled:opacity-50"
                 disabled={loading}
               >
                 {loading ? (

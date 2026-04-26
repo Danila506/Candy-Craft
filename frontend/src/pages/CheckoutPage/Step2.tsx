@@ -50,15 +50,15 @@ export const Step2 = () => {
   }, []);
 
   return (
-    <div className="space-y-8">
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-blue-500 to-purple-500 rounded-2xl mb-4 shadow-lg shadow-purple-200/50">
-          <Truck className="w-10 h-10 text-white" />
+    <div className="space-y-6 sm:space-y-8">
+      <div className="text-center mb-6 sm:mb-10">
+        <div className="inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 bg-linear-to-br from-blue-500 to-purple-500 rounded-2xl mb-4 shadow-lg shadow-purple-200/50">
+          <Truck className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
           Способ доставки
         </h2>
-        <p className="text-gray-600 text-lg">
+        <p className="text-gray-600 text-base sm:text-lg">
           Как быстро хотите получить сладости?
         </p>
       </div>
@@ -69,7 +69,7 @@ export const Step2 = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
         {isLoading &&
           [1, 2, 3].map((id) => (
             <div
@@ -81,7 +81,7 @@ export const Step2 = () => {
           <button
             key={option.id}
             onClick={() => setSelectedDelivery(option)}
-            className={`group relative p-6 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden ${
+            className={`group relative p-4 sm:p-6 rounded-2xl border-2 transition-all duration-300 text-left overflow-hidden ${
               selectedDelivery?.id === option.id
                 ? "border-[#ff398b] bg-linear-to-br from-pink-50 via-purple-50/30 to-rose-50 shadow-xl shadow-pink-200/50 scale-105"
                 : "border-gray-200 hover:border-pink-300 hover:shadow-lg bg-white/80 backdrop-blur-sm"
@@ -103,14 +103,14 @@ export const Step2 = () => {
                 >
                   {option.icon}
                 </div>
-                <h3 className="font-bold text-lg text-gray-900">
+                <h3 className="font-bold text-base sm:text-lg text-gray-900">
                   {option.name}
                 </h3>
               </div>
               <p className="text-gray-600 mb-4 text-sm leading-relaxed">
                 {option.description}
               </p>
-              <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-4 border-t border-gray-100">
                 <span className="text-sm font-semibold text-gray-700">
                   {option.time}
                 </span>

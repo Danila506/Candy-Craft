@@ -49,61 +49,63 @@ export function OrdersAdmin() {
     <AdminLayout title="Управление заказами">
       {/* Таблица заказов */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left">ID заказа</th>
-              <th className="px-6 py-3 text-left">Пользователь</th>
-              <th className="px-6 py-3 text-left">Статус</th>
-              <th className="px-6 py-3 text-left">Сумма</th>
-              <th className="px-6 py-3 text-left">Товары</th>
-              <th className="px-6 py-3 text-left">Действия</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order: Order) => (
-              <tr key={order.id} className="border-t hover:bg-gray-50">
-                <td className="px-6 py-4">{order.id}</td>
-                <td className="px-6 py-4">{order.fullName}</td>
-                <td className="px-6 py-4">
-                  {
-                    OrderStatusLabels[
-                      order.status as keyof typeof OrderStatusLabels
-                    ]
-                  }
-                </td>
-                <td className="px-6 py-4">{formatOrderAmount(order)}</td>
-                <td className="px-6 py-4">
-                  <ul>
-                    {order.items?.map((item: OrderItem) => (
-                      <li key={item.id}>
-                        {item.productName} — {item.quantity}шт.
-                      </li>
-                    ))}
-                  </ul>
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleEdit(order)}
-                      aria-label={`Редактировать заказ ${order.id}`}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                    >
-                      <Edit size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(order.id)}
-                      aria-label={`Удалить заказ ${order.id}`}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px]">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left">ID заказа</th>
+                <th className="px-6 py-3 text-left">Пользователь</th>
+                <th className="px-6 py-3 text-left">Статус</th>
+                <th className="px-6 py-3 text-left">Сумма</th>
+                <th className="px-6 py-3 text-left">Товары</th>
+                <th className="px-6 py-3 text-left">Действия</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {orders.map((order: Order) => (
+                <tr key={order.id} className="border-t hover:bg-gray-50">
+                  <td className="px-6 py-4">{order.id}</td>
+                  <td className="px-6 py-4">{order.fullName}</td>
+                  <td className="px-6 py-4">
+                    {
+                      OrderStatusLabels[
+                        order.status as keyof typeof OrderStatusLabels
+                      ]
+                    }
+                  </td>
+                  <td className="px-6 py-4">{formatOrderAmount(order)}</td>
+                  <td className="px-6 py-4">
+                    <ul>
+                      {order.items?.map((item: OrderItem) => (
+                        <li key={item.id}>
+                          {item.productName} — {item.quantity}шт.
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEdit(order)}
+                        aria-label={`Редактировать заказ ${order.id}`}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded"
+                      >
+                        <Edit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(order.id)}
+                        aria-label={`Удалить заказ ${order.id}`}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Модальное окно для заказа */}

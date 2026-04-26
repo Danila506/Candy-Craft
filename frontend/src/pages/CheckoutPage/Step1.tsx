@@ -67,20 +67,20 @@ export const Step1 = () => {
   };
 
   return (
-    <div className="space-y-8">
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-br from-[#ff398b] to-pink-500 rounded-2xl mb-4 shadow-lg shadow-pink-200/50">
-          <Sparkles className="w-10 h-10 text-white" />
+    <div className="space-y-6 sm:space-y-8">
+      <div className="text-center mb-6 sm:mb-10">
+        <div className="inline-flex items-center justify-center w-14 h-14 sm:w-20 sm:h-20 bg-linear-to-br from-[#ff398b] to-pink-500 rounded-2xl mb-4 shadow-lg shadow-pink-200/50">
+          <Sparkles className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
-        <h2 className="text-3xl font-extrabold text-gray-900 mb-2">
+        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
           Адрес доставки
         </h2>
-        <p className="text-gray-600 text-lg">
+        <p className="text-gray-600 text-base sm:text-lg">
           Расскажите, куда доставить сладости
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
         {savedAddresses.length > 0 && (
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
