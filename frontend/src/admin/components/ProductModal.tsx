@@ -106,7 +106,17 @@ export function ProductModal({
 
     setLoading(true);
     try {
-      const { id, ...submitData } = formData;
+      const submitData = {
+        sku: formData.sku,
+        slug: formData.slug,
+        name: formData.name,
+        price: formData.price,
+        inStock: formData.inStock,
+        categoryId: formData.categoryId,
+        description: formData.description,
+        imageUrl: formData.imageUrl,
+        isActive: formData.isActive,
+      };
 
       if (product && onUpdate) {
         await onUpdate(product.id, submitData);

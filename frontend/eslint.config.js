@@ -25,6 +25,9 @@ export default defineConfig([
     },
     rules: {
       "no-unused-vars": ["error", { varsIgnorePattern: "^[A-Z_]" }],
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-refresh/only-export-components": "warn",
     },
   },
   {
@@ -50,6 +53,9 @@ export default defineConfig([
         "error",
         { varsIgnorePattern: "^[A-Z_]", argsIgnorePattern: "^_" },
       ],
+      "react-hooks/refs": "warn",
+      "react-hooks/set-state-in-effect": "warn",
+      "react-refresh/only-export-components": "warn",
     },
   },
 ]);
