@@ -136,8 +136,6 @@ export default function AccountPage() {
 
   const [error, setError] = useState<string>("");
 
-  const { user } = useAuth();
-
   // форма профиля
   const [profile, setProfile] = useState({
     firstName: "",

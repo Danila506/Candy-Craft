@@ -201,8 +201,22 @@ export class PaymentsService {
     if (clientIdempotencyKey) {
       const existingByKey = await (this.prisma as any).payment.findUnique({
         where: { idempotencyKey: clientIdempotencyKey },
+        include: {
+          attempts: {
+            orderBy: { createdAt: 'desc' },
+            take: 1,
+          },
+        },
       });
       if (existingByKey) {
+        if (existingByKey.status === 'FAILED') {
+          const lastAttempt = existingByKey.attempts?.[0];
+          throw new BadGatewayException(
+            lastAttempt?.errorMessage ||
+              'Предыдущая попытка создания платежа завершилась ошибкой',
+          );
+        }
+
         return {
           paymentId: existingByKey.id,
           status: existingByKey.status,

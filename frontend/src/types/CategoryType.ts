@@ -3,6 +3,7 @@ export type CategoryType = {
   name: string;
   description: string;
   imageUrl: string;
+  className?: string;
 };
 
 export type CreateCategoryDto = {

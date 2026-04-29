@@ -14,6 +14,8 @@ import { SuggestModule } from './suggest/suggest.module';
 import { PaymentsModule } from './payments/payments.module';
 import { SecurityModule } from './security/security.module';
 import { ObservabilityModule } from './observability/observability.module';
+import { ContactModule } from './contact/contact.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -31,6 +33,8 @@ import { ObservabilityModule } from './observability/observability.module';
     PaymentsModule,
     AuthModule,
     SuggestModule,
+    ContactModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
