@@ -90,7 +90,7 @@ jobs:
         run: npm ci
 
       - name: Lint
-        run: npm run lint --if-present
+        run: npm run lint
 
       - name: Unit tests
         run: npm run test
@@ -123,6 +123,9 @@ jobs:
 
       - name: Lint
         run: npm run lint --if-present
+
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Build
         run: npm run build --if-present

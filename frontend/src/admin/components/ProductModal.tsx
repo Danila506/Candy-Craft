@@ -125,7 +125,7 @@ export function ProductModal({
 
   const handleChange = (
     field: keyof CreateProductDto,
-    value: string | number,
+    value: CreateProductDto[keyof CreateProductDto],
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
 

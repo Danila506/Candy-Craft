@@ -28,6 +28,7 @@ export class CartService {
             description: true,
             price: true,
             inStock: true,
+            reservedQty: true,
             imageUrl: true,
             categoryId: true,
           },
@@ -35,11 +36,10 @@ export class CartService {
       },
     });
 
-    return (cartItems as any[]).map((item) => ({
+    return cartItems.map((item) => ({
       ...item.product,
       productId: item.productId,
       quantity: item.quantity,
-      reservedQty: item.product?.reservedQty ?? 0,
     }));
   }
 
@@ -47,16 +47,20 @@ export class CartService {
   async addToCart(userId: number, createCartDto: CreateCartItemDto) {
     const { productId } = createCartDto;
 
-    // Проверяем существование товара
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
-    });
-
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
-
     const result = await this.prisma.$transaction(async (tx) => {
+      const product = await tx.product.findUnique({
+        where: { id: productId },
+        select: {
+          id: true,
+          inStock: true,
+          reservedQty: true,
+        },
+      });
+
+      if (!product) {
+        throw new NotFoundException('Product not found');
+      }
+
       let cart = await tx.cart.findUnique({
         where: { userId },
       });
@@ -65,6 +69,26 @@ export class CartService {
         cart = await tx.cart.create({
           data: { userId },
         });
+      }
+
+      const existingCartItem = await tx.cartItem.findUnique({
+        where: {
+          cartId_productId: {
+            cartId: cart.id,
+            productId,
+          },
+        },
+        select: {
+          quantity: true,
+        },
+      });
+      const requestedQuantity = (existingCartItem?.quantity ?? 0) + 1;
+      const available = Math.max(0, product.inStock - product.reservedQty);
+
+      if (available < requestedQuantity) {
+        throw new BadRequestException(
+          `Not enough stock. Available: ${available}`,
+        );
       }
 
       const cartItem = await tx.cartItem.upsert({
@@ -93,6 +117,7 @@ export class CartService {
               description: true,
               price: true,
               inStock: true,
+              reservedQty: true,
               imageUrl: true,
               categoryId: true,
             },
@@ -116,10 +141,9 @@ export class CartService {
     });
     return {
       item: {
-        ...(result.cartItem as any).product,
+        ...result.cartItem.product,
         productId: result.cartItem.productId,
         quantity: result.cartItem.quantity,
-        reservedQty: (result.cartItem as any).product?.reservedQty ?? 0,
       },
       count: result.count,
     };
@@ -156,8 +180,10 @@ export class CartService {
     }
 
     // Проверяем наличие на складе
-    const reservedQty = (cartItem.product as any).reservedQty ?? 0;
-    const available = Math.max(0, cartItem.product.inStock - reservedQty);
+    const available = Math.max(
+      0,
+      cartItem.product.inStock - cartItem.product.reservedQty,
+    );
     if (available < quantity) {
       throw new BadRequestException(
         `Not enough stock. Available: ${available}`,
