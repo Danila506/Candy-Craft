@@ -16,6 +16,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import type { Response } from 'express';
+import { createHash, randomBytes } from 'crypto';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -68,6 +69,23 @@ function setAuthCookies(
     ...cookieBaseOptions(),
     maxAge: 30 * 24 * 60 * 60 * 1000,
   });
+}
+
+function base64Url(buffer: Buffer) {
+  return buffer
+    .toString('base64')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/g, '');
+}
+
+function createVkPkcePair() {
+  const codeVerifier = base64Url(randomBytes(64));
+  const codeChallenge = base64Url(
+    createHash('sha256').update(codeVerifier).digest(),
+  );
+
+  return { codeVerifier, codeChallenge };
 }
 
 @Controller('auth')
@@ -175,15 +193,30 @@ export class AuthController {
 
   @Get('vk')
   async vkAuth(@Res() res: Response) {
+    const state = randomBytes(24).toString('hex');
+    const { codeVerifier, codeChallenge } = createVkPkcePair();
+
+    res.cookie('vk_oauth_state', state, {
+      ...cookieBaseOptions(),
+      maxAge: 10 * 60 * 1000,
+    });
+    res.cookie('vk_code_verifier', codeVerifier, {
+      ...cookieBaseOptions(),
+      maxAge: 10 * 60 * 1000,
+    });
+
     const params = new URLSearchParams({
       client_id: getRequiredOAuthEnv('VK_CLIENT_ID'),
       redirect_uri: getRequiredOAuthEnv('VK_CALLBACK_URL'),
       response_type: 'code',
-      scope: 'email',
-      v: process.env.VK_API_VERSION || '5.199',
+      scope: 'vkid.personal_info email',
+      state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
     });
 
-    return res.redirect(`https://oauth.vk.com/authorize?${params}`);
+    const vkIdBaseUrl = process.env.VK_ID_BASE_URL || 'https://id.vk.com';
+    return res.redirect(`${vkIdBaseUrl}/authorize?${params}`);
   }
 
   @Get('vk/callback')
@@ -192,10 +225,35 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const code = (req as any).query?.code as string | undefined;
-    if (!code) throw new UnauthorizedException('VK OAuth code is missing');
+    const deviceId = (req as any).query?.device_id as string | undefined;
+    const state = (req as any).query?.state as string | undefined;
+    const storedState = (req as any).cookies?.vk_oauth_state as
+      | string
+      | undefined;
+    const codeVerifier = (req as any).cookies?.vk_code_verifier as
+      | string
+      | undefined;
 
-    const { accessToken, refreshToken } = await this.auth.vkLogin(code);
+    if (!code) throw new UnauthorizedException('VK OAuth code is missing');
+    if (!deviceId) {
+      throw new UnauthorizedException('VK OAuth device_id is missing');
+    }
+    if (!state || !storedState || state !== storedState) {
+      throw new UnauthorizedException('VK OAuth state is invalid');
+    }
+    if (!codeVerifier) {
+      throw new UnauthorizedException('VK OAuth code verifier is missing');
+    }
+
+    const { accessToken, refreshToken } = await this.auth.vkLogin({
+      code,
+      deviceId,
+      codeVerifier,
+      state,
+    });
     setAuthCookies(res, { accessToken, refreshToken });
+    res.clearCookie('vk_oauth_state', { ...cookieBaseOptions() });
+    res.clearCookie('vk_code_verifier', { ...cookieBaseOptions() });
 
     return res.redirect(`${getFrontendBaseUrl()}/account`);
   }
