@@ -51,7 +51,7 @@ CandyCraft/
 │   ├── src/contexts      # Auth, cart, products, checkout
 │   └── src/api           # HTTP-клиент и API helpers
 ├── backend/              # NestJS API
-│   ├── src/auth          # Авторизация, JWT, Google OAuth
+│   ├── src/auth          # Авторизация, JWT, Google/Yandex/VK OAuth
 │   ├── src/products      # Товары
 │   ├── src/categories    # Категории
 │   ├── src/cart          # Корзина
@@ -102,6 +102,17 @@ JWT_EXPIRES_IN="7d"
 GOOGLE_CLIENT_ID=""
 GOOGLE_CLIENT_SECRET=""
 GOOGLE_CALLBACK_URL="http://localhost:3000/auth/google/callback"
+
+# Optional: Yandex OAuth
+YANDEX_CLIENT_ID=""
+YANDEX_CLIENT_SECRET=""
+YANDEX_CALLBACK_URL="http://localhost:3000/auth/yandex/callback"
+
+# Optional: VK OAuth
+VK_CLIENT_ID=""
+VK_CLIENT_SECRET=""
+VK_CALLBACK_URL="http://localhost:3000/auth/vk/callback"
+VK_API_VERSION="5.199"
 
 # Optional: address suggestions
 DADATA_API_KEY=""

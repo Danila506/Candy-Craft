@@ -78,7 +78,10 @@ export function OrdersAdmin() {
                     <ul>
                       {order.items?.map((item: OrderItem) => (
                         <li key={item.id}>
-                          {item.productName} — {item.quantity}шт.
+                          {item.productName}
+                          {item.productId === null
+                            ? " (индивидуальный)"
+                            : ""} — {item.quantity}шт.
                         </li>
                       ))}
                     </ul>

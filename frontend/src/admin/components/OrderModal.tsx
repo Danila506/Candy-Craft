@@ -1,9 +1,90 @@
 import { Dialog } from "@headlessui/react";
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useMemo } from "react";
 import type { Order, OrderItem, OrderStatusKey } from "../../types/OrderType";
 import { OrderStatusLabels } from "../../types/OrderType";
 import type { OrderUpdateDto } from "../context/OrderContext";
 import { useProducts } from "../../contexts/ProductContext";
+
+type CustomCandyCakeConfig = {
+  type?: "custom_cake";
+  base?: "round" | "square" | "heart";
+  layout?: "box" | "round-basket" | "tiered-tower" | "heart-box";
+  shape?: "round" | "square" | "heart";
+  size?: "small" | "medium" | "large" | "m" | "l";
+  sweetSet?: "kinder" | "merci" | "mix" | "premium";
+  color?: "pink" | "gold" | "white";
+  outerLayer?: "kinder-sticks" | "kitkat" | "merci-bars" | "wafer-rolls";
+  wrapper?: "satin" | "lace" | "kraft" | "transparent";
+  packaging?: "standard" | "window" | "gift" | "premium-box";
+  decor?: "none" | "flowers" | "bow" | "topper";
+  // Legacy orders may still contain levels/tiers. New custom cakes are single-level.
+  levels?: number;
+  tiers?: number;
+  theme?: string;
+  candies?: Array<{
+    id?: string;
+    name?: string;
+    quantity?: number;
+  }>;
+  decorations?: Array<{
+    type?: string;
+    label?: string;
+  }>;
+  inscription?: string;
+  messageText?: string;
+};
+
+const customShapeLabels = {
+  round: "круг",
+  square: "квадрат",
+  heart: "сердце",
+} as const;
+
+const customSizeLabels = {
+  small: "малый",
+  medium: "средний",
+  large: "большой",
+  m: "M",
+  l: "L",
+} as const;
+
+const customSweetSetLabels = {
+  kinder: "Kinder",
+  merci: "Merci",
+  mix: "Mix",
+  premium: "Premium",
+} as const;
+
+const customLayoutLabels = {
+  box: "коробка",
+  "round-basket": "корзина",
+  "tiered-tower": "башня",
+  "heart-box": "сердце",
+} as const;
+
+const customOuterLayerLabels = {
+  "kinder-sticks": "Kinder по борту",
+  kitkat: "KitKat по борту",
+  "merci-bars": "Merci по борту",
+  "wafer-rolls": "вафельные трубочки",
+} as const;
+
+const customPackagingLabels = {
+  standard: "фирменная коробка",
+  window: "коробка с окном",
+  gift: "подарочная упаковка",
+  "premium-box": "премиум-бокс",
+} as const;
+
+function isCustomCandyCakeConfig(
+  value: unknown,
+): value is CustomCandyCakeConfig {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    ("candies" in value || (value as { type?: string }).type === "custom_cake"),
+  );
+}
 
 type Props = {
   isOpen: boolean;
@@ -14,13 +95,9 @@ type Props = {
 
 export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
   const [status, setStatus] = useState<OrderStatusKey>(order.status);
-  const [items, setItems] = useState<OrderItem[]>([]);
-
-  useEffect(() => {
-    if (order?.items) {
-      setItems(order.items.map((i) => ({ ...i })));
-    }
-  }, [order]);
+  const [items, setItems] = useState<OrderItem[]>(() =>
+    order.items.map((i) => ({ ...i })),
+  );
 
   const totalAmountMinor = useMemo(() => {
     return items.reduce(
@@ -38,33 +115,32 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
   }, [order.currency, totalAmountMinor]);
 
   const handleSave = async () => {
+    const hasCustomItems = items.some((item) => item.productId === null);
     await onUpdate(order.id, {
       status,
-      items: items.map(({ productId, quantity }) => ({
-        productId,
-        quantity,
-      })),
+      items: hasCustomItems
+        ? undefined
+        : items.map(({ productId, quantity }) => ({
+            productId: productId as number,
+            quantity,
+          })),
     });
     onClose();
   };
 
-  const baseQtyRef = useRef<Record<number, number>>({}); // ключ = productId, значение = qty из заказа при открытии
-
-  useEffect(() => {
-    if (order?.items) {
-      setItems(order.items.map((i) => ({ ...i })));
-
-      // фиксируем базовые qty один раз при смене order.id
-      baseQtyRef.current = Object.fromEntries(
-        order.items.map((i) => [i.productId, i.quantity]),
-      );
-    }
-  }, [order?.id]); // ВАЖНО: именно order.id, чтобы не пересоздавалось от каждого рендера
   const { products } = useProducts();
 
   const productById = useMemo(() => {
     return new Map(products.map((p) => [p.id, p]));
   }, [products]);
+
+  const baseQtyByProductId = useMemo(() => {
+    return Object.fromEntries(
+      order.items
+        .filter((i) => i.productId !== null)
+        .map((i) => [i.productId, i.quantity]),
+    );
+  }, [order.items]);
   return (
     <Dialog
       open={isOpen}
@@ -105,56 +181,131 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
 
         <div className="mb-4">
           <label className="block font-semibold mb-1">Товары:</label>
-          <ul className="max-h-40 overflow-auto">
+          <ul className="max-h-72 overflow-auto">
             {items.map((item, idx) => {
-              const product = productById.get(item.productId);
+              const productId = item.productId;
+              const isCustom = productId === null;
+              const product =
+                productId === null ? undefined : productById.get(productId);
               const available = product?.inStock ?? 0;
+              const customConfig = isCustomCandyCakeConfig(item.customConfig)
+                ? item.customConfig
+                : null;
+              const candySummary =
+                customConfig?.type === "custom_cake"
+                  ? customConfig.sweetSet
+                    ? customSweetSetLabels[customConfig.sweetSet]
+                    : ""
+                  : (customConfig?.candies
+                      ?.filter((candy) => Number(candy.quantity) > 0)
+                      .map(
+                        (candy) =>
+                          `${candy.name ?? candy.id ?? "конфета"} x${candy.quantity}`,
+                      )
+                      .join(", ") ?? "");
 
               const baseQty =
-                baseQtyRef.current[item.productId] ?? item.quantity;
+                productId === null
+                  ? item.quantity
+                  : (baseQtyByProductId[productId] ?? item.quantity);
               const maxQty = available + baseQty; // ✅ статично для этого заказа
 
               return (
                 <li
                   key={item.id || idx}
-                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 py-2"
+                  className="flex flex-col gap-2 border-b border-gray-100 py-3 last:border-b-0"
                 >
-                  <span className="truncate">
-                    {item.productName}
-                    <span className="ml-2 text-xs text-gray-500">
-                      (доступно: {available}, максимум: {maxQty})
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <span className="truncate">
+                      {item.productName}
+                      <span className="ml-2 text-xs text-gray-500">
+                        {isCustom
+                          ? "(индивидуальная сборка)"
+                          : `(доступно: ${available}, максимум: ${maxQty})`}
+                      </span>
                     </span>
-                  </span>
 
-                  <div className="flex items-center gap-2 self-stretch sm:self-auto">
-                    <input
-                      type="number"
-                      value={item.quantity}
-                      min={0}
-                      max={maxQty}
-                      onChange={(e) => {
-                        const raw = Number(e.target.value);
-                        const next = Number.isFinite(raw) ? raw : 0;
+                    <div className="flex items-center gap-2 self-stretch sm:self-auto">
+                      <input
+                        type="number"
+                        value={item.quantity}
+                        min={0}
+                        max={maxQty}
+                        disabled={isCustom}
+                        onChange={(e) => {
+                          const raw = Number(e.target.value);
+                          const next = Number.isFinite(raw) ? raw : 0;
 
-                        const clamped = Math.min(Math.max(next, 0), maxQty);
+                          const clamped = Math.min(Math.max(next, 0), maxQty);
 
-                        setItems((prev) =>
-                          prev.map((it, i) =>
-                            i === idx
-                              ? {
-                                  ...it,
-                                  quantity: clamped,
-                                }
-                              : it,
-                          ),
-                        );
-                      }}
-                      className="border rounded px-2 py-1 w-20"
-                    />
-                    <span className="text-sm text-gray-600">
-                      × {item.price} ₽
-                    </span>
+                          setItems((prev) =>
+                            prev.map((it, i) =>
+                              i === idx
+                                ? {
+                                    ...it,
+                                    quantity: clamped,
+                                  }
+                                : it,
+                            ),
+                          );
+                        }}
+                        className="border rounded px-2 py-1 w-20 disabled:bg-gray-100"
+                      />
+                      <span className="text-sm text-gray-600">
+                        × {item.price} ₽
+                      </span>
+                    </div>
                   </div>
+
+                  {customConfig && (
+                    <div className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-xs text-gray-700">
+                      <div>
+                        Тип:{" "}
+                        {customConfig.type === "custom_cake"
+                          ? "PNG-слои"
+                          : customConfig.layout
+                            ? customLayoutLabels[customConfig.layout]
+                            : "—"}
+                        , Форма:{" "}
+                        {customConfig.type === "custom_cake" &&
+                        customConfig.base
+                          ? customShapeLabels[customConfig.base]
+                          : customConfig.shape
+                            ? customShapeLabels[customConfig.shape]
+                            : "—"}
+                        , размер:{" "}
+                        {customConfig.size
+                          ? customSizeLabels[customConfig.size]
+                          : "—"}
+                      </div>
+                      {candySummary && (
+                        <div className="mt-1">
+                          {customConfig.type === "custom_cake"
+                            ? "Внутренний слой"
+                            : "Конфеты"}
+                          : {candySummary}
+                        </div>
+                      )}
+                      {customConfig.type === "custom_cake" && (
+                        <div className="mt-1">
+                          {customConfig.outerLayer
+                            ? customOuterLayerLabels[customConfig.outerLayer]
+                            : "наружный ряд не указан"}
+                          ,{" "}
+                          {customConfig.packaging
+                            ? customPackagingLabels[customConfig.packaging]
+                            : "упаковка не указана"}
+                        </div>
+                      )}
+                      {(customConfig.inscription ||
+                        customConfig.messageText) && (
+                        <div className="mt-1">
+                          Надпись:{" "}
+                          {customConfig.inscription || customConfig.messageText}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </li>
               );
             })}

@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
-  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -33,6 +32,7 @@ export class UserService {
             cartId: true,
             productId: true,
             quantity: true,
+            customPrice: true,
             product: {
               select: {
                 id: true,
@@ -88,7 +88,8 @@ export class UserService {
     // Если у пользователя есть корзина, подсчитываем общую стоимость
     if (users.cart) {
       const totalPrice = users.cart.items.reduce(
-        (sum, item) => sum + item.product.price * item.quantity,
+        (sum, item) =>
+          sum + (item.product?.price ?? item.customPrice ?? 0) * item.quantity,
         0,
       );
 
@@ -224,13 +225,15 @@ export class UserService {
     }
 
     const totalCartValue = users.cart.items.reduce(
-      (sum, item) => sum + item.product.price * item.quantity,
+      (sum, item) =>
+        sum + (item.product?.price ?? item.customPrice ?? 0) * item.quantity,
       0,
     );
 
     const categoriesMap = new Map<string, number>();
     users.cart.items.forEach((item) => {
-      const categoryName = item.product.category.name;
+      const categoryName =
+        item.product?.category.name ?? 'Индивидуальные конфетные торты';
       categoriesMap.set(
         categoryName,
         (categoriesMap.get(categoryName) || 0) + item.quantity,

@@ -10,6 +10,7 @@ import { Order, Prisma } from '@prisma/client';
 import { OrderStatus } from '@prisma/client';
 import { normalizeRuPhone } from 'src/utils/phone';
 import { OrderOptionsService } from './order-options.service';
+import { calculateCandyCakePrice } from 'src/candy-cake/candy-cake-pricing';
 
 function cleanText(value?: string) {
   const v = value?.trim();
@@ -129,6 +130,18 @@ export class OrdersService {
     }));
   }
 
+  private calculateCustomCakePrice(config: unknown) {
+    try {
+      return calculateCandyCakePrice(config as any);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error
+          ? error.message
+          : 'Некорректная конфигурация конфетного торта',
+      );
+    }
+  }
+
   async create(dto: CreateOrderDto, userId: number, idempotencyKey?: string) {
     const normalizedIdempotencyKey = cleanText(idempotencyKey ?? undefined);
     if (normalizedIdempotencyKey) {
@@ -142,19 +155,33 @@ export class OrdersService {
       if (existing) return existing;
     }
 
-    const cartSnapshotItems = await this.prisma.cartItem.findMany({
+    const cartSnapshotItems = await (this.prisma as any).cartItem.findMany({
       where: {
         cart: {
           userId,
         },
       },
       select: {
+        id: true,
         productId: true,
         quantity: true,
+        customName: true,
+        customConfig: true,
+        customPreviewUrl: true,
+        customPrice: true,
       },
     });
-    const sourceItems = this.aggregateItems(cartSnapshotItems);
-    if (!sourceItems.length) {
+    const productCartItems = cartSnapshotItems.filter((item) => item.productId);
+    const customCartItems = cartSnapshotItems.filter(
+      (item) => !item.productId && item.customConfig,
+    );
+    const sourceItems = this.aggregateItems(
+      productCartItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
+    );
+    if (!sourceItems.length && !customCartItems.length) {
       throw new BadRequestException('Корзина пуста');
     }
     const address = cleanText(dto.address) ?? buildStructuredAddress(dto);
@@ -207,7 +234,21 @@ export class OrdersService {
       const product = products.find((p) => p.id === item.productId)!;
       return { ...item, price: product.price };
     });
-    const totals = this.calculateCommercialTotals(pricedItems, {
+    const customPricedItems = customCartItems.map((item) => {
+      if (item.quantity <= 0) {
+        throw new BadRequestException('Количество должно быть больше 0');
+      }
+      return {
+        cartItemId: item.id,
+        productName: item.customName ?? 'Индивидуальный конфетный торт',
+        quantity: item.quantity,
+        price: this.calculateCustomCakePrice(item.customConfig),
+        customConfig: item.customConfig,
+        customPreviewUrl: item.customPreviewUrl ?? null,
+      };
+    });
+    const allPricedItems = [...pricedItems, ...customPricedItems];
+    const totals = this.calculateCommercialTotals(allPricedItems, {
       deliveryOptionId: dto.deliveryOptionId,
       giftOptionId: dto.giftOptionId,
     });
@@ -234,6 +275,24 @@ export class OrdersService {
       }
 
       // 4.2) Создаём заказ (и сохраняем snapshot цен/названий)
+      const stockOrderItems = sourceItems.map((item) => {
+        const product = products.find((p) => p.id === item.productId)!;
+        return {
+          productId: product.id,
+          productName: product.name,
+          price: product.price,
+          quantity: item.quantity,
+        };
+      });
+      const customOrderItems = customPricedItems.map((item) => ({
+        productId: null,
+        productName: item.productName,
+        price: item.price,
+        quantity: item.quantity,
+        customConfig: item.customConfig,
+        customPreviewUrl: item.customPreviewUrl,
+      }));
+
       const order = await (tx as any).order.create({
         data: {
           userId: userId ?? undefined,
@@ -248,15 +307,7 @@ export class OrdersService {
           giftTotalMinor: totals.giftTotalMinor,
           finalAmountMinor: totals.finalAmountMinor,
           items: {
-            create: sourceItems.map((item) => {
-              const product = products.find((p) => p.id === item.productId)!;
-              return {
-                productId: product.id,
-                productName: product.name,
-                price: product.price,
-                quantity: item.quantity,
-              };
-            }),
+            create: [...stockOrderItems, ...customOrderItems],
           },
         },
         include: { items: true },
@@ -279,15 +330,17 @@ export class OrdersService {
           changedByUserId: userId ?? null,
         },
       });
-      await (tx as any).inventoryMovement.createMany({
-        data: sourceItems.map((item) => ({
-          productId: item.productId,
-          orderId: order.id,
-          type: 'RESERVE',
-          quantity: item.quantity,
-          note: 'Reserved on order creation',
-        })),
-      });
+      if (sourceItems.length) {
+        await (tx as any).inventoryMovement.createMany({
+          data: sourceItems.map((item) => ({
+            productId: item.productId,
+            orderId: order.id,
+            type: 'RESERVE',
+            quantity: item.quantity,
+            note: 'Reserved on order creation',
+          })),
+        });
+      }
       await (tx as any).orderAddress.create({
         data: {
           orderId: order.id,
@@ -425,6 +478,11 @@ export class OrdersService {
       // Если пришли новые items
       if (dto.items) {
         this.assertCanChangeItems(order.status);
+        if (order.items.some((item) => !item.productId)) {
+          throw new BadRequestException(
+            'Заказы с индивидуальными конфетными тортами пока нельзя менять по составу',
+          );
+        }
         const requestedItems = this.aggregateItems(dto.items);
         if (!requestedItems.length) {
           throw new BadRequestException(

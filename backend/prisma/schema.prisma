@@ -26,6 +26,8 @@ model User {
   phone        String? @unique
   passwordHash String
   googleId     String? @unique
+  yandexId     String? @unique
+  vkId         String? @unique
   role         Role    @default(USER)
 
   createdAt DateTime @default(now())
@@ -85,12 +87,16 @@ model Cart {
 model CartItem {
   id        Int @id @default(autoincrement())
   cartId    Int @map("cart_id")
-  productId Int @map("product_id")
+  productId Int? @map("product_id")
   quantity  Int @default(1)
+  customName       String? @map("custom_name")
+  customConfig     Json?   @map("custom_config")
+  customPreviewUrl String? @map("custom_preview_url")
+  customPrice      Int?    @map("custom_price")
 
   // Связи
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
   @@index([cartId])
@@ -322,6 +328,8 @@ model OrderItem {
 
   quantity Int @default(1)
   price    Int
+  customConfig     Json?   @map("custom_config")
+  customPreviewUrl String? @map("custom_preview_url")
 
   // Связи
   order   Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)

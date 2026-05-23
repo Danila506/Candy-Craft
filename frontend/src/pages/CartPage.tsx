@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { H2 } from "../components/ui/H2";
 import { useCart } from "../contexts/CartContext";
 import { Link, useNavigate } from "react-router-dom";
+import type { CartType } from "../types/CartType";
 import {
   ShoppingCart,
   Plus,
@@ -15,31 +16,80 @@ import {
   Tag,
 } from "lucide-react";
 
+const customShapeLabels = {
+  round: "круг",
+  square: "квадрат",
+  heart: "сердце",
+} as const;
+
+const customSizeLabels = {
+  small: "малый",
+  medium: "средний",
+  large: "большой",
+  m: "M",
+  l: "L",
+} as const;
+
+const customSweetSetLabels = {
+  kinder: "Kinder",
+  merci: "Merci",
+  mix: "Mix",
+  premium: "Premium",
+} as const;
+
+const customColorLabels = {
+  pink: "розовый",
+  gold: "золотой",
+  white: "белый",
+} as const;
+
+const customDecorLabels = {
+  none: "без декора",
+  flowers: "цветы",
+  bow: "бант",
+  topper: "топпер",
+} as const;
+
+const customOuterLayerLabels = {
+  "kinder-sticks": "Kinder по борту",
+  kitkat: "KitKat по борту",
+  "merci-bars": "Merci по борту",
+  "wafer-rolls": "вафельные трубочки",
+} as const;
+
+const customWrapperLabels = {
+  satin: "атласная лента",
+  lace: "кружевная обёртка",
+  kraft: "крафт-бортик",
+  transparent: "прозрачный борт",
+} as const;
+
+const customPackagingLabels = {
+  standard: "фирменная коробка",
+  window: "коробка с окном",
+  gift: "подарочная упаковка",
+  "premium-box": "премиум-бокс",
+} as const;
+
 export function Cart() {
-  const { cartItems, removeItem, updateItemQuantity } = useCart();
+  const { cartItems, removeCartEntry, updateCartEntryQuantity } = useCart();
   const [busyItemId, setBusyItemId] = useState<number | null>(null);
   const navigate = useNavigate();
 
-  const incrementQuantity = async (
-    productId: number,
-    currentQuantity: number,
-  ) => {
-    setBusyItemId(productId);
+  const incrementQuantity = async (item: CartType) => {
+    setBusyItemId(item.id);
     try {
-      await updateItemQuantity(productId, currentQuantity + 1);
+      await updateCartEntryQuantity(item, item.quantity + 1);
     } finally {
       setBusyItemId(null);
     }
   };
 
-  const decrementQuantity = async (
-    productId: number,
-    currentQuantity: number,
-  ) => {
-    if (currentQuantity <= 1) return;
-    setBusyItemId(productId);
+  const decrementQuantity = async (item: CartType) => {
+    if (item.quantity <= 1) return;
+    setBusyItemId(item.id);
     try {
-      await updateItemQuantity(productId, currentQuantity - 1);
+      await updateCartEntryQuantity(item, item.quantity - 1);
     } finally {
       setBusyItemId(null);
     }
@@ -113,11 +163,12 @@ export function Cart() {
               {cartItems.map((item) => {
                 const quantity = item.quantity;
                 const itemTotal = Number(item.price) * quantity;
-                const isBusy = busyItemId === item.productId;
-                const availableStock = Math.max(
-                  0,
-                  item.inStock - (item.reservedQty ?? 0),
-                );
+                const isBusy = busyItemId === item.id;
+                const availableStock = item.isCustom
+                  ? 5
+                  : Math.max(0, item.inStock - (item.reservedQty ?? 0));
+                const customConfig = item.customConfig;
+                const isLayerCake = customConfig?.type === "custom_cake";
 
                 return (
                   <div
@@ -126,11 +177,22 @@ export function Cart() {
                   >
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 md:gap-5 p-4 md:p-6">
                       <div className="relative w-full sm:w-28 h-48 min-[420px]:h-56 sm:h-28 md:w-32 md:h-32 shrink-0 rounded-xl overflow-hidden bg-linear-to-br from-slate-50 to-slate-100">
-                        <img
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          src={item.imageUrl}
-                          alt={item.name}
-                        />
+                        {item.imageUrl ? (
+                          <img
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            src={item.imageUrl}
+                            alt={item.name}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-rose-100 via-amber-50 to-pink-100">
+                            <div className="text-center">
+                              <div className="mx-auto mb-2 h-14 w-14 rounded-full border-8 border-rose-200 bg-amber-100 shadow-inner" />
+                              <div className="text-xs font-semibold text-rose-700">
+                                CandyCraft
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex-1 min-w-0 w-full sm:w-auto">
@@ -140,16 +202,51 @@ export function Cart() {
                         <div className="flex items-center gap-2 mb-4">
                           <div className="px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-100">
                             <span className="text-xs font-medium text-emerald-700">
-                              Доступно: {availableStock} шт
+                              {item.isCustom
+                                ? "Индивидуальная сборка"
+                                : `Доступно: ${availableStock} шт`}
                             </span>
                           </div>
                         </div>
+                        {customConfig && (
+                          <div className="mb-4 rounded-xl border border-rose-100 bg-rose-50/70 px-3 py-2 text-xs text-slate-600">
+                            {isLayerCake ? (
+                              <>
+                                {customShapeLabels[customConfig.base]},{" "}
+                                {customSizeLabels[customConfig.size]},{" "}
+                                {
+                                  customOuterLayerLabels[
+                                    customConfig.outerLayer
+                                  ]
+                                }
+                                , {customSweetSetLabels[customConfig.sweetSet]},{" "}
+                                {customColorLabels[customConfig.color]},{" "}
+                                {customWrapperLabels[customConfig.wrapper]},{" "}
+                                {customPackagingLabels[customConfig.packaging]},{" "}
+                                {customDecorLabels[customConfig.decor]}
+                                {customConfig.messageText
+                                  ? `, надпись: "${customConfig.messageText}"`
+                                  : ""}
+                              </>
+                            ) : (
+                              <>
+                                {customShapeLabels[customConfig.shape]},{" "}
+                                {customSizeLabels[customConfig.size]}, конфет:{" "}
+                                {customConfig.candies.reduce(
+                                  (sum, candy) => sum + candy.quantity,
+                                  0,
+                                )}
+                                {customConfig.inscription
+                                  ? `, надпись: "${customConfig.inscription}"`
+                                  : ""}
+                              </>
+                            )}
+                          </div>
+                        )}
 
                         <div className="flex items-center gap-3 mb-4">
                           <button
-                            onClick={() =>
-                              decrementQuantity(item.productId, quantity)
-                            }
+                            onClick={() => decrementQuantity(item)}
                             disabled={quantity <= 1 || isBusy}
                             className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
                             title="Уменьшить"
@@ -162,9 +259,7 @@ export function Cart() {
                             </span>
                           </div>
                           <button
-                            onClick={() =>
-                              incrementQuantity(item.productId, quantity)
-                            }
+                            onClick={() => incrementQuantity(item)}
                             disabled={quantity >= availableStock || isBusy}
                             className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
                             title="Увеличить"
@@ -189,7 +284,7 @@ export function Cart() {
 
                       <div className="flex w-full sm:w-auto sm:flex-col items-end gap-4">
                         <button
-                          onClick={() => removeItem(item.productId)}
+                          onClick={() => removeCartEntry(item)}
                           className="ml-auto p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100 transition-all duration-200"
                           title="Удалить товар"
                         >

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Link, Outlet, Route, Routes } from "react-router-dom";
 import Header from "./components/header/Header";
 import { Main } from "./components/Main";
@@ -25,6 +26,12 @@ import AccountPage from "./pages/AccountPage/AccountPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { DeliveryPayment } from "./pages/DeliveryPage";
 import { PaymentResultPage } from "./pages/PaymentResultPage";
+
+const CakeConstructorPage = lazy(() =>
+  import("./features/cake-constructor/CakeConstructorPage").then((module) => ({
+    default: module.CakeConstructorPage,
+  })),
+);
 
 function PublicLayout() {
   return (
@@ -65,6 +72,17 @@ function NotFoundPage() {
   );
 }
 
+function PageLoader() {
+  return (
+    <main className="container px-4 py-20 min-h-[60vh] flex items-center justify-center text-center">
+      <div>
+        <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-rose-100 border-t-[#ff398b]" />
+        <p className="text-sm font-semibold text-gray-600">Загружаем...</p>
+      </div>
+    </main>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
@@ -80,6 +98,14 @@ function App() {
                 <Route path="/delivery" element={<DeliveryPayment />} />
                 <Route path="/contacts" element={<ContactsPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
+                <Route
+                  path="/constructor"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <CakeConstructorPage />
+                    </Suspense>
+                  }
+                />
                 <Route path="/payment/result" element={<PaymentResultPage />} />
               </Route>
 

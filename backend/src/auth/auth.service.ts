@@ -16,6 +16,16 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserAddressDto } from './dto/create-user-address.dto';
 import { UpdateUserAddressDto } from './dto/update-user-address.dto';
 
+type SocialProvider = 'google' | 'yandex' | 'vk';
+
+type SocialLoginProfile = {
+  provider: SocialProvider;
+  providerId: string;
+  email: string | null;
+  firstName: string;
+  lastName: string;
+};
+
 function msFromExpires(expires: string) {
   // простая поддержка 15m/30d/1h
   const m = expires.match(/^(\d+)([smhd])$/);
@@ -57,6 +67,31 @@ function buildAddressLine(dto: {
   return parts.length ? parts.join(', ') : null;
 }
 
+function requiredEnv(name: string) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new BadRequestException(`Не настроена переменная окружения ${name}`);
+  }
+  return value;
+}
+
+async function readOAuthJson<T>(url: string, init?: RequestInit) {
+  const response = await fetch(url, init);
+  const data = (await response.json().catch(() => null)) as
+    | (T & { error?: string; error_description?: string })
+    | null;
+
+  if (!response.ok || data?.error) {
+    throw new BadRequestException(
+      data?.error_description ||
+        data?.error ||
+        'Не удалось получить данные OAuth-провайдера',
+    );
+  }
+
+  return data as T;
+}
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -68,6 +103,17 @@ export class AuthService {
   private refreshSecret = process.env.JWT_REFRESH_SECRET!;
   private accessExp: string = process.env.JWT_ACCESS_EXPIRES_IN || '15m';
   private refreshExp: string = process.env.JWT_REFRESH_EXPIRES_IN || '30d';
+  private readonly socialUserSelect = {
+    id: true,
+    email: true,
+    firstName: true,
+    lastName: true,
+    phone: true,
+    role: true,
+    googleId: true,
+    yandexId: true,
+    vkId: true,
+  } as const;
 
   async register(dto: CreateUserDto) {
     // 1) проверка паролей (фронт можно обойти — бэк обязан проверить)
@@ -175,94 +221,154 @@ export class AuthService {
     lastName: string;
     googleId: string;
   }) {
+    return this.socialLogin({
+      provider: 'google',
+      providerId: profile.googleId,
+      email: profile.email,
+      firstName: profile.firstName,
+      lastName: profile.lastName,
+    });
+  }
+
+  async yandexLogin(code: string) {
+    const callbackUrl = requiredEnv('YANDEX_CALLBACK_URL');
+    const tokenBody = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code,
+      client_id: requiredEnv('YANDEX_CLIENT_ID'),
+      client_secret: requiredEnv('YANDEX_CLIENT_SECRET'),
+      redirect_uri: callbackUrl,
+    });
+
+    const token = await readOAuthJson<{ access_token: string }>(
+      'https://oauth.yandex.ru/token',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: tokenBody,
+      },
+    );
+
+    const profileUrl = new URL('https://login.yandex.ru/info');
+    profileUrl.searchParams.set('format', 'json');
+    profileUrl.searchParams.set('oauth_token', token.access_token);
+
+    const profile = await readOAuthJson<{
+      id: string;
+      default_email?: string;
+      first_name?: string;
+      last_name?: string;
+      real_name?: string;
+      login?: string;
+    }>(profileUrl.toString());
+
+    const [fallbackFirstName, ...fallbackLastName] = (
+      profile.real_name ||
+      profile.login ||
+      'Yandex User'
+    ).split(' ');
+
+    return this.socialLogin({
+      provider: 'yandex',
+      providerId: profile.id,
+      email: profile.default_email ?? null,
+      firstName: profile.first_name || fallbackFirstName || 'Yandex',
+      lastName: profile.last_name || fallbackLastName.join(' ') || 'User',
+    });
+  }
+
+  async vkLogin(code: string) {
+    const tokenUrl = new URL('https://oauth.vk.com/access_token');
+    tokenUrl.searchParams.set('client_id', requiredEnv('VK_CLIENT_ID'));
+    tokenUrl.searchParams.set('client_secret', requiredEnv('VK_CLIENT_SECRET'));
+    tokenUrl.searchParams.set('redirect_uri', requiredEnv('VK_CALLBACK_URL'));
+    tokenUrl.searchParams.set('code', code);
+
+    const token = await readOAuthJson<{
+      access_token: string;
+      user_id: number;
+      email?: string;
+    }>(tokenUrl.toString());
+
+    const profileUrl = new URL('https://api.vk.com/method/users.get');
+    profileUrl.searchParams.set('user_ids', String(token.user_id));
+    profileUrl.searchParams.set('fields', 'first_name,last_name');
+    profileUrl.searchParams.set('access_token', token.access_token);
+    profileUrl.searchParams.set('v', process.env.VK_API_VERSION || '5.199');
+
+    const profileResponse = await readOAuthJson<{
+      response?: Array<{
+        id: number;
+        first_name?: string;
+        last_name?: string;
+      }>;
+    }>(profileUrl.toString());
+    const profile = profileResponse.response?.[0];
+
+    if (!profile) {
+      throw new BadRequestException('Не удалось получить профиль VK');
+    }
+
+    return this.socialLogin({
+      provider: 'vk',
+      providerId: String(profile.id),
+      email: token.email ?? null,
+      firstName: profile.first_name || 'VK',
+      lastName: profile.last_name || 'User',
+    });
+  }
+
+  private async socialLogin(profile: SocialLoginProfile) {
     if (!profile.email) {
-      throw new BadRequestException('Не удалось получить email от Google');
+      throw new BadRequestException(
+        `Не удалось получить email от ${profile.provider.toUpperCase()}`,
+      );
     }
 
     const email = profile.email.trim().toLowerCase();
-    const googleId = profile.googleId;
+    const providerIdField = {
+      google: 'googleId',
+      yandex: 'yandexId',
+      vk: 'vkId',
+    } satisfies Record<SocialProvider, 'googleId' | 'yandexId' | 'vkId'>;
+    const providerIdKey = providerIdField[profile.provider];
 
     let user = await this.prisma.user.findUnique({
-      where: { googleId },
-      select: {
-        id: true,
-        email: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        role: true,
-        googleId: true,
-      },
+      where: { [providerIdKey]: profile.providerId } as any,
+      select: this.socialUserSelect,
     });
 
     if (!user) {
       const byEmail = await this.prisma.user.findUnique({
         where: { email },
-        select: {
-          id: true,
-          email: true,
-          firstName: true,
-          lastName: true,
-          phone: true,
-          role: true,
-          googleId: true,
-        },
+        select: this.socialUserSelect,
       });
 
       if (byEmail) {
-        if (byEmail.googleId !== googleId) {
+        if (byEmail[providerIdKey] !== profile.providerId) {
           await this.prisma.user.update({
             where: { id: byEmail.id },
-            data: { googleId },
+            data: { [providerIdKey]: profile.providerId } as any,
           });
         }
-        user = { ...byEmail, googleId };
+        user = { ...byEmail, [providerIdKey]: profile.providerId };
       } else {
         const passwordHash = await argon2.hash(randomBytes(32).toString('hex'));
-        const created = await this.prisma.user.create({
+        user = await this.prisma.user.create({
           data: {
-            firstName: profile.firstName || 'Google',
+            firstName: profile.firstName || profile.provider,
             lastName: profile.lastName || 'User',
             email,
             phone: null,
             passwordHash,
-            googleId,
-          },
-          select: {
-            id: true,
-            email: true,
-            firstName: true,
-            lastName: true,
-            phone: true,
-            role: true,
-            googleId: true,
-          },
+            [providerIdKey]: profile.providerId,
+          } as any,
+          select: this.socialUserSelect,
         });
-        user = created;
       }
     }
 
-    const { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt } =
-      await this.issueTokens(user.id, user.email, user.role);
-
-    await this.prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash: refreshTokenHash,
-        expiresAt: refreshExpiresAt,
-      },
-    });
-
-    const safeUser = {
-      id: user.id,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      phone: user.phone,
-      role: user.role,
-    };
-
-    return { accessToken, refreshToken, user: safeUser };
+    return this.issueAuthSession(user);
   }
 
   async refresh(refreshToken: string) {
@@ -357,6 +463,39 @@ export class AuthService {
     );
 
     return { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt };
+  }
+
+  private async issueAuthSession(user: {
+    id: number;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    role: Role;
+  }) {
+    const { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt } =
+      await this.issueTokens(user.id, user.email, user.role);
+
+    await this.prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: refreshTokenHash,
+        expiresAt: refreshExpiresAt,
+      },
+    });
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phone: user.phone,
+        role: user.role,
+      },
+    };
   }
 
   async logout(refreshToken: string) {
