@@ -18,6 +18,7 @@ import type { Request } from 'express';
 import { CreateCartItemDto } from './dto/create-cart-item.dto';
 import { UpdateCartItemDto } from './dto/update-cart-item.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CreateCustomCandyCakeDto } from './dto/create-custom-candy-cake.dto';
 
 @Controller('cart')
 @UseGuards(JwtAuthGuard)
@@ -61,6 +62,20 @@ export class CartController {
     return this.cartService.addToCart(authorizedUserId, createCartDto);
   }
 
+  @Post(':userId/custom-candy-cakes')
+  @HttpCode(HttpStatus.CREATED)
+  addCustomCandyCake(
+    @Req() req: Request,
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() createCustomCakeDto: CreateCustomCandyCakeDto,
+  ) {
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.addCustomCandyCake(
+      authorizedUserId,
+      createCustomCakeDto,
+    );
+  }
+
   // Обновить количество товара в корзине
   @Patch(':userId/items/:productId')
   updateCartItem(
@@ -77,6 +92,21 @@ export class CartController {
     );
   }
 
+  @Patch(':userId/custom-items/:cartItemId')
+  updateCartItemById(
+    @Req() req: Request,
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('cartItemId', ParseIntPipe) cartItemId: number,
+    @Body() updateCartItemDto: UpdateCartItemDto,
+  ) {
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.updateCartItemById(
+      authorizedUserId,
+      cartItemId,
+      updateCartItemDto.quantity,
+    );
+  }
+
   // Удалить товар из корзины
   @Delete(':userId/items/:productId')
   @HttpCode(HttpStatus.OK)
@@ -87,6 +117,17 @@ export class CartController {
   ) {
     const authorizedUserId = this.getAuthorizedUserId(req, userId);
     return this.cartService.removeFromCart(authorizedUserId, productId);
+  }
+
+  @Delete(':userId/custom-items/:cartItemId')
+  @HttpCode(HttpStatus.OK)
+  removeCartItemById(
+    @Req() req: Request,
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('cartItemId', ParseIntPipe) cartItemId: number,
+  ) {
+    const authorizedUserId = this.getAuthorizedUserId(req, userId);
+    return this.cartService.removeCartItemById(authorizedUserId, cartItemId);
   }
 
   // Очистить корзину

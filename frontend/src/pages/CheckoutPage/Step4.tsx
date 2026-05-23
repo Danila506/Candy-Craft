@@ -54,7 +54,13 @@ export const Step4 = () => {
                   className="flex flex-col min-[420px]:flex-row min-[420px]:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-white/60 backdrop-blur-sm rounded-xl border border-pink-100/50 hover:shadow-md transition-all"
                 >
                   <div className="w-12 h-12 sm:w-14 sm:h-14 bg-linear-to-br from-pink-200 to-rose-200 rounded-xl flex shrink-0 items-center justify-center text-xl sm:text-2xl shadow-md">
-                    {index % 3 === 0 ? "🍰" : index % 3 === 1 ? "🍬" : "🎂"}
+                    {item.isCustom
+                      ? "🎁"
+                      : index % 3 === 0
+                        ? "🍰"
+                        : index % 3 === 1
+                          ? "🍬"
+                          : "🎂"}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-gray-900">
@@ -63,6 +69,16 @@ export const Step4 = () => {
                     <div className="text-sm text-gray-600 mt-1">
                       {item.quantity} × {item.price.toLocaleString()} ₽
                     </div>
+                    {item.customConfig && (
+                      <div className="mt-1 text-xs text-[#ff398b]">
+                        {item.customConfig.type === "custom_cake"
+                          ? `Индивидуальный торт: ${item.customConfig.base}, ${item.customConfig.size.toUpperCase()}, ${item.customConfig.sweetSet}, ${item.customConfig.packaging}`
+                          : `Индивидуальный конфетный торт: ${item.customConfig.candies.reduce(
+                              (sum, candy) => sum + candy.quantity,
+                              0,
+                            )} конфет`}
+                      </div>
+                    )}
                   </div>
                   <div className="font-bold text-base sm:text-lg text-[#ff398b]">
                     {(item.price * item.quantity).toLocaleString()} ₽

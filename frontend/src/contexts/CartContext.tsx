@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { CartType } from "../types/CartType";
+import type { AddCustomCandyCakePayload, CartType } from "../types/CartType";
 import { http } from "../api/http";
 import { useAuth } from "./AuthContext";
 
@@ -16,8 +16,11 @@ interface CartContextType {
   isItemInCart: (productId: number) => boolean;
   clearCart: () => void;
   addToCart: (productId: number) => Promise<void>;
+  addCustomCandyCake: (payload: AddCustomCandyCakePayload) => Promise<void>;
   removeItem: (productId: number) => Promise<void>;
+  removeCartEntry: (item: CartType) => Promise<void>;
   updateItemQuantity: (productId: number, quantity: number) => Promise<void>;
+  updateCartEntryQuantity: (item: CartType, quantity: number) => Promise<void>;
   showAuthWarn: boolean;
   setShowAuthWarn: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -95,12 +98,50 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const addCustomCandyCake = async (payload: AddCustomCandyCakePayload) => {
+    try {
+      if (!userId) {
+        throw new Error("Пользователь не авторизован");
+      }
+
+      const data = await http.post<{ item: CartType }>(
+        `/cart/${userId}/custom-candy-cakes`,
+        payload,
+      );
+      setCartItems((prevItems) => [...prevItems, data.item]);
+    } catch (error) {
+      console.error("Не удалось добавить конфетный торт:", error);
+      throw error;
+    }
+  };
+
   const updateItemQuantity = async (productId: number, quantity: number) => {
     try {
       if (!userId) return;
       await http.patch(`/cart/${userId}/items/${productId}`, {
         quantity,
       });
+      await fetchCartItems();
+    } catch (error) {
+      console.error("Ошибка обновления количества:", error);
+      throw error;
+    }
+  };
+
+  const updateCartEntryQuantity = async (item: CartType, quantity: number) => {
+    try {
+      if (!userId) return;
+
+      if (item.isCustom || item.productId === null) {
+        await http.patch(`/cart/${userId}/custom-items/${item.id}`, {
+          quantity,
+        });
+      } else {
+        await http.patch(`/cart/${userId}/items/${item.productId}`, {
+          quantity,
+        });
+      }
+
       await fetchCartItems();
     } catch (error) {
       console.error("Ошибка обновления количества:", error);
@@ -120,6 +161,27 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     }
   };
 
+  const removeCartEntry = async (item: CartType) => {
+    try {
+      if (!userId) return;
+
+      if (item.isCustom || item.productId === null) {
+        await http.del(`/cart/${userId}/custom-items/${item.id}`);
+        setCartItems((prev) =>
+          prev.filter((cartItem) => cartItem.id !== item.id),
+        );
+        return;
+      }
+
+      await http.del(`/cart/${userId}/items/${item.productId}`);
+      setCartItems((prev) =>
+        prev.filter((cartItem) => cartItem.productId !== item.productId),
+      );
+    } catch (error) {
+      console.error("Ошибка удаления:", error);
+    }
+  };
+
   const isItemInCart = (productId: number): boolean => {
     return cartItems.some((item) => item.productId === productId);
   };
@@ -131,8 +193,11 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     isItemInCart,
     clearCart,
     addToCart,
+    addCustomCandyCake,
     removeItem,
+    removeCartEntry,
     updateItemQuantity,
+    updateCartEntryQuantity,
     showAuthWarn,
     setShowAuthWarn,
   };

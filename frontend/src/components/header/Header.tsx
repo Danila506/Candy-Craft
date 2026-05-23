@@ -50,6 +50,9 @@ function Header() {
           <NavLink to="/" className={navClass}>
             Каталог
           </NavLink>
+          <NavLink to="/constructor" className={navClass}>
+            Конструктор
+          </NavLink>
           <NavLink to="/delivery" className={navClass}>
             Доставка и оплата
           </NavLink>
@@ -97,6 +100,15 @@ function Header() {
       {isMobileMenuOpen && (
         <nav className="lg:hidden border-t border-rose-100 bg-white px-4 py-3 shadow-sm">
           <ul className="space-y-2 text-sm">
+            <li>
+              <Link
+                className="text-gray-700 hover:text-[#ff398b]"
+                to="/constructor"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                Конструктор
+              </Link>
+            </li>
             <li>
               <Link
                 className="text-gray-700 hover:text-[#ff398b]"

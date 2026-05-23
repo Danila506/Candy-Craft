@@ -43,6 +43,8 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const googleUrl = `${API_URL}/auth/google`;
+  const yandexUrl = `${API_URL}/auth/yandex`;
+  const vkUrl = `${API_URL}/auth/vk`;
 
   const canSubmit = useMemo(() => {
     if (loading) return false;
@@ -104,15 +106,37 @@ export function LoginPage() {
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => {
-            window.location.href = googleUrl;
-          }}
-          className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 hover:bg-gray-50"
-        >
-          Войти через Google
-        </button>
+        <div className="grid gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = googleUrl;
+            }}
+            className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 hover:bg-gray-50"
+          >
+            Войти через Google
+          </button>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = yandexUrl;
+              }}
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 hover:bg-gray-50"
+            >
+              Войти через Яндекс
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = vkUrl;
+              }}
+              className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 hover:bg-gray-50"
+            >
+              Войти через VK
+            </button>
+          </div>
+        </div>
 
         <div>
           <label className="text-sm font-medium" htmlFor="email">

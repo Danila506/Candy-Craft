@@ -45,6 +45,31 @@ function getFrontendBaseUrl() {
   );
 }
 
+function getRequiredOAuthEnv(name: string) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new UnauthorizedException(
+      `OAuth provider is not configured: ${name}`,
+    );
+  }
+  return value;
+}
+
+function setAuthCookies(
+  res: Response,
+  tokens: { accessToken: string; refreshToken: string },
+) {
+  res.cookie('access_token', tokens.accessToken, {
+    ...cookieBaseOptions(),
+    maxAge: 15 * 60 * 1000,
+  });
+
+  res.cookie('refresh_token', tokens.refreshToken, {
+    ...cookieBaseOptions(),
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+  });
+}
+
 @Controller('auth')
 export class AuthController {
   constructor(private auth: AuthService) {}
@@ -117,15 +142,60 @@ export class AuthController {
       (req as any).user,
     );
 
-    res.cookie('access_token', accessToken, {
-      ...cookieBaseOptions(),
-      maxAge: 15 * 60 * 1000,
+    setAuthCookies(res, { accessToken, refreshToken });
+
+    return res.redirect(`${getFrontendBaseUrl()}/account`);
+  }
+
+  @Get('yandex')
+  async yandexAuth(@Res() res: Response) {
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: getRequiredOAuthEnv('YANDEX_CLIENT_ID'),
+      redirect_uri: getRequiredOAuthEnv('YANDEX_CALLBACK_URL'),
+      scope: 'login:email login:info',
     });
 
-    res.cookie('refresh_token', refreshToken, {
-      ...cookieBaseOptions(),
-      maxAge: 30 * 24 * 60 * 60 * 1000,
+    return res.redirect(`https://oauth.yandex.ru/authorize?${params}`);
+  }
+
+  @Get('yandex/callback')
+  async yandexCallback(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const code = (req as any).query?.code as string | undefined;
+    if (!code) throw new UnauthorizedException('Yandex OAuth code is missing');
+
+    const { accessToken, refreshToken } = await this.auth.yandexLogin(code);
+    setAuthCookies(res, { accessToken, refreshToken });
+
+    return res.redirect(`${getFrontendBaseUrl()}/account`);
+  }
+
+  @Get('vk')
+  async vkAuth(@Res() res: Response) {
+    const params = new URLSearchParams({
+      client_id: getRequiredOAuthEnv('VK_CLIENT_ID'),
+      redirect_uri: getRequiredOAuthEnv('VK_CALLBACK_URL'),
+      response_type: 'code',
+      scope: 'email',
+      v: process.env.VK_API_VERSION || '5.199',
     });
+
+    return res.redirect(`https://oauth.vk.com/authorize?${params}`);
+  }
+
+  @Get('vk/callback')
+  async vkCallback(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const code = (req as any).query?.code as string | undefined;
+    if (!code) throw new UnauthorizedException('VK OAuth code is missing');
+
+    const { accessToken, refreshToken } = await this.auth.vkLogin(code);
+    setAuthCookies(res, { accessToken, refreshToken });
 
     return res.redirect(`${getFrontendBaseUrl()}/account`);
   }

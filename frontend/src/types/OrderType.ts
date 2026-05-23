@@ -11,10 +11,12 @@ export type OrderStatusKey = keyof typeof OrderStatusLabels; // "PENDING" | "PAI
 
 export type OrderItem = {
   id: number;
-  productId: number;
+  productId: number | null;
   productName: string;
   quantity: number;
   price: number;
+  customConfig?: unknown;
+  customPreviewUrl?: string | null;
 };
 
 export type Order = {
