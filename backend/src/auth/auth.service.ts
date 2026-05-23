@@ -277,42 +277,62 @@ export class AuthService {
     });
   }
 
-  async vkLogin(code: string) {
-    const tokenUrl = new URL('https://oauth.vk.com/access_token');
-    tokenUrl.searchParams.set('client_id', requiredEnv('VK_CLIENT_ID'));
-    tokenUrl.searchParams.set('client_secret', requiredEnv('VK_CLIENT_SECRET'));
-    tokenUrl.searchParams.set('redirect_uri', requiredEnv('VK_CALLBACK_URL'));
-    tokenUrl.searchParams.set('code', code);
+  async vkLogin(params: {
+    code: string;
+    deviceId: string;
+    codeVerifier: string;
+    state: string;
+  }) {
+    const vkIdBaseUrl = process.env.VK_ID_BASE_URL || 'https://id.vk.com';
+    const tokenBody = new URLSearchParams({
+      grant_type: 'authorization_code',
+      code: params.code,
+      code_verifier: params.codeVerifier,
+      client_id: requiredEnv('VK_CLIENT_ID'),
+      device_id: params.deviceId,
+      redirect_uri: requiredEnv('VK_CALLBACK_URL'),
+      state: params.state,
+    });
 
     const token = await readOAuthJson<{
       access_token: string;
-      user_id: number;
+      user_id?: string;
+      id_token?: string;
       email?: string;
-    }>(tokenUrl.toString());
+    }>(`${vkIdBaseUrl}/oauth2/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: tokenBody,
+    });
 
-    const profileUrl = new URL('https://api.vk.com/method/users.get');
-    profileUrl.searchParams.set('user_ids', String(token.user_id));
-    profileUrl.searchParams.set('fields', 'first_name,last_name');
-    profileUrl.searchParams.set('access_token', token.access_token);
-    profileUrl.searchParams.set('v', process.env.VK_API_VERSION || '5.199');
+    const profileBody = new URLSearchParams({
+      client_id: requiredEnv('VK_CLIENT_ID'),
+      access_token: token.access_token,
+    });
 
     const profileResponse = await readOAuthJson<{
-      response?: Array<{
-        id: number;
+      user?: {
+        user_id?: string;
+        id?: string | number;
         first_name?: string;
         last_name?: string;
-      }>;
-    }>(profileUrl.toString());
-    const profile = profileResponse.response?.[0];
+        email?: string;
+      };
+    }>(`${vkIdBaseUrl}/oauth2/user_info`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: profileBody,
+    });
+    const profile = profileResponse.user;
 
-    if (!profile) {
+    if (!profile || (!profile.user_id && !profile.id && !token.user_id)) {
       throw new BadRequestException('Не удалось получить профиль VK');
     }
 
     return this.socialLogin({
       provider: 'vk',
-      providerId: String(profile.id),
-      email: token.email ?? null,
+      providerId: String(profile.user_id ?? profile.id ?? token.user_id),
+      email: profile.email ?? token.email ?? null,
       firstName: profile.first_name || 'VK',
       lastName: profile.last_name || 'User',
     });
