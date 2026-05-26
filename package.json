@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "deploy:frontend": "powershell -ExecutionPolicy Bypass -File .\\scripts\\deploy-frontend.ps1",
+    "deploy:frontend:dry": "powershell -ExecutionPolicy Bypass -File .\\scripts\\deploy-frontend.ps1 -DryRun",
+    "deploy:frontend:skip-build": "powershell -ExecutionPolicy Bypass -File .\\scripts\\deploy-frontend.ps1 -SkipBuild"
   },
   "lint-staged": {
     "**/*.{ts,tsx,js,jsx}": [

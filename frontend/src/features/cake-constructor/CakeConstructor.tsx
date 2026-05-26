@@ -4,29 +4,20 @@ import { Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { ApiError } from "../../api/http";
 import { useAuth } from "../../contexts/AuthContext";
 import { useCart } from "../../contexts/CartContext";
+import { CakeDecorSelector } from "./CakeDecorSelector";
+import { CakeInnerLayerSelector } from "./CakeInnerLayerSelector";
 import { CakeOptionSelector } from "./CakeOptionSelector";
 import { CakeSummary } from "./CakeSummary";
 import {
   cakeOptions,
   calculateCakePrice,
   defaultCakeConfig,
-  getFirstAvailableSweetSet,
-  isSweetSetAvailable,
+  getInnerLayerPercentSum,
+  getOuterLayerPrice,
   type CakeBaseId,
   type CakeConstructorConfig,
   type CakeSizeId,
 } from "./cakeConstructorConfig";
-
-function normalizeConfig(config: CakeConstructorConfig): CakeConstructorConfig {
-  if (isSweetSetAvailable(config, config.sweetSet)) {
-    return config;
-  }
-
-  return {
-    ...config,
-    sweetSet: getFirstAvailableSweetSet(config),
-  };
-}
 
 export function CakeConstructor() {
   const [config, setConfig] =
@@ -40,23 +31,28 @@ export function CakeConstructor() {
   const navigate = useNavigate();
 
   const totalPrice = useMemo(() => calculateCakePrice(config), [config]);
-  const disabledSweetSets = useMemo(() => {
-    return Object.fromEntries(
-      cakeOptions.sweetSets
-        .filter((sweetSet) => !isSweetSetAvailable(config, sweetSet.id))
-        .map((sweetSet) => [
-          sweetSet.id,
-          "Эта комбинация формы и размера пока недоступна",
-        ]),
-    );
-  }, [config.base, config.size]);
+  const outerLayerOptions = useMemo(
+    () =>
+      cakeOptions.outerLayers.map((option) => ({
+        ...option,
+        price: getOuterLayerPrice(config.size, option.id),
+      })),
+    [config.size],
+  );
+  const innerLayerPercentSum = useMemo(
+    () => getInnerLayerPercentSum(config.innerLayer),
+    [config.innerLayer],
+  );
+  const isInnerLayerValid =
+    config.innerLayer.length > 0 &&
+    Math.abs(innerLayerPercentSum - 100) < 0.001;
 
   const updateBase = (base: CakeBaseId) => {
-    setConfig((prev) => normalizeConfig({ ...prev, base }));
+    setConfig((prev) => ({ ...prev, base }));
   };
 
   const updateSize = (size: CakeSizeId) => {
-    setConfig((prev) => normalizeConfig({ ...prev, size }));
+    setConfig((prev) => ({ ...prev, size }));
   };
 
   const steps = [
@@ -71,10 +67,6 @@ export function CakeConstructor() {
     {
       title: "Внутренний слой",
       caption: "Конфеты внутри сборки",
-    },
-    {
-      title: "Обёртка",
-      caption: "Оформление борта",
     },
     {
       title: "Декор",
@@ -154,7 +146,7 @@ export function CakeConstructor() {
           <CakeOptionSelector
             step={2}
             title="Наружный ряд конфет"
-            options={cakeOptions.outerLayers}
+            options={outerLayerOptions}
             value={config.outerLayer}
             onChange={(outerLayer) =>
               setConfig((prev) => ({ ...prev, outerLayer }))
@@ -175,69 +167,58 @@ export function CakeConstructor() {
 
     if (activeStep === 2) {
       return (
-        <CakeOptionSelector
-          step={3}
-          title="Внутренний слой"
-          options={cakeOptions.sweetSets}
-          value={config.sweetSet}
-          onChange={(sweetSet) => setConfig((prev) => ({ ...prev, sweetSet }))}
-          disabledOptions={disabledSweetSets}
-          columns="four"
+        <CakeInnerLayerSelector
+          size={config.size}
+          value={config.innerLayer}
+          onChange={(innerLayer) =>
+            setConfig((prev) => ({ ...prev, innerLayer }))
+          }
         />
       );
     }
 
     if (activeStep === 3) {
       return (
-        <CakeOptionSelector
-          step={4}
-          title="Обёртка и борт"
-          options={cakeOptions.wrappers}
-          value={config.wrapper}
-          onChange={(wrapper) => setConfig((prev) => ({ ...prev, wrapper }))}
-          columns="four"
-        />
-      );
-    }
-
-    if (activeStep === 4) {
-      return (
         <div className="space-y-4">
-          <CakeOptionSelector
-            step={5}
-            title="Декор"
-            options={cakeOptions.decor}
+          <CakeDecorSelector
             value={config.decor}
-            onChange={(decor) => setConfig((prev) => ({ ...prev, decor }))}
-            columns="four"
+            onChange={(decor) =>
+              setConfig((prev) => ({
+                ...prev,
+                decor,
+                messageText: decor.includes("topper") ? prev.messageText : "",
+              }))
+            }
           />
 
-          <section className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
-            <label className="block text-sm font-black text-slate-800">
-              Текст поздравления
-              <input
-                value={config.messageText}
-                onChange={(event) =>
-                  setConfig((prev) => ({
-                    ...prev,
-                    messageText: event.target.value.slice(0, 40),
-                  }))
-                }
-                className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-[#ff398b]"
-                placeholder="Например: С днём рождения"
-              />
-            </label>
-            <div className="mt-2 text-xs font-medium text-slate-500">
-              До 40 символов, текст попадёт в макет и заказ.
-            </div>
-          </section>
+          {config.decor.includes("topper") && (
+            <section className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
+              <label className="block text-sm font-black text-slate-800">
+                Надпись
+                <input
+                  value={config.messageText}
+                  onChange={(event) =>
+                    setConfig((prev) => ({
+                      ...prev,
+                      messageText: event.target.value.slice(0, 40),
+                    }))
+                  }
+                  className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-[#ff398b]"
+                  placeholder="Например: С днём рождения"
+                />
+              </label>
+              <div className="mt-2 text-xs font-medium text-slate-500">
+                До 40 символов, надпись попадёт в макет и заказ.
+              </div>
+            </section>
+          )}
         </div>
       );
     }
 
     return (
       <CakeOptionSelector
-        step={6}
+        step={5}
         title="Упаковка"
         options={cakeOptions.packaging}
         value={config.packaging}
@@ -246,6 +227,8 @@ export function CakeConstructor() {
       />
     );
   };
+
+  const isNextDisabled = activeStep === 2 && !isInnerLayerValid;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -268,23 +251,28 @@ export function CakeConstructor() {
             </div>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-6">
+          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
             {steps.map((step, index) => {
               const isDone = index < activeStep;
               const isActive = index === activeStep;
+              const isLockedByInnerLayer = index > 2 && !isInnerLayerValid;
 
               return (
                 <button
                   key={step.title}
                   type="button"
-                  onClick={() => setActiveStep(index)}
+                  onClick={() => {
+                    if (isLockedByInnerLayer) return;
+                    setActiveStep(index);
+                  }}
+                  disabled={isLockedByInnerLayer}
                   className={`min-h-18 rounded-xl border px-3 py-2 text-left transition ${
                     isActive
                       ? "border-[#ff398b] bg-rose-50 text-rose-700"
                       : isDone
                         ? "border-emerald-100 bg-emerald-50 text-emerald-700"
                         : "border-slate-200 bg-white text-slate-600 hover:border-rose-200"
-                  }`}
+                  } disabled:cursor-not-allowed disabled:opacity-50`}
                 >
                   <div className="mb-1 flex items-center justify-between gap-2">
                     <span className="text-xs font-black">
@@ -320,7 +308,8 @@ export function CakeConstructor() {
             <button
               type="button"
               onClick={goNext}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ff398b] px-6 py-3 font-black text-white transition hover:bg-[#e0327a]"
+              disabled={isNextDisabled}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ff398b] px-6 py-3 font-black text-white transition hover:bg-[#e0327a] disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               Далее
               <ChevronRight className="h-5 w-5" />

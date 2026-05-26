@@ -339,13 +339,6 @@ export class AuthService {
   }
 
   private async socialLogin(profile: SocialLoginProfile) {
-    if (!profile.email) {
-      throw new BadRequestException(
-        `Не удалось получить email от ${profile.provider.toUpperCase()}`,
-      );
-    }
-
-    const email = profile.email.trim().toLowerCase();
     const providerIdField = {
       google: 'googleId',
       yandex: 'yandexId',
@@ -358,11 +351,24 @@ export class AuthService {
       select: this.socialUserSelect,
     });
 
+    if (user) {
+      return this.issueAuthSession(user);
+    }
+
+    if (!profile.email && profile.provider !== 'vk') {
+      throw new BadRequestException(
+        `Не удалось получить email от ${profile.provider.toUpperCase()}`,
+      );
+    }
+
     if (!user) {
-      const byEmail = await this.prisma.user.findUnique({
-        where: { email },
-        select: this.socialUserSelect,
-      });
+      const email = profile.email?.trim().toLowerCase() ?? null;
+      const byEmail = email
+        ? await this.prisma.user.findUnique({
+            where: { email },
+            select: this.socialUserSelect,
+          })
+        : null;
 
       if (byEmail) {
         if (byEmail[providerIdKey] !== profile.providerId) {
@@ -465,7 +471,7 @@ export class AuthService {
     return null;
   }
 
-  private async issueTokens(userId: number, email: string, role: Role) {
+  private async issueTokens(userId: number, email: string | null, role: Role) {
     const accessToken = await this.jwt.signAsync(
       { sub: userId, email, role },
       { secret: this.accessSecret, expiresIn: this.accessExp as StringValue },
@@ -487,7 +493,7 @@ export class AuthService {
 
   private async issueAuthSession(user: {
     id: number;
-    email: string;
+    email: string | null;
     firstName: string;
     lastName: string;
     phone: string | null;
@@ -571,7 +577,8 @@ export class AuthService {
 
     const firstName = dto.firstName?.trim();
     const lastName = dto.lastName?.trim();
-    const email = dto.email?.trim().toLowerCase();
+    const emailRaw = dto.email?.trim();
+    const email = emailRaw ? emailRaw.toLowerCase() : undefined;
     const phoneRaw = dto.phone?.trim();
     const phone = phoneRaw ? normalizeRuPhone(phoneRaw) : null;
 

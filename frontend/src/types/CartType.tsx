@@ -32,13 +32,24 @@ export type CartCustomCandyCakeConfig = {
 export type CartCustomCakeConfig = {
   type: "custom_cake";
   base: "round" | "heart" | "square";
-  size: "m" | "l";
-  sweetSet: "kinder" | "merci" | "mix" | "premium";
+  size: "s" | "m" | "l" | "xl";
+  innerLayer: Array<{
+    candyId: "milka" | "raffaello" | "kinder" | "ferrero" | "merci";
+    percentage: number;
+  }>;
   color: "pink" | "gold" | "white";
-  outerLayer: "kinder-sticks" | "kitkat" | "merci-bars" | "wafer-rolls";
+  outerLayer:
+    | "kinder-chocolate"
+    | "kinder-bueno"
+    | "milka-baton"
+    | "twix"
+    | "rittersport"
+    | "kitkat"
+    | "snikers"
+    | "milkiway";
   wrapper: "satin" | "lace" | "kraft" | "transparent";
   packaging: "standard" | "window" | "gift" | "premium-box";
-  decor: "none" | "flowers" | "bow" | "topper";
+  decor: Array<"bow" | "topper"> | "none" | "flowers" | "bow" | "topper";
   messageText?: string;
   totalPrice?: number;
 };

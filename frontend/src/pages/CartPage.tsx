@@ -26,15 +26,18 @@ const customSizeLabels = {
   small: "малый",
   medium: "средний",
   large: "большой",
-  m: "M",
-  l: "L",
+  s: "S (14,5см)",
+  m: "M (19,5см)",
+  l: "L (24,5см)",
+  xl: "XL (29,5см)",
 } as const;
 
-const customSweetSetLabels = {
+const customInnerCandyLabels = {
+  milka: "Milka",
+  raffaello: "Raffaello",
   kinder: "Kinder",
+  ferrero: "Ferrero",
   merci: "Merci",
-  mix: "Mix",
-  premium: "Premium",
 } as const;
 
 const customColorLabels = {
@@ -47,21 +50,18 @@ const customDecorLabels = {
   none: "без декора",
   flowers: "цветы",
   bow: "бант",
-  topper: "топпер",
+  topper: "топпер с надписью",
 } as const;
 
 const customOuterLayerLabels = {
-  "kinder-sticks": "Kinder по борту",
-  kitkat: "KitKat по борту",
-  "merci-bars": "Merci по борту",
-  "wafer-rolls": "вафельные трубочки",
-} as const;
-
-const customWrapperLabels = {
-  satin: "атласная лента",
-  lace: "кружевная обёртка",
-  kraft: "крафт-бортик",
-  transparent: "прозрачный борт",
+  "kinder-chocolate": "Kinder Chocolate",
+  "kinder-bueno": "Kinder Bueno",
+  "milka-baton": "Milka Baton",
+  twix: "Twix",
+  rittersport: "RitterSport",
+  kitkat: "Kitkat",
+  snikers: "Snikers",
+  milkiway: "MilkiWay",
 } as const;
 
 const customPackagingLabels = {
@@ -109,6 +109,51 @@ export function Cart() {
   const totalItems = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
   }, [cartItems]);
+
+  const formatInnerLayerSummary = (
+    innerLayer:
+      | Array<{
+          candyId: keyof typeof customInnerCandyLabels;
+          percentage: number;
+        }>
+      | undefined,
+  ) => {
+    if (!innerLayer?.length) {
+      return "внутренний слой не указан";
+    }
+
+    const parts = innerLayer
+      .filter((part) => part.percentage > 0)
+      .map(
+        (part) =>
+          `${customInnerCandyLabels[part.candyId] ?? part.candyId} ${part.percentage}%`,
+      );
+
+    return parts.join(", ") || "внутренний слой не указан";
+  };
+
+  const formatDecorSummary = (
+    decor:
+      | Array<keyof typeof customDecorLabels>
+      | keyof typeof customDecorLabels
+      | undefined,
+  ) => {
+    if (!decor) {
+      return "без декора";
+    }
+
+    if (!Array.isArray(decor)) {
+      return customDecorLabels[decor] ?? "без декора";
+    }
+
+    if (decor.length === 0) {
+      return "без декора";
+    }
+
+    const parts = decor.map((item) => customDecorLabels[item] ?? item);
+
+    return parts.join(", ") || "без декора";
+  };
 
   return (
     <main className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50/20 to-purple-50/20 relative overflow-hidden">
@@ -219,11 +264,13 @@ export function Cart() {
                                     customConfig.outerLayer
                                   ]
                                 }
-                                , {customSweetSetLabels[customConfig.sweetSet]},{" "}
-                                {customColorLabels[customConfig.color]},{" "}
-                                {customWrapperLabels[customConfig.wrapper]},{" "}
+                                ,{" "}
+                                {formatInnerLayerSummary(
+                                  customConfig.innerLayer,
+                                )}
+                                , {customColorLabels[customConfig.color]},{" "}
                                 {customPackagingLabels[customConfig.packaging]},{" "}
-                                {customDecorLabels[customConfig.decor]}
+                                {formatDecorSummary(customConfig.decor)}
                                 {customConfig.messageText
                                   ? `, надпись: "${customConfig.messageText}"`
                                   : ""}

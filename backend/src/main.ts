@@ -6,19 +6,38 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 
 import cookieParser from 'cookie-parser';
 
+const DEFAULT_CORS_ORIGINS = [
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'https://candy-craft.ru',
+  'https://www.candy-craft.ru',
+  'https://candy-craft.vercel.app',
+  'https://candy-craft.onrender.com',
+];
+
+function parseOrigins(value?: string) {
+  return (value || '')
+    .split(',')
+    .map((origin) => origin.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set('trust proxy', process.env.TRUST_PROXY || 'loopback');
   app.use(cookieParser());
+  const corsOrigins = Array.from(
+    new Set([
+      ...DEFAULT_CORS_ORIGINS,
+      ...parseOrigins(process.env.FRONTEND_URL),
+      ...parseOrigins(process.env.CORS_ALLOWED_ORIGINS),
+    ]),
+  );
+
   // Включение CORS с правильными настройками
   app.enableCors({
-    origin: [
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://localhost:3000',
-      'https://candy-craft.vercel.app',
-      'https://candy-craft.onrender.com',
-    ],
+    origin: corsOrigins,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders:

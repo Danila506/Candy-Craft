@@ -1,6 +1,11 @@
 import { ShoppingCart } from "lucide-react";
 import type { CakeConstructorConfig } from "./cakeConstructorConfig";
-import { cakeOptions, getOptionLabel } from "./cakeConstructorConfig";
+import {
+  cakeOptions,
+  getDecorSummary,
+  getInnerLayerSummary,
+  getOptionLabel,
+} from "./cakeConstructorConfig";
 
 type Props = {
   config: CakeConstructorConfig;
@@ -26,7 +31,7 @@ export function CakeSummary({
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
           <div className="text-xs uppercase tracking-[0.22em] text-rose-200">
-            Шаг 6
+            Шаг 5
           </div>
           <h2 className="mt-1 text-xl font-black">Итог</h2>
         </div>
@@ -52,7 +57,7 @@ export function CakeSummary({
         <div className="rounded-xl bg-white/8 px-3 py-2">
           <dt className="text-slate-400">Внутренний слой</dt>
           <dd className="font-bold">
-            {getOptionLabel(cakeOptions.sweetSets, config.sweetSet)}
+            {getInnerLayerSummary(config.innerLayer) || "Не задан"}
           </dd>
         </div>
         <div className="rounded-xl bg-white/8 px-3 py-2">
@@ -68,12 +73,6 @@ export function CakeSummary({
           </dd>
         </div>
         <div className="rounded-xl bg-white/8 px-3 py-2">
-          <dt className="text-slate-400">Обёртка</dt>
-          <dd className="font-bold">
-            {getOptionLabel(cakeOptions.wrappers, config.wrapper)}
-          </dd>
-        </div>
-        <div className="rounded-xl bg-white/8 px-3 py-2">
           <dt className="text-slate-400">Упаковка</dt>
           <dd className="font-bold">
             {getOptionLabel(cakeOptions.packaging, config.packaging)}
@@ -81,9 +80,7 @@ export function CakeSummary({
         </div>
         <div className="rounded-xl bg-white/8 px-3 py-2 sm:col-span-2">
           <dt className="text-slate-400">Декор</dt>
-          <dd className="font-bold">
-            {getOptionLabel(cakeOptions.decor, config.decor)}
-          </dd>
+          <dd className="font-bold">{getDecorSummary(config.decor)}</dd>
         </div>
       </dl>
 

@@ -1,6 +1,9 @@
 import {
+  ArrayMinSize,
   IsIn,
+  IsArray,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -9,6 +12,17 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+export class CustomCandyCakeInnerLayerDto {
+  @IsString()
+  @IsIn(['milka', 'raffaello', 'kinder', 'ferrero', 'merci'])
+  candyId: string;
+
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  percentage: number;
+}
 
 export class CustomCandyCakeConfigDto {
   @IsString()
@@ -20,19 +34,30 @@ export class CustomCandyCakeConfigDto {
   base: string;
 
   @IsString()
-  @IsIn(['m', 'l'])
+  @IsIn(['s', 'm', 'l', 'xl'])
   size: string;
 
-  @IsString()
-  @IsIn(['kinder', 'merci', 'mix', 'premium'])
-  sweetSet: string;
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CustomCandyCakeInnerLayerDto)
+  innerLayer: CustomCandyCakeInnerLayerDto[];
 
   @IsString()
   @IsIn(['pink', 'gold', 'white'])
   color: string;
 
   @IsString()
-  @IsIn(['kinder-sticks', 'kitkat', 'merci-bars', 'wafer-rolls'])
+  @IsIn([
+    'kinder-chocolate',
+    'kinder-bueno',
+    'milka-baton',
+    'twix',
+    'rittersport',
+    'kitkat',
+    'snikers',
+    'milkiway',
+  ])
   outerLayer: string;
 
   @IsString()
@@ -43,9 +68,9 @@ export class CustomCandyCakeConfigDto {
   @IsIn(['standard', 'window', 'gift', 'premium-box'])
   packaging: string;
 
-  @IsString()
-  @IsIn(['none', 'flowers', 'bow', 'topper'])
-  decor: string;
+  @IsArray()
+  @IsIn(['bow', 'topper'], { each: true })
+  decor: string[];
 
   @IsOptional()
   @IsString()

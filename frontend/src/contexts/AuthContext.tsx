@@ -12,7 +12,7 @@ export type Role = "USER" | "ADMIN";
 
 export type AuthUser = {
   id: number;
-  email: string;
+  email?: string | null;
   firstName: string;
   lastName: string;
   phone?: string | null;

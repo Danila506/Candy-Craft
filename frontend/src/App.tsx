@@ -2,30 +2,79 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Link, Outlet, Route, Routes } from "react-router-dom";
 import Header from "./components/header/Header";
 import { Main } from "./components/Main";
-import { Cart } from "./pages/CartPage";
 import { CartProvider } from "./contexts/CartContext";
-import { ProductPage } from "./pages/ProductPage";
 import { ProductsProvider } from "./contexts/ProductContext";
-import { ContactsPage } from "./pages/ContactsPage";
-
-// Админ-страницы
-import { RegisterPage } from "./pages/Auth/RegisterPage";
-import { Dashboard } from "./admin/pages/Dashboard";
-import { ProductsAdmin } from "./admin/pages/ProductsAdmin";
 import { AdminRoute } from "./admin/components/AdminRoute";
 import { Footer } from "./components/Footer"; // Если есть Footer
-import { CheckoutPage } from "./pages/CheckoutPage/CheckoutPage";
-import { OrdersAdmin } from "./admin/pages/OrdersAdmin";
 import { OrderProvider } from "./admin/context/OrderContext";
 import { CheckoutProvider } from "./contexts/CheckoutContext";
-import { CategoriesAdmin } from "./admin/pages/CategoriesAdmin";
 import { CategoryProvider } from "./contexts/CategoryContext";
-import { LoginPage } from "./pages/Auth/LoginPage";
 import { AuthProvider } from "./contexts/AuthContext";
-import AccountPage from "./pages/AccountPage/AccountPage";
-import { PrivacyPage } from "./pages/PrivacyPage";
-import { DeliveryPayment } from "./pages/DeliveryPage";
-import { PaymentResultPage } from "./pages/PaymentResultPage";
+
+const CartPage = lazy(() =>
+  import("./pages/CartPage").then((module) => ({ default: module.Cart })),
+);
+const ProductPage = lazy(() =>
+  import("./pages/ProductPage").then((module) => ({
+    default: module.ProductPage,
+  })),
+);
+const ContactsPage = lazy(() =>
+  import("./pages/ContactsPage").then((module) => ({
+    default: module.ContactsPage,
+  })),
+);
+const RegisterPage = lazy(() =>
+  import("./pages/Auth/RegisterPage").then((module) => ({
+    default: module.RegisterPage,
+  })),
+);
+const LoginPage = lazy(() =>
+  import("./pages/Auth/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+const AccountPage = lazy(() => import("./pages/AccountPage/AccountPage"));
+const PrivacyPage = lazy(() =>
+  import("./pages/PrivacyPage").then((module) => ({
+    default: module.PrivacyPage,
+  })),
+);
+const DeliveryPaymentPage = lazy(() =>
+  import("./pages/DeliveryPage").then((module) => ({
+    default: module.DeliveryPayment,
+  })),
+);
+const PaymentResultPage = lazy(() =>
+  import("./pages/PaymentResultPage").then((module) => ({
+    default: module.PaymentResultPage,
+  })),
+);
+const CheckoutPage = lazy(() =>
+  import("./pages/CheckoutPage/CheckoutPage").then((module) => ({
+    default: module.CheckoutPage,
+  })),
+);
+const DashboardPage = lazy(() =>
+  import("./admin/pages/Dashboard").then((module) => ({
+    default: module.Dashboard,
+  })),
+);
+const ProductsAdminPage = lazy(() =>
+  import("./admin/pages/ProductsAdmin").then((module) => ({
+    default: module.ProductsAdmin,
+  })),
+);
+const CategoriesAdminPage = lazy(() =>
+  import("./admin/pages/CategoriesAdmin").then((module) => ({
+    default: module.CategoriesAdmin,
+  })),
+);
+const OrdersAdminPage = lazy(() =>
+  import("./admin/pages/OrdersAdmin").then((module) => ({
+    default: module.OrdersAdmin,
+  })),
+);
 
 const CakeConstructorPage = lazy(() =>
   import("./features/cake-constructor/CakeConstructorPage").then((module) => ({
@@ -92,12 +141,54 @@ function App() {
             <Routes>
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<Main />} />
-                <Route path="/product/:id" element={<ProductPage />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/account" element={<AccountPage />} />
-                <Route path="/delivery" element={<DeliveryPayment />} />
-                <Route path="/contacts" element={<ContactsPage />} />
-                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route
+                  path="/product/:id"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <ProductPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/cart"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <CartPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/account"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <AccountPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/delivery"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <DeliveryPaymentPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/contacts"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <ContactsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/privacy"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <PrivacyPage />
+                    </Suspense>
+                  }
+                />
                 <Route
                   path="/constructor"
                   element={
@@ -106,12 +197,33 @@ function App() {
                     </Suspense>
                   }
                 />
-                <Route path="/payment/result" element={<PaymentResultPage />} />
+                <Route
+                  path="/payment/result"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <PaymentResultPage />
+                    </Suspense>
+                  }
+                />
               </Route>
 
               <Route element={<HeaderOnlyLayout />}>
-                <Route path="/account/login" element={<LoginPage />} />
-                <Route path="/account/register" element={<RegisterPage />} />
+                <Route
+                  path="/account/login"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <LoginPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/account/register"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <RegisterPage />
+                    </Suspense>
+                  }
+                />
               </Route>
 
               <Route
@@ -119,7 +231,9 @@ function App() {
                 element={
                   <OrderProvider>
                     <CheckoutProvider>
-                      <CheckoutPage />
+                      <Suspense fallback={<PageLoader />}>
+                        <CheckoutPage />
+                      </Suspense>
                     </CheckoutProvider>
                   </OrderProvider>
                 }
@@ -130,7 +244,9 @@ function App() {
                 element={
                   <AdminRoute>
                     <OrderProvider>
-                      <Dashboard />
+                      <Suspense fallback={<PageLoader />}>
+                        <DashboardPage />
+                      </Suspense>
                     </OrderProvider>
                   </AdminRoute>
                 }
@@ -139,7 +255,9 @@ function App() {
                 path="/admin/products"
                 element={
                   <AdminRoute>
-                    <ProductsAdmin />
+                    <Suspense fallback={<PageLoader />}>
+                      <ProductsAdminPage />
+                    </Suspense>
                   </AdminRoute>
                 }
               />
@@ -148,7 +266,9 @@ function App() {
                 element={
                   <AdminRoute>
                     <CategoryProvider>
-                      <CategoriesAdmin />
+                      <Suspense fallback={<PageLoader />}>
+                        <CategoriesAdminPage />
+                      </Suspense>
                     </CategoryProvider>
                   </AdminRoute>
                 }
@@ -158,7 +278,9 @@ function App() {
                 element={
                   <AdminRoute>
                     <OrderProvider>
-                      <OrdersAdmin />
+                      <Suspense fallback={<PageLoader />}>
+                        <OrdersAdminPage />
+                      </Suspense>
                     </OrderProvider>
                   </AdminRoute>
                 }
