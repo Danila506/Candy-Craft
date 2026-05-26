@@ -13,6 +13,29 @@ export const Step4 = () => {
     giftPrice,
   } = useCheckout();
 
+  const innerCandyLabels = {
+    milka: "Milka",
+    raffaello: "Raffaello",
+    kinder: "Kinder",
+    ferrero: "Ferrero",
+    merci: "Merci",
+  } as const;
+
+  const getInnerLayerSummary = (
+    innerLayer:
+      | Array<{ candyId: keyof typeof innerCandyLabels; percentage: number }>
+      | undefined,
+  ) => {
+    if (!innerLayer?.length) return "внутренний слой не указан";
+    const parts = innerLayer
+      .filter((part) => part.percentage > 0)
+      .map(
+        (part) =>
+          `${innerCandyLabels[part.candyId] ?? part.candyId} ${part.percentage}%`,
+      );
+    return parts.join(", ") || "внутренний слой не указан";
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="text-center">
@@ -72,7 +95,7 @@ export const Step4 = () => {
                     {item.customConfig && (
                       <div className="mt-1 text-xs text-[#ff398b]">
                         {item.customConfig.type === "custom_cake"
-                          ? `Индивидуальный торт: ${item.customConfig.base}, ${item.customConfig.size.toUpperCase()}, ${item.customConfig.sweetSet}, ${item.customConfig.packaging}`
+                          ? `Индивидуальный торт: ${item.customConfig.base}, ${item.customConfig.size.toUpperCase()}, ${getInnerLayerSummary(item.customConfig.innerLayer)}, ${item.customConfig.packaging}`
                           : `Индивидуальный конфетный торт: ${item.customConfig.candies.reduce(
                               (sum, candy) => sum + candy.quantity,
                               0,

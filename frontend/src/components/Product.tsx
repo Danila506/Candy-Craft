@@ -38,8 +38,8 @@ export function Product(product: ProductType) {
 
   return (
     <li className="list-none ">
-      <div className="group h-full bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-        <Link to={`/product/${id}`} className="block">
+      <div className="group flex h-full flex-col bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
+        <Link to={`/product/${id}`} className="block flex-1">
           {/* IMAGE */}
           <div className="relative overflow-hidden bg-linear-to-br from-rose-100 via-pink-100 to-rose-50 aspect-square">
             {imageBroken ? (
@@ -88,7 +88,7 @@ export function Product(product: ProductType) {
           </div>
 
           {/* CONTENT */}
-          <div className="bg-white p-3 sm:p-4">
+          <div className="bg-white p-3 sm:p-4 flex-1">
             <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-2 group-hover:text-[#ff398b] transition-colors">
               {name}
             </h3>
@@ -99,7 +99,7 @@ export function Product(product: ProductType) {
         </Link>
 
         {/* FOOTER */}
-        <div className="border-t border-rose-100 bg-white px-3 sm:px-4 py-3 sm:py-3.5">
+        <div className="mt-auto border-t border-rose-100 bg-white px-3 sm:px-4 py-3 sm:py-3.5">
           <div className="flex flex-col min-[360px]:flex-row min-[360px]:items-center justify-between gap-3">
             <div className="flex flex-col">
               <span className="text-[11px] text-gray-500">Цена</span>

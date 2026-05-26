@@ -12,6 +12,8 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:3000',
+  'https://candy-craft.ru',
+  'https://www.candy-craft.ru',
   'https://candy-craft.vercel.app',
   'https://candy-craft.onrender.com',
 ];

@@ -216,7 +216,7 @@ export function ProductList() {
         </aside>
 
         {/* Grid */}
-        <div className="rounded-2xl bg-rose-50/60 p-2 sm:p-3 md:p-4 border border-rose-100">
+        <div className="rounded-2xl bg-rose-50/60 p-2 sm:p-3 md:p-4 border border-rose-100 min-h-[620px]">
           {isLoading ? (
             <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
               {Array.from({ length: 8 }).map((_, idx) => (
@@ -244,7 +244,7 @@ export function ProductList() {
                 <Product
                   key={product.id}
                   {...product}
-                  imageUrl={`https://img.gs/wgbfglmcbt/full/${product.imageUrl}`}
+                  imageUrl={product.imageUrl}
                 />
               ))}
             </ul>

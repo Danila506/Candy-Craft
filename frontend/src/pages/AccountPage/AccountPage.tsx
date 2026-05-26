@@ -7,7 +7,7 @@ type MeDto = {
   id: number;
   firstName: string;
   lastName: string;
-  email: string;
+  email?: string | null;
   phone?: string | null;
   role: Role;
   createdAt?: string;
@@ -151,9 +151,10 @@ export default function AccountPage() {
     const fn = profile.firstName.trim();
     const ln = profile.lastName.trim();
     const email = profile.email.trim();
+    const phone = normalizeRuPhone(profile.phone);
 
-    if (!fn || !ln || !email) return false;
-    if (!isValidEmail(email)) return false;
+    if (!fn || !ln || !phone) return false;
+    if (email && !isValidEmail(email)) return false;
 
     return !saving;
   }, [profile, saving, me]);
@@ -252,17 +253,17 @@ export default function AccountPage() {
     const rawPhone = profile.phone.trim();
     const phone = rawPhone ? normalizeRuPhone(rawPhone) : undefined;
 
-    if (!firstName || !lastName || !email) {
-      setSaveMsg("Заполните имя, фамилию и email");
+    if (!firstName || !lastName) {
+      setSaveMsg("Заполните имя и фамилию");
       return;
     }
 
-    if (!isValidEmail(email)) {
+    if (email && !isValidEmail(email)) {
       setEmailError("Введите корректный email");
       setSaveMsg("Проверьте email");
       return;
     }
-    if (rawPhone && !phone) {
+    if (!phone) {
       setSaveMsg("Введите телефон в формате +7 (999) 999-99-99");
       return;
     }
@@ -275,7 +276,7 @@ export default function AccountPage() {
       const updated = await http.patch<MeDto>("/auth/me", {
         firstName,
         lastName,
-        email,
+        email: email || undefined,
         phone,
       });
 
@@ -400,9 +401,9 @@ export default function AccountPage() {
 
         {/* Content */}
         {tab === "profile" && (
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+          <div className="mt-6">
             {/* Card: profile */}
-            <div className="lg:col-span-2 rounded-2xl border border-gray-200 p-5">
+            <div className="rounded-2xl border border-gray-200 p-5">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold">Данные профиля</h3>
                 <span className="text-xs text-gray-500">
@@ -441,7 +442,7 @@ export default function AccountPage() {
 
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium" htmlFor="email">
-                    Email <RequiredStar />
+                    Email
                   </label>
 
                   <input
@@ -451,9 +452,7 @@ export default function AccountPage() {
                     onChange={onProfileChange("email")}
                     onBlur={() => {
                       const v = profile.email.trim();
-                      if (!v) {
-                        setEmailError("Введите email");
-                      } else if (!isValidEmail(v)) {
+                      if (v && !isValidEmail(v)) {
                         setEmailError("Введите корректный email");
                       } else {
                         setEmailError("");
@@ -476,7 +475,7 @@ export default function AccountPage() {
 
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium" htmlFor="phone">
-                    Телефон (РФ)
+                    Телефон (РФ) <RequiredStar />
                   </label>
                   <input
                     id="phone"
@@ -490,7 +489,7 @@ export default function AccountPage() {
                     maxLength={18}
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Можно оставить пустым — будем связываться по email.
+                    Обязателен для связи по заказу.
                   </p>
                 </div>
               </div>
@@ -507,32 +506,6 @@ export default function AccountPage() {
                 {saveMsg && (
                   <div className="text-sm text-gray-700">{saveMsg}</div>
                 )}
-              </div>
-            </div>
-
-            {/* Card: quick info */}
-            <div className="rounded-2xl border border-gray-200 p-5">
-              <h3 className="font-semibold">Быстро</h3>
-
-              <div className="mt-3 space-y-3 text-sm">
-                <div className="rounded-xl bg-gray-50 p-3">
-                  <div className="text-gray-500">Роль</div>
-                  <div className="font-medium">{me?.role}</div>
-                </div>
-
-                <div className="rounded-xl bg-gray-50 p-3">
-                  <div className="text-gray-500">Готовы выбрать торт?</div>
-                  <Link to="/" className="font-medium text-rose-600 underline">
-                    Перейти в каталог 🍫
-                  </Link>
-                </div>
-
-                <div className="rounded-xl bg-gray-50 p-3">
-                  <div className="text-gray-500">Нужна помощь?</div>
-                  <div className="font-medium">
-                    Напишите нам — быстро ответим 💬
-                  </div>
-                </div>
               </div>
             </div>
           </div>

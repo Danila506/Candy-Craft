@@ -10,13 +10,24 @@ type CustomCandyCakeConfig = {
   base?: "round" | "square" | "heart";
   layout?: "box" | "round-basket" | "tiered-tower" | "heart-box";
   shape?: "round" | "square" | "heart";
-  size?: "small" | "medium" | "large" | "m" | "l";
-  sweetSet?: "kinder" | "merci" | "mix" | "premium";
+  size?: "small" | "medium" | "large" | "s" | "m" | "l" | "xl";
+  innerLayer?: Array<{
+    candyId?: "milka" | "raffaello" | "kinder" | "ferrero" | "merci";
+    percentage?: number;
+  }>;
   color?: "pink" | "gold" | "white";
-  outerLayer?: "kinder-sticks" | "kitkat" | "merci-bars" | "wafer-rolls";
+  outerLayer?:
+    | "kinder-chocolate"
+    | "kinder-bueno"
+    | "milka-baton"
+    | "twix"
+    | "rittersport"
+    | "kitkat"
+    | "snikers"
+    | "milkiway";
   wrapper?: "satin" | "lace" | "kraft" | "transparent";
   packaging?: "standard" | "window" | "gift" | "premium-box";
-  decor?: "none" | "flowers" | "bow" | "topper";
+  decor?: Array<"bow" | "topper"> | "none" | "flowers" | "bow" | "topper";
   // Legacy orders may still contain levels/tiers. New custom cakes are single-level.
   levels?: number;
   tiers?: number;
@@ -44,15 +55,18 @@ const customSizeLabels = {
   small: "малый",
   medium: "средний",
   large: "большой",
+  s: "S",
   m: "M",
   l: "L",
+  xl: "XL",
 } as const;
 
-const customSweetSetLabels = {
+const customInnerCandyLabels = {
+  milka: "Milka",
+  raffaello: "Raffaello",
   kinder: "Kinder",
+  ferrero: "Ferrero",
   merci: "Merci",
-  mix: "Mix",
-  premium: "Premium",
 } as const;
 
 const customLayoutLabels = {
@@ -63,10 +77,14 @@ const customLayoutLabels = {
 } as const;
 
 const customOuterLayerLabels = {
-  "kinder-sticks": "Kinder по борту",
-  kitkat: "KitKat по борту",
-  "merci-bars": "Merci по борту",
-  "wafer-rolls": "вафельные трубочки",
+  "kinder-chocolate": "Kinder Chocolate",
+  "kinder-bueno": "Kinder Bueno",
+  "milka-baton": "Milka Baton",
+  twix: "Twix",
+  rittersport: "RitterSport",
+  kitkat: "Kitkat",
+  snikers: "Snikers",
+  milkiway: "MilkiWay",
 } as const;
 
 const customPackagingLabels = {
@@ -193,9 +211,13 @@ export const OrderModal = ({ isOpen, onClose, order, onUpdate }: Props) => {
                 : null;
               const candySummary =
                 customConfig?.type === "custom_cake"
-                  ? customConfig.sweetSet
-                    ? customSweetSetLabels[customConfig.sweetSet]
-                    : ""
+                  ? (customConfig.innerLayer
+                      ?.filter((part) => Number(part.percentage) > 0)
+                      .map(
+                        (part) =>
+                          `${part.candyId ? customInnerCandyLabels[part.candyId] : "конфета"} ${part.percentage}%`,
+                      )
+                      .join(", ") ?? "")
                   : (customConfig?.candies
                       ?.filter((candy) => Number(candy.quantity) > 0)
                       .map(

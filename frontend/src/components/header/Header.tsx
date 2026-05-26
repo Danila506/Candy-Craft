@@ -1,5 +1,5 @@
 // components/Header/Header.tsx
-import Logo from "../../assets/candyLogo.png";
+import Logo from "../../assets/candyLogo-header.jpg";
 import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useState } from "react";
@@ -41,6 +41,10 @@ function Header() {
             <img
               src={Logo}
               alt="CandyCraft"
+              width={192}
+              height={192}
+              decoding="async"
+              fetchPriority="high"
               className="h-16 sm:h-20 md:h-24 lg:h-28 w-auto max-w-[150px] sm:max-w-[190px] object-contain"
             />
           </Link>

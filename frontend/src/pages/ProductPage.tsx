@@ -130,37 +130,6 @@ export function ProductPage() {
         </div>
       </div>
 
-      {/* Адаптивная таблица характеристик (опционально) */}
-      <div className="mb-10 md:mb-16">
-        <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">
-          Характеристики
-        </h2>
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="divide-y divide-gray-200">
-            {[
-              { name: "Срок годности", value: "72 часа" },
-              { name: "Условия хранения", value: "+2°C до +6°C" },
-              { name: "Размер", value: "Ø 20 см" },
-              { name: "Калорийность", value: "350 ккал/100г" },
-            ].map((spec, index) => (
-              <div
-                key={index}
-                className={`p-3 md:p-4 ${index % 2 === 0 ? "bg-gray-50" : "bg-white"}`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center">
-                  <div className="font-medium text-gray-700 text-sm md:text-base mb-1 sm:mb-0 sm:w-1/3">
-                    {spec.name}
-                  </div>
-                  <div className="text-gray-600 text-sm md:text-base sm:w-2/3">
-                    {spec.value}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Кнопка "Назад" для мобильных */}
       {isMobile && (
         <div className="sticky bottom-0 bg-white border-t border-gray-200 py-3 px-4 -mx-4">
