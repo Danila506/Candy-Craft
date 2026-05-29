@@ -227,13 +227,6 @@ npm run start:prod
 
 `start:prod` применяет Prisma migrations и запускает собранный NestJS сервер.
 
-## Workflow
-
-- Работать в `dev`.
-- Изменения отправлять PR в `main`.
-- CI должен быть зеленым.
-- Merge через squash.
-- `main` считается production-веткой.
 
 ## License
 

@@ -1,1 +1,0 @@
-ALTER TABLE "orders" ADD COLUMN "gift_total_minor" INTEGER NOT NULL DEFAULT 0;
