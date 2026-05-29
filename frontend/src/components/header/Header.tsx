@@ -1,5 +1,4 @@
 // components/Header/Header.tsx
-import Logo from "../../assets/candyLogo-header.jpg";
 import { useCart } from "../../contexts/CartContext";
 import { useAuth } from "../../contexts/AuthContext";
 import { useState } from "react";
@@ -39,7 +38,7 @@ function Header() {
             aria-label="CandyCraft — на главную"
           >
             <img
-              src={Logo}
+              src="/logo-1024.png"
               alt="CandyCraft"
               width={192}
               height={192}

@@ -5,3 +5,7 @@ node_modules
 backend/dist/
 frontend/dist/
 frontend/build/
+deploy-artifacts/
+backend/dev.db
+frontend/lighthouse-report.report.html
+frontend/lighthouse-report.report.json

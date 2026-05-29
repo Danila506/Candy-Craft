@@ -1,5 +1,5 @@
 param(
-  [string]$Server = "root@95.163.220.40",
+  [string]$Server = "root@31.31.196.97",
   [string]$KeyPath = "$env:USERPROFILE\.ssh\id_ed25519",
   [string]$RemotePath = "/var/www/candycraft/",
   [string]$FrontendDir = (Join-Path $PSScriptRoot "..\frontend"),
