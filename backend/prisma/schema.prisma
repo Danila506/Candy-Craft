@@ -79,7 +79,7 @@ model Cart {
 
   // Связи
   user  User       @relation(fields: [userId], references: [id])
-  items CartItem[] // было cart_items
+  items CartItem[] 
 
   @@map("carts")
 }

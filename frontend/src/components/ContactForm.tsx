@@ -139,9 +139,6 @@ export default function ContactPage() {
                   <div>
                     <div className="text-gray-500">Телефон</div>
                     <div className="font-medium">+7 999 123-45-67</div>
-                    <div className="text-xs text-gray-500">
-                      (замени на свой)
-                    </div>
                   </div>
                 </div>
 
@@ -150,9 +147,6 @@ export default function ContactPage() {
                   <div>
                     <div className="text-gray-500">Email</div>
                     <div className="font-medium">hello@candycraft.ru</div>
-                    <div className="text-xs text-gray-500">
-                      (замени на свой)
-                    </div>
                   </div>
                 </div>
 
@@ -161,9 +155,6 @@ export default function ContactPage() {
                   <div>
                     <div className="text-gray-500">Instagram</div>
                     <div className="font-medium">@candycraft</div>
-                    <div className="text-xs text-gray-500">
-                      (замени на свой)
-                    </div>
                   </div>
                 </div>
               </div>
