@@ -19,28 +19,46 @@ enum Role {
 }
 
 model User {
-  id           Int     @id @default(autoincrement())
-  firstName    String
-  lastName     String
-  email        String? @unique
-  phone        String? @unique
-  passwordHash String
-  googleId     String? @unique
-  yandexId     String? @unique
-  vkId         String? @unique
-  role         Role    @default(USER)
+  id              Int       @id @default(autoincrement())
+  firstName       String
+  lastName        String
+  email           String?   @unique
+  emailVerifiedAt DateTime? @map("email_verified_at")
+  phone           String?   @unique
+  passwordHash    String
+  googleId        String?   @unique
+  yandexId        String?   @unique
+  vkId            String?   @unique
+  role            Role      @default(USER)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   cart Cart?
 
-  orders        Order[]
-  addresses     UserAddress[]
-  orderStatusChanges OrderStatusHistory[] @relation("OrderStatusChangedBy")
-  refreshTokens RefreshToken[]
+  orders                  Order[]
+  addresses               UserAddress[]
+  orderStatusChanges      OrderStatusHistory[]     @relation("OrderStatusChangedBy")
+  refreshTokens           RefreshToken[]
+  emailVerificationTokens EmailVerificationToken[]
 
   @@map("users")
+}
+
+model EmailVerificationToken {
+  id        Int       @id @default(autoincrement())
+  userId    Int       @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  codeHash  String    @map("code_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
 }
 
 model UserAddress {
@@ -79,23 +97,23 @@ model Cart {
 
   // Связи
   user  User       @relation(fields: [userId], references: [id])
-  items CartItem[] 
+  items CartItem[]
 
   @@map("carts")
 }
 
 model CartItem {
-  id        Int @id @default(autoincrement())
-  cartId    Int @map("cart_id")
-  productId Int? @map("product_id")
-  quantity  Int @default(1)
+  id               Int     @id @default(autoincrement())
+  cartId           Int     @map("cart_id")
+  productId        Int?    @map("product_id")
+  quantity         Int     @default(1)
   customName       String? @map("custom_name")
   customConfig     Json?   @map("custom_config")
   customPreviewUrl String? @map("custom_preview_url")
   customPrice      Int?    @map("custom_price")
 
   // Связи
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cart    Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
@@ -105,25 +123,25 @@ model CartItem {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  sku         String   @unique
-  slug        String   @unique
+  id          Int       @id @default(autoincrement())
+  sku         String    @unique
+  slug        String    @unique
   name        String
   description String
   price       Int
-  isActive    Boolean  @default(true) @map("is_active")
+  isActive    Boolean   @default(true) @map("is_active")
   deletedAt   DateTime? @map("deleted_at")
-  inStock     Int      @default(0) @map("in_stock")
-  reservedQty Int      @default(0) @map("reserved_qty")
+  inStock     Int       @default(0) @map("in_stock")
+  reservedQty Int       @default(0) @map("reserved_qty")
   imageUrl    String
   categoryId  Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Связи
-  cartItems  CartItem[]
-  category   Category    @relation(fields: [categoryId], references: [id])
-  orderItems OrderItem[]
+  cartItems          CartItem[]
+  category           Category            @relation(fields: [categoryId], references: [id])
+  orderItems         OrderItem[]
   inventoryMovements InventoryMovement[]
 
   @@index([name, categoryId])
@@ -186,15 +204,15 @@ model Order {
   updatedAt          DateTime    @updatedAt @map("updated_at")
 
   // Связи
-  user  User        @relation(fields: [userId], references: [id])
-  items OrderItem[]
-  orderAddress OrderAddress?
-  payments Payment[]
-  statusHistory OrderStatusHistory[]
+  user               User                 @relation(fields: [userId], references: [id])
+  items              OrderItem[]
+  orderAddress       OrderAddress?
+  payments           Payment[]
+  statusHistory      OrderStatusHistory[]
   inventoryMovements InventoryMovement[]
 
-  @@index([userId])
   @@unique([userId, idempotencyKey])
+  @@index([userId])
   @@map("orders")
 }
 
@@ -294,13 +312,13 @@ model OrderAddress {
 }
 
 model OrderStatusHistory {
-  id              Int         @id @default(autoincrement())
-  orderId         Int         @map("order_id")
+  id              Int          @id @default(autoincrement())
+  orderId         Int          @map("order_id")
   fromStatus      OrderStatus? @map("from_status")
   toStatus        OrderStatus  @map("to_status")
   reason          String?
-  changedByUserId Int?        @map("changed_by_user_id")
-  createdAt       DateTime    @default(now()) @map("created_at")
+  changedByUserId Int?         @map("changed_by_user_id")
+  createdAt       DateTime     @default(now()) @map("created_at")
 
   order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
   changedBy User? @relation("OrderStatusChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
@@ -326,8 +344,8 @@ model OrderItem {
   productId   Int?   @map("product_id")
   productName String @map("product_name")
 
-  quantity Int @default(1)
-  price    Int
+  quantity         Int     @default(1)
+  price            Int
   customConfig     Json?   @map("custom_config")
   customPreviewUrl String? @map("custom_preview_url")
 

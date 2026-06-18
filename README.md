@@ -114,6 +114,18 @@ VK_CLIENT_SECRET=""
 VK_CALLBACK_URL="http://localhost:3000/auth/vk/callback"
 VK_API_VERSION="5.199"
 
+# Email verification SMTP
+# Для reg.ru обычно:
+# SMTP_HOST="mail.hosting.reg.ru"
+# SMTP_PORT=465
+# SMTP_SECURE=true
+SMTP_HOST=""
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER="no-reply@your-domain.ru"
+SMTP_PASS="mailbox-password"
+SMTP_FROM="CandyCraft <no-reply@your-domain.ru>"
+
 # Optional: address suggestions
 DADATA_API_KEY=""
 

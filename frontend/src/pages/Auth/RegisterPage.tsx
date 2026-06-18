@@ -53,6 +53,9 @@ export function RegisterPage() {
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [verificationEmail, setVerificationEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -72,6 +75,7 @@ export function RegisterPage() {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
       setErrors((prev) => ({ ...prev, [key]: undefined }));
       setServerError("");
+      setNotice("");
     };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -94,8 +98,8 @@ export function RegisterPage() {
         confirmPassword: form.confirmPassword,
       });
 
-      // после регистрации — на логин
-      navigate("/account/login", { replace: true });
+      setVerificationEmail(form.email.trim().toLowerCase());
+      setNotice("Мы отправили код и ссылку подтверждения на вашу почту.");
     } catch (err) {
       if (err instanceof ApiError) setServerError(err.message);
       else setServerError("Не удалось зарегистрироваться");
@@ -103,6 +107,119 @@ export function RegisterPage() {
       setLoading(false);
     }
   };
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const code = verificationCode.trim();
+    if (!code) {
+      setServerError("Введите код из письма");
+      return;
+    }
+
+    setLoading(true);
+    setServerError("");
+    setNotice("");
+
+    try {
+      await http.post("/auth/verify-email", {
+        email: verificationEmail,
+        code,
+      });
+      navigate("/account/login", {
+        replace: true,
+        state: { message: "Email подтверждён. Теперь можно войти." },
+      });
+    } catch (err) {
+      if (err instanceof ApiError) setServerError(err.message);
+      else setServerError("Не удалось подтвердить email");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!verificationEmail) return;
+
+    setLoading(true);
+    setServerError("");
+    setNotice("");
+
+    try {
+      await http.post("/auth/resend-verification", {
+        email: verificationEmail,
+      });
+      setNotice("Мы отправили новый код подтверждения.");
+    } catch (err) {
+      if (err instanceof ApiError) setServerError(err.message);
+      else setServerError("Не удалось отправить код повторно");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (verificationEmail) {
+    return (
+      <AuthShell
+        title="Подтвердите email"
+        subtitle={`Код отправлен на ${verificationEmail}`}
+        bottomText="Уже подтвердили?"
+        bottomLinkText="Войти"
+        bottomLinkTo="/account/login"
+      >
+        <form onSubmit={handleVerify} className="space-y-5">
+          {serverError && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {serverError}
+            </div>
+          )}
+
+          {notice && (
+            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              {notice}
+            </div>
+          )}
+
+          <div>
+            <label className="text-sm font-medium" htmlFor="verificationCode">
+              Код из письма <RequiredStar />
+            </label>
+            <input
+              id="verificationCode"
+              type="text"
+              inputMode="numeric"
+              value={verificationCode}
+              onChange={(e) => {
+                setVerificationCode(
+                  e.target.value.replace(/\D/g, "").slice(0, 6),
+                );
+                setServerError("");
+              }}
+              placeholder="000000"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-center text-xl font-semibold tracking-[0.35em] outline-none focus:ring-2 focus:ring-gray-200"
+              autoComplete="one-time-code"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || verificationCode.trim().length !== 6}
+            className="w-full rounded-lg bg-amber-500 px-4 py-2.5 text-white hover:bg-amber-600 disabled:opacity-50"
+          >
+            {loading ? "Проверяю..." : "Подтвердить email"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleResend}
+            disabled={loading}
+            className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            Отправить код ещё раз
+          </button>
+        </form>
+      </AuthShell>
+    );
+  }
 
   return (
     <AuthShell

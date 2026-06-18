@@ -47,10 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await http.post<{ user: AuthUser }>("/auth/login", {
-      email,
-      password,
-    });
+    const res = await http.post<{ user: AuthUser }>(
+      "/auth/login",
+      {
+        email,
+        password,
+      },
+      { retryOn401: false },
+    );
     setUser(res.user);
     return res.user;
   };

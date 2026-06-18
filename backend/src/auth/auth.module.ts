@@ -4,12 +4,20 @@ import { PassportModule } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
+import { EmailService } from './email.service';
 import { GoogleStrategy } from './google.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import type { Secret } from 'jsonwebtoken';
 import type { StringValue } from 'ms';
 import { RateLimitGuard } from 'src/security/rate-limit.guard';
 import { SimpleRateLimitStore } from 'src/security/simple-rate-limit.store';
+
+const googleOAuthProviders =
+  process.env.GOOGLE_CLIENT_ID &&
+  process.env.GOOGLE_CLIENT_SECRET &&
+  process.env.GOOGLE_CALLBACK_URL
+    ? [GoogleStrategy]
+    : [];
 
 @Module({
   imports: [
@@ -27,9 +35,10 @@ import { SimpleRateLimitStore } from 'src/security/simple-rate-limit.store';
   controllers: [AuthController],
   providers: [
     AuthService,
+    EmailService,
     PrismaService,
     JwtStrategy,
-    GoogleStrategy,
+    ...googleOAuthProviders,
     RateLimitGuard,
     SimpleRateLimitStore,
   ],

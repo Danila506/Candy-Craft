@@ -34,6 +34,11 @@ const LoginPage = lazy(() =>
     default: module.LoginPage,
   })),
 );
+const VerifyEmailPage = lazy(() =>
+  import("./pages/Auth/VerifyEmailPage").then((module) => ({
+    default: module.VerifyEmailPage,
+  })),
+);
 const AccountPage = lazy(() => import("./pages/AccountPage/AccountPage"));
 const PrivacyPage = lazy(() =>
   import("./pages/PrivacyPage").then((module) => ({
@@ -221,6 +226,14 @@ function App() {
                   element={
                     <Suspense fallback={<PageLoader />}>
                       <RegisterPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/account/verify-email"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <VerifyEmailPage />
                     </Suspense>
                   }
                 />

@@ -23,6 +23,19 @@ function parseOrigins(value?: string) {
     .filter(Boolean);
 }
 
+function isCandyCraftOrigin(origin: string) {
+  try {
+    const url = new URL(origin);
+    return (
+      url.protocol === 'https:' &&
+      (url.hostname === 'candy-craft.ru' ||
+        url.hostname.endsWith('.candy-craft.ru'))
+    );
+  } catch {
+    return false;
+  }
+}
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set('trust proxy', process.env.TRUST_PROXY || 'loopback');
@@ -37,7 +50,18 @@ async function bootstrap() {
 
   // Включение CORS с правильными настройками
   app.enableCors({
-    origin: corsOrigins,
+    origin(origin, callback) {
+      if (
+        !origin ||
+        corsOrigins.includes(origin) ||
+        isCandyCraftOrigin(origin)
+      ) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
     allowedHeaders:

@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -11,10 +12,11 @@ import { Prisma, Role } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { normalizeRuPhone } from 'src/utils/phone';
 import type { StringValue } from 'ms';
-import { randomBytes } from 'crypto';
+import { createHash, randomBytes, randomInt } from 'crypto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserAddressDto } from './dto/create-user-address.dto';
 import { UpdateUserAddressDto } from './dto/update-user-address.dto';
+import { EmailService } from './email.service';
 
 type SocialProvider = 'google' | 'yandex' | 'vk';
 
@@ -97,6 +99,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService,
+    private emailService: EmailService,
   ) {}
 
   private accessSecret = process.env.JWT_ACCESS_SECRET!;
@@ -106,6 +109,7 @@ export class AuthService {
   private readonly socialUserSelect = {
     id: true,
     email: true,
+    emailVerifiedAt: true,
     firstName: true,
     lastName: true,
     phone: true,
@@ -140,6 +144,7 @@ export class AuthService {
           firstName: dto.firstName.trim(),
           lastName: dto.lastName.trim(),
           email,
+          emailVerifiedAt: null,
           phone: phone ?? null,
           passwordHash,
         },
@@ -154,7 +159,13 @@ export class AuthService {
         },
       });
 
-      return user;
+      await this.sendEmailVerification(user.id, email, user.firstName);
+
+      return {
+        ...user,
+        message:
+          'Аккаунт создан. Мы отправили код и ссылку подтверждения на email.',
+      };
     } catch (e) {
       // уникальность email/phone
       if (
@@ -182,6 +193,7 @@ export class AuthService {
         lastName: true,
         phone: true,
         passwordHash: true,
+        emailVerifiedAt: true,
         role: true,
       },
     });
@@ -190,6 +202,11 @@ export class AuthService {
 
     const ok = await argon2.verify(user.passwordHash, password);
     if (!ok) throw new UnauthorizedException('Неверный email или пароль');
+    if (!user.emailVerifiedAt) {
+      throw new ForbiddenException(
+        'Завершите регистрацию: подтвердите email по ссылке или коду из письма',
+      );
+    }
 
     const { accessToken, refreshToken, refreshTokenHash, refreshExpiresAt } =
       await this.issueTokens(user.id, user.email, user.role);
@@ -374,10 +391,17 @@ export class AuthService {
         if (byEmail[providerIdKey] !== profile.providerId) {
           await this.prisma.user.update({
             where: { id: byEmail.id },
-            data: { [providerIdKey]: profile.providerId } as any,
+            data: {
+              [providerIdKey]: profile.providerId,
+              emailVerifiedAt: byEmail.emailVerifiedAt ?? new Date(),
+            } as any,
           });
         }
-        user = { ...byEmail, [providerIdKey]: profile.providerId };
+        user = {
+          ...byEmail,
+          emailVerifiedAt: byEmail.emailVerifiedAt ?? new Date(),
+          [providerIdKey]: profile.providerId,
+        };
       } else {
         const passwordHash = await argon2.hash(randomBytes(32).toString('hex'));
         user = await this.prisma.user.create({
@@ -387,6 +411,7 @@ export class AuthService {
             email,
             phone: null,
             passwordHash,
+            emailVerifiedAt: email ? new Date() : null,
             [providerIdKey]: profile.providerId,
           } as any,
           select: this.socialUserSelect,
@@ -570,7 +595,7 @@ export class AuthService {
   async updateMe(userId: number, dto: UpdateProfileDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true },
+      select: { id: true, email: true, firstName: true },
     });
 
     if (!user) throw new UnauthorizedException('User not found');
@@ -594,12 +619,17 @@ export class AuthService {
     }
 
     try {
-      return await this.prisma.user.update({
+      const updated = await this.prisma.user.update({
         where: { id: userId },
         data: {
           ...(firstName !== undefined ? { firstName } : {}),
           ...(lastName !== undefined ? { lastName } : {}),
-          ...(email !== undefined ? { email } : {}),
+          ...(email !== undefined
+            ? {
+                email,
+                ...(email !== user.email ? { emailVerifiedAt: null } : {}),
+              }
+            : {}),
           ...(dto.phone !== undefined ? { phone } : {}),
         },
         select: {
@@ -611,6 +641,16 @@ export class AuthService {
           role: true,
         },
       });
+
+      if (email && email !== user.email) {
+        await this.sendEmailVerification(
+          userId,
+          email,
+          firstName ?? user.firstName,
+        );
+      }
+
+      return updated;
     } catch (e) {
       if (
         e instanceof Prisma.PrismaClientKnownRequestError &&
@@ -779,5 +819,153 @@ export class AuthService {
     });
     if (!user) throw new UnauthorizedException('User not found');
     return user;
+  }
+
+  async resendEmailVerification(emailRaw: string) {
+    const email = emailRaw.trim().toLowerCase();
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: {
+        id: true,
+        email: true,
+        emailVerifiedAt: true,
+        firstName: true,
+      },
+    });
+
+    if (!user) {
+      return { ok: true };
+    }
+    if (user.emailVerifiedAt) {
+      return { ok: true, message: 'Email уже подтверждён' };
+    }
+
+    await this.sendEmailVerification(user.id, email, user.firstName);
+    return { ok: true };
+  }
+
+  async verifyEmail(params: { token?: string; email?: string; code?: string }) {
+    if (params.token) {
+      return this.verifyEmailByToken(params.token);
+    }
+
+    if (params.email && params.code) {
+      return this.verifyEmailByCode(params.email, params.code);
+    }
+
+    throw new BadRequestException('Передайте token или email вместе с code');
+  }
+
+  private async verifyEmailByToken(token: string) {
+    const tokenHash = this.hashVerificationSecret(token);
+    const verification = await (
+      this.prisma as any
+    ).emailVerificationToken.findUnique({
+      where: { tokenHash },
+      include: { user: true },
+    });
+
+    return this.consumeVerification(verification);
+  }
+
+  private async verifyEmailByCode(emailRaw: string, code: string) {
+    const email = emailRaw.trim().toLowerCase();
+    const codeHash = this.hashVerificationSecret(code);
+    const verification = await (
+      this.prisma as any
+    ).emailVerificationToken.findFirst({
+      where: {
+        codeHash,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+        user: { email },
+      },
+      include: { user: true },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return this.consumeVerification(verification);
+  }
+
+  private async consumeVerification(
+    verification: {
+      id: number;
+      expiresAt: Date;
+      usedAt: Date | null;
+      user: { id: number };
+    } | null,
+  ) {
+    if (
+      !verification ||
+      verification.usedAt ||
+      verification.expiresAt.getTime() < Date.now()
+    ) {
+      throw new BadRequestException(
+        'Код или ссылка подтверждения недействительны',
+      );
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: verification.user.id },
+        data: { emailVerifiedAt: new Date() },
+      }),
+      (this.prisma as any).emailVerificationToken.update({
+        where: { id: verification.id },
+        data: { usedAt: new Date() },
+      }),
+      (this.prisma as any).emailVerificationToken.updateMany({
+        where: {
+          userId: verification.user.id,
+          id: { not: verification.id },
+          usedAt: null,
+        },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    return { ok: true };
+  }
+
+  private async sendEmailVerification(
+    userId: number,
+    email: string,
+    firstName: string,
+  ) {
+    const token = randomBytes(32).toString('hex');
+    const code = String(randomInt(100000, 1000000));
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    await (this.prisma as any).emailVerificationToken.updateMany({
+      where: { userId, usedAt: null },
+      data: { usedAt: new Date() },
+    });
+
+    await (this.prisma as any).emailVerificationToken.create({
+      data: {
+        userId,
+        tokenHash: this.hashVerificationSecret(token),
+        codeHash: this.hashVerificationSecret(code),
+        expiresAt,
+      },
+    });
+
+    const frontendUrl = (
+      process.env.FRONTEND_URL || 'http://localhost:5173'
+    ).replace(/\/+$/, '');
+    const verifyUrl = `${frontendUrl}/account/verify-email?token=${encodeURIComponent(
+      token,
+    )}`;
+
+    await this.emailService.sendVerificationEmail({
+      to: email,
+      firstName,
+      code,
+      verifyUrl,
+    });
+  }
+
+  private hashVerificationSecret(value: string) {
+    return createHash('sha256').update(value).digest('hex');
   }
 }
