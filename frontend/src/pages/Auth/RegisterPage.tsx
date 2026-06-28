@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthShell } from "./AuthShell";
 import { http, ApiError } from "../../api/http";
 
@@ -53,11 +53,10 @@ export function RegisterPage() {
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [serverError, setServerError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [verificationEmail, setVerificationEmail] = useState("");
-  const [verificationCode, setVerificationCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [personalDataConsent, setPersonalDataConsent] = useState(false);
+  const [consentError, setConsentError] = useState("");
 
   const canSubmit = useMemo(() => {
     if (loading) return false;
@@ -66,16 +65,16 @@ export function RegisterPage() {
       form.lastName.trim() &&
       form.email.trim() &&
       form.password &&
-      form.confirmPassword
+      form.confirmPassword &&
+      personalDataConsent
     );
-  }, [form, loading]);
+  }, [form, loading, personalDataConsent]);
 
   const onChange =
     (key: keyof RegisterForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [key]: e.target.value }));
       setErrors((prev) => ({ ...prev, [key]: undefined }));
       setServerError("");
-      setNotice("");
     };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -83,143 +82,38 @@ export function RegisterPage() {
 
     const nextErrors = validate(form);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return;
+    if (!personalDataConsent) {
+      setConsentError("Необходимо согласие на обработку персональных данных");
+    }
+    if (Object.keys(nextErrors).length || !personalDataConsent) return;
 
     setLoading(true);
     setServerError("");
+
+    const email = form.email.trim().toLowerCase();
 
     try {
       await http.post("/auth/register", {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
-        email: form.email.trim().toLowerCase(),
+        email,
         phone: form.phone?.trim() || undefined,
         password: form.password,
         confirmPassword: form.confirmPassword,
       });
 
-      setVerificationEmail(form.email.trim().toLowerCase());
-      setNotice("Мы отправили код и ссылку подтверждения на вашу почту.");
-    } catch (err) {
-      if (err instanceof ApiError) setServerError(err.message);
-      else setServerError("Не удалось зарегистрироваться");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const code = verificationCode.trim();
-    if (!code) {
-      setServerError("Введите код из письма");
-      return;
-    }
-
-    setLoading(true);
-    setServerError("");
-    setNotice("");
-
-    try {
-      await http.post("/auth/verify-email", {
-        email: verificationEmail,
-        code,
-      });
       navigate("/account/login", {
         replace: true,
-        state: { message: "Email подтверждён. Теперь можно войти." },
+        state: { message: "Аккаунт создан. Теперь можно войти." },
       });
     } catch (err) {
-      if (err instanceof ApiError) setServerError(err.message);
-      else setServerError("Не удалось подтвердить email");
+      if (err instanceof ApiError) {
+        setServerError(err.message);
+      } else setServerError("Не удалось зарегистрироваться");
     } finally {
       setLoading(false);
     }
   };
-
-  const handleResend = async () => {
-    if (!verificationEmail) return;
-
-    setLoading(true);
-    setServerError("");
-    setNotice("");
-
-    try {
-      await http.post("/auth/resend-verification", {
-        email: verificationEmail,
-      });
-      setNotice("Мы отправили новый код подтверждения.");
-    } catch (err) {
-      if (err instanceof ApiError) setServerError(err.message);
-      else setServerError("Не удалось отправить код повторно");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (verificationEmail) {
-    return (
-      <AuthShell
-        title="Подтвердите email"
-        subtitle={`Код отправлен на ${verificationEmail}`}
-        bottomText="Уже подтвердили?"
-        bottomLinkText="Войти"
-        bottomLinkTo="/account/login"
-      >
-        <form onSubmit={handleVerify} className="space-y-5">
-          {serverError && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {serverError}
-            </div>
-          )}
-
-          {notice && (
-            <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
-              {notice}
-            </div>
-          )}
-
-          <div>
-            <label className="text-sm font-medium" htmlFor="verificationCode">
-              Код из письма <RequiredStar />
-            </label>
-            <input
-              id="verificationCode"
-              type="text"
-              inputMode="numeric"
-              value={verificationCode}
-              onChange={(e) => {
-                setVerificationCode(
-                  e.target.value.replace(/\D/g, "").slice(0, 6),
-                );
-                setServerError("");
-              }}
-              placeholder="000000"
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-center text-xl font-semibold tracking-[0.35em] outline-none focus:ring-2 focus:ring-gray-200"
-              autoComplete="one-time-code"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading || verificationCode.trim().length !== 6}
-            className="w-full rounded-lg bg-amber-500 px-4 py-2.5 text-white hover:bg-amber-600 disabled:opacity-50"
-          >
-            {loading ? "Проверяю..." : "Подтвердить email"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleResend}
-            disabled={loading}
-            className="w-full rounded-lg border border-gray-200 px-4 py-2.5 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-          >
-            Отправить код ещё раз
-          </button>
-        </form>
-      </AuthShell>
-    );
-  }
 
   return (
     <AuthShell
@@ -375,6 +269,33 @@ export function RegisterPage() {
             </p>
           )}
         </div>
+
+        <label className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={personalDataConsent}
+            onChange={(e) => {
+              setPersonalDataConsent(e.target.checked);
+              setConsentError("");
+            }}
+            className="mt-1 h-4 w-4 shrink-0 accent-amber-500"
+          />
+          <span>
+            Я согласен на обработку персональных данных и ознакомлен с{" "}
+            <Link
+              to="/privacy"
+              className="font-medium text-amber-700 underline"
+            >
+              политикой конфиденциальности
+            </Link>
+            .
+            {consentError && (
+              <span className="mt-1 block text-xs text-red-600">
+                {consentError}
+              </span>
+            )}
+          </span>
+        </label>
 
         <button
           type="submit"

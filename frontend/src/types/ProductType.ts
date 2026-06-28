@@ -1,7 +1,6 @@
 export type ProductType = {
   categoryId: number;
   id: number;
-  sku: string;
   slug: string;
   name: string;
   description: string;
@@ -19,7 +18,6 @@ export type ProductType = {
 
 // DTO для создания (без ID)
 export interface CreateProductDto {
-  sku?: string;
   slug?: string;
   name: string;
   price: number;

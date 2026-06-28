@@ -8,9 +8,9 @@ import { ProductInfo } from "../components/ProductInfo";
 import { useState, useEffect } from "react";
 
 export function ProductPage() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const { getProductById, loading } = useProducts();
+  const { getProductById, getProductBySlug, loading } = useProducts();
   const { isItemInCart, addToCart } = useCart();
   const [isMobile, setIsMobile] = useState(false);
 
@@ -22,7 +22,11 @@ export function ProductPage() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
-  const product = getProductById(Number(id));
+  const numericId = slug ? Number(slug) : Number.NaN;
+  const product =
+    slug && Number.isNaN(numericId)
+      ? getProductBySlug(slug)
+      : getProductById(numericId);
 
   // Адаптивный лоадер
   if (loading) {
@@ -74,7 +78,10 @@ export function ProductPage() {
           items={[
             { text: "Главная", path: "/" },
             { text: "Каталог", path: "/" },
-            { text: product.name, path: `/product/${product.id}` },
+            {
+              text: product.name,
+              path: `/product/${product.slug || product.id}`,
+            },
           ]}
           isMobile={isMobile}
         />
@@ -97,36 +104,6 @@ export function ProductPage() {
             onAddToCart={handleAddToCart}
             isMobile={isMobile}
           />
-        </div>
-      </div>
-
-      {/* Описание товара - адаптивные отступы */}
-      <div className="mb-10 md:mb-16">
-        <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">
-          Подробное описание
-        </h2>
-        <div className="bg-white rounded-lg p-4 md:p-6 border border-gray-200">
-          <div className="space-y-4">
-            <p className="text-gray-700 leading-relaxed text-sm md:text-base">
-              {product.description}
-            </p>
-
-            {/* Пример дополнительной информации */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-              <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
-                <h3 className="font-medium text-sm md:text-base mb-2">
-                  Состав
-                </h3>
-                <p className="text-gray-600 text-xs md:text-sm">
-                  Бисквит, крем, ягоды, шоколад
-                </p>
-              </div>
-              <div className="bg-gray-50 p-3 md:p-4 rounded-lg">
-                <h3 className="font-medium text-sm md:text-base mb-2">Вес</h3>
-                <p className="text-gray-600 text-xs md:text-sm">1.5 кг</p>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

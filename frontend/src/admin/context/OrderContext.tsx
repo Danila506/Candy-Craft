@@ -3,6 +3,8 @@ import {
   useContext,
   useState,
   useEffect,
+  useCallback,
+  useRef,
   type ReactNode,
 } from "react";
 import type {
@@ -40,15 +42,20 @@ type Props = { children: ReactNode };
 export const OrderProvider = ({ children }: Props) => {
   const [orders, setOrders] = useState<Order[]>([]);
   const { user } = useAuth();
+  const isFetchingOrders = useRef(false);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
+    if (isFetchingOrders.current) return;
+    isFetchingOrders.current = true;
     try {
       const data = await http.get<Order[]>(`/orders`);
       setOrders(data ?? []);
     } catch (err) {
       console.error(err);
+    } finally {
+      isFetchingOrders.current = false;
     }
-  };
+  }, []);
 
   const createOrder = async (data: OrderCreateDto) => {
     try {
@@ -81,10 +88,13 @@ export const OrderProvider = ({ children }: Props) => {
   };
 
   useEffect(() => {
-    if (user?.role === "ADMIN") {
-      fetchOrders();
-    }
-  }, [user?.role]);
+    if (user?.role !== "ADMIN") return;
+
+    fetchOrders();
+    const intervalId = window.setInterval(fetchOrders, 10_000);
+
+    return () => window.clearInterval(intervalId);
+  }, [fetchOrders, user?.role]);
 
   return (
     <OrderContext.Provider

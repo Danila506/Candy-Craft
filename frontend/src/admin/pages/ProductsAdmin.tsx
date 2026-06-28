@@ -63,12 +63,11 @@ export function ProductsAdmin() {
       {/* Таблица товаров */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[920px]">
+          <table className="w-full min-w-[840px]">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left">Изображение</th>
                 <th className="px-6 py-3 text-left">Название</th>
-                <th className="px-6 py-3 text-left">SKU</th>
                 <th className="px-6 py-3 text-left">Категория</th>
                 <th className="px-6 py-3 text-left">Цена</th>
                 <th className="px-6 py-3 text-left">В наличии</th>
@@ -88,7 +87,6 @@ export function ProductsAdmin() {
                     />
                   </td>
                   <td className="px-6 py-4">{product.name}</td>
-                  <td className="px-6 py-4">{product.sku}</td>
                   <td className="px-6 py-4">{product.category.name}</td>
                   <td className="px-6 py-4">{product.price} ₽</td>
                   <td className="px-6 py-4">{product.inStock} шт</td>

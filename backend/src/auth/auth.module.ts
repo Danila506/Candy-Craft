@@ -4,7 +4,6 @@ import { PassportModule } from '@nestjs/passport';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { EmailService } from './email.service';
 import { GoogleStrategy } from './google.strategy';
 import { JwtStrategy } from './jwt.strategy';
 import type { Secret } from 'jsonwebtoken';
@@ -35,7 +34,6 @@ const googleOAuthProviders =
   controllers: [AuthController],
   providers: [
     AuthService,
-    EmailService,
     PrismaService,
     JwtStrategy,
     ...googleOAuthProviders,

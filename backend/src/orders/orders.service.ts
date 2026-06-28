@@ -321,45 +321,6 @@ export class OrdersService {
         data: { publicOrderNumber },
         include: { items: true },
       });
-      await tx.orderStatusHistory.create({
-        data: {
-          orderId: order.id,
-          fromStatus: null,
-          toStatus: order.status,
-          reason: 'Order created',
-          changedByUserId: userId ?? null,
-        },
-      });
-      if (sourceItems.length) {
-        await (tx as any).inventoryMovement.createMany({
-          data: sourceItems.map((item) => ({
-            productId: item.productId,
-            orderId: order.id,
-            type: 'RESERVE',
-            quantity: item.quantity,
-            note: 'Reserved on order creation',
-          })),
-        });
-      }
-      await (tx as any).orderAddress.create({
-        data: {
-          orderId: order.id,
-          country: cleanText(dto.country) ?? 'Россия',
-          city: cleanText(dto.city),
-          street: cleanText(dto.street),
-          house: cleanText(dto.house),
-          apartment: cleanText(dto.apartment),
-          entrance: cleanText(dto.entrance),
-          floor: cleanText(dto.floor),
-          intercom: cleanText(dto.intercom),
-          postalCode: cleanText(dto.postalCode),
-          comment: cleanText(dto.comment),
-          recipientName: cleanText(dto.fullName),
-          recipientPhone,
-          fullAddress: address,
-        },
-      });
-
       if (userId) {
         const existingUserAddress = await (tx as any).userAddress.findFirst({
           where: {
@@ -460,7 +421,7 @@ export class OrdersService {
     return orders;
   }
 
-  async update(id: number, dto: UpdateOrderDto, changedByUserId?: number) {
+  async update(id: number, dto: UpdateOrderDto) {
     return this.prisma.$transaction(async (tx) => {
       const order = await tx.order.findUnique({
         where: { id },
@@ -507,7 +468,7 @@ export class OrdersService {
           throw new NotFoundException(`Product #${missingId} not found`);
         }
 
-        await this.reconcileReservedStock(tx, order.items, requestedItems, id);
+        await this.reconcileReservedStock(tx, order.items, requestedItems);
 
         // Сначала удаляем старые
         await tx.orderItem.deleteMany({
@@ -550,62 +511,14 @@ export class OrdersService {
 
       if (dto.status && dto.status !== order.status) {
         if (dto.status === 'PAID') {
-          await this.consumeReservedStock(
-            tx,
-            stockItems,
-            order.id,
-            'Reserved stock consumed on manual PAID status',
-          );
+          await this.consumeReservedStock(tx, stockItems);
         }
         if (dto.status === 'CANCELED' && order.status !== 'PAID') {
-          await this.releaseReservedStock(
-            tx,
-            order.items,
-            order.id,
-            'Reserved stock released on order cancellation',
-          );
+          await this.releaseReservedStock(tx, order.items);
         }
-
-        await tx.orderStatusHistory.create({
-          data: {
-            orderId: id,
-            fromStatus: order.status,
-            toStatus: dto.status,
-            reason: dto.statusReason?.trim() || null,
-            changedByUserId: changedByUserId ?? null,
-          },
-        });
       }
 
       return updatedOrder;
-    });
-  }
-
-  async getStatusHistory(orderId: number) {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      select: { id: true },
-    });
-    if (!order) throw new NotFoundException(`Order #${orderId} not found`);
-
-    return this.prisma.orderStatusHistory.findMany({
-      where: { orderId },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        fromStatus: true,
-        toStatus: true,
-        reason: true,
-        createdAt: true,
-        changedBy: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            email: true,
-          },
-        },
-      },
     });
   }
 
@@ -616,8 +529,6 @@ export class OrdersService {
   private async consumeReservedStock(
     tx: any,
     items: Array<{ productId: number | null; quantity: number }>,
-    orderId: number,
-    note: string,
   ) {
     for (const item of items) {
       if (!item.productId) continue;
@@ -637,15 +548,6 @@ export class OrdersService {
           `Не удалось списать резерв по товару #${item.productId}`,
         );
       }
-      await (tx as any).inventoryMovement.create({
-        data: {
-          productId: item.productId,
-          orderId,
-          type: 'OUT',
-          quantity: item.quantity,
-          note,
-        },
-      });
     }
   }
 
@@ -653,7 +555,6 @@ export class OrdersService {
     tx: any,
     productId: number,
     quantity: number,
-    orderId: number,
   ) {
     const updated = await tx.$executeRaw`
       UPDATE "products"
@@ -667,23 +568,12 @@ export class OrdersService {
         `Недостаточно доступного остатка для товара #${productId}`,
       );
     }
-
-    await (tx as any).inventoryMovement.create({
-      data: {
-        productId,
-        orderId,
-        type: 'RESERVE',
-        quantity,
-        note: 'Reserved stock increased on order item update',
-      },
-    });
   }
 
   private async reconcileReservedStock(
     tx: any,
     oldItems: Array<{ productId: number | null; quantity: number }>,
     nextItems: Array<{ productId: number; quantity: number }>,
-    orderId: number,
   ) {
     const oldQty = new Map<number, number>();
     const nextQty = new Map<number, number>();
@@ -706,15 +596,12 @@ export class OrdersService {
     for (const productId of productIds) {
       const diff = (nextQty.get(productId) ?? 0) - (oldQty.get(productId) ?? 0);
       if (diff > 0) {
-        await this.reserveAdditionalStock(tx, productId, diff, orderId);
+        await this.reserveAdditionalStock(tx, productId, diff);
       }
       if (diff < 0) {
-        await this.releaseReservedStock(
-          tx,
-          [{ productId, quantity: Math.abs(diff) }],
-          orderId,
-          'Reserved stock released on order item update',
-        );
+        await this.releaseReservedStock(tx, [
+          { productId, quantity: Math.abs(diff) },
+        ]);
       }
     }
   }
@@ -722,12 +609,10 @@ export class OrdersService {
   private async releaseReservedStock(
     tx: any,
     items: Array<{ productId: number | null; quantity: number }>,
-    orderId: number,
-    note: string,
   ) {
     for (const item of items) {
       if (!item.productId) continue;
-      const updated = await (tx as any).product.updateMany({
+      await (tx as any).product.updateMany({
         where: {
           id: item.productId,
           reservedQty: { gte: item.quantity },
@@ -736,17 +621,6 @@ export class OrdersService {
           reservedQty: { decrement: item.quantity },
         },
       });
-      if (updated.count > 0) {
-        await (tx as any).inventoryMovement.create({
-          data: {
-            productId: item.productId,
-            orderId,
-            type: 'RELEASE',
-            quantity: item.quantity,
-            note,
-          },
-        });
-      }
     }
   }
 }

@@ -3,8 +3,6 @@ import {
   IsEnum,
   IsInt,
   IsOptional,
-  IsString,
-  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -32,11 +30,6 @@ export class UpdateOrderDto {
   @IsOptional()
   @IsEnum(OrderStatusKey)
   status?: OrderStatusKey;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(500)
-  statusReason?: string;
 
   @IsOptional()
   @IsArray()

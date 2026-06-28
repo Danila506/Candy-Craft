@@ -22,10 +22,6 @@ export class ProductsService {
       .replace(/(^-|-$)/g, '');
   }
 
-  private normalizeSku(value: string): string {
-    return value.toUpperCase().replace(/[^A-Z0-9_-]/g, '-');
-  }
-
   private async ensureUniqueSlug(baseInput: string, excludeId?: number) {
     const base = this.normalizeSlug(baseInput) || 'product';
     let candidate = base;
@@ -35,25 +31,6 @@ export class ProductsService {
       const existing = await this.prisma.product.findFirst({
         where: {
           slug: candidate,
-          ...(excludeId ? { id: { not: excludeId } } : {}),
-        },
-        select: { id: true },
-      });
-      if (!existing) return candidate;
-      suffix += 1;
-      candidate = `${base}-${suffix}`;
-    }
-  }
-
-  private async ensureUniqueSku(baseInput: string, excludeId?: number) {
-    const base = this.normalizeSku(baseInput) || 'SKU';
-    let candidate = base;
-    let suffix = 1;
-
-    while (true) {
-      const existing = await this.prisma.product.findFirst({
-        where: {
-          sku: candidate,
           ...(excludeId ? { id: { not: excludeId } } : {}),
         },
         select: { id: true },
@@ -113,9 +90,6 @@ export class ProductsService {
     const slug = await this.ensureUniqueSlug(
       dto.slug?.trim() || normalizedName,
     );
-    const sku = await this.ensureUniqueSku(
-      dto.sku?.trim() || `SKU-${normalizedName}`,
-    );
 
     // Создаем продукт
     //     const exists = await this.prisma.product.findFirst({
@@ -127,7 +101,6 @@ export class ProductsService {
         data: {
           ...dto,
           name: normalizedName,
-          sku,
           slug,
           isActive: dto.isActive ?? true,
         },
@@ -140,9 +113,7 @@ export class ProductsService {
         e instanceof Prisma.PrismaClientKnownRequestError &&
         e.code === 'P2002'
       ) {
-        throw new ConflictException(
-          'Товар с таким SKU или slug уже существует',
-        );
+        throw new ConflictException('Товар с таким slug уже существует');
       }
       throw e;
     }
@@ -172,6 +143,16 @@ export class ProductsService {
       throw new NotFoundException(`Продукт с ID ${id} не найден`);
     }
     return productId;
+  }
+
+  async findBySlug(slug: string): Promise<Product> {
+    const product = await this.prisma.product.findFirst({
+      where: { slug, deletedAt: null, isActive: true },
+    });
+    if (!product) {
+      throw new NotFoundException(`Продукт со slug "${slug}" не найден`);
+    }
+    return product;
   }
 
   //todo Удаление товара по id
@@ -223,9 +204,6 @@ export class ProductsService {
     }
     if (dto.slug !== undefined) {
       data.slug = await this.ensureUniqueSlug(dto.slug.trim(), id);
-    }
-    if (dto.sku !== undefined) {
-      data.sku = await this.ensureUniqueSku(dto.sku.trim(), id);
     }
 
     const updatedProduct = await this.prisma.product.update({

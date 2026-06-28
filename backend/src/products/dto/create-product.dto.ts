@@ -12,11 +12,6 @@ import {
 export class CreateProductDto {
   @IsOptional()
   @IsString()
-  @MaxLength(64)
-  sku?: string;
-
-  @IsOptional()
-  @IsString()
   @MaxLength(128)
   slug?: string;
 

@@ -26,7 +26,6 @@ import { RolesGuard } from './guards/roles.guard';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CreateUserAddressDto } from './dto/create-user-address.dto';
 import { UpdateUserAddressDto } from './dto/update-user-address.dto';
-import { ResendVerificationDto, VerifyEmailDto } from './dto/verify-email.dto';
 import { RateLimit } from 'src/security/rate-limit.decorator';
 import { RateLimitGuard } from 'src/security/rate-limit.guard';
 
@@ -113,34 +112,6 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createUserDto: CreateUserDto) {
     return this.auth.register(createUserDto);
-  }
-
-  @Post('verify-email')
-  @UseGuards(RateLimitGuard)
-  @RateLimit({
-    keyPrefix: 'auth:verify-email',
-    maxEnv: 'AUTH_VERIFY_EMAIL_RATE_LIMIT_MAX',
-    windowMsEnv: 'AUTH_VERIFY_EMAIL_RATE_LIMIT_WINDOW_MS',
-    defaultMax: 20,
-    defaultWindowMs: 15 * 60 * 1000,
-  })
-  @HttpCode(HttpStatus.OK)
-  verifyEmail(@Body() dto: VerifyEmailDto) {
-    return this.auth.verifyEmail(dto);
-  }
-
-  @Post('resend-verification')
-  @UseGuards(RateLimitGuard)
-  @RateLimit({
-    keyPrefix: 'auth:resend-verification',
-    maxEnv: 'AUTH_RESEND_VERIFICATION_RATE_LIMIT_MAX',
-    windowMsEnv: 'AUTH_RESEND_VERIFICATION_RATE_LIMIT_WINDOW_MS',
-    defaultMax: 5,
-    defaultWindowMs: 15 * 60 * 1000,
-  })
-  @HttpCode(HttpStatus.OK)
-  resendVerification(@Body() dto: ResendVerificationDto) {
-    return this.auth.resendEmailVerification(dto.email);
   }
 
   @Post('login')

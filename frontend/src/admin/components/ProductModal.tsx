@@ -21,7 +21,6 @@ export function ProductModal({
   product,
 }: ProductModalProps) {
   const [formData, setFormData] = useState<CreateProductDto & { id?: number }>({
-    sku: "",
     slug: "",
     name: "",
     price: 0,
@@ -45,7 +44,6 @@ export function ProductModal({
       if (product) {
         setFormData({
           id: product.id,
-          sku: product.sku,
           slug: product.slug,
           name: product.name,
           price: product.price,
@@ -57,7 +55,6 @@ export function ProductModal({
         });
       } else {
         setFormData({
-          sku: "",
           slug: "",
           name: "",
           price: 0,
@@ -107,7 +104,6 @@ export function ProductModal({
     setLoading(true);
     try {
       const submitData = {
-        sku: formData.sku,
         slug: formData.slug,
         name: formData.name,
         price: formData.price,
@@ -171,41 +167,22 @@ export function ProductModal({
           <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
               <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label
-                      htmlFor="product-sku"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      SKU
-                    </label>
-                    <input
-                      id="product-sku"
-                      type="text"
-                      value={formData.sku ?? ""}
-                      onChange={(e) => handleChange("sku", e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
-                      placeholder="SKU-000123"
-                      disabled={loading}
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="product-slug"
-                      className="block text-sm font-medium text-gray-700 mb-2"
-                    >
-                      Slug
-                    </label>
-                    <input
-                      id="product-slug"
-                      type="text"
-                      value={formData.slug ?? ""}
-                      onChange={(e) => handleChange("slug", e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
-                      placeholder="tort-napoleon"
-                      disabled={loading}
-                    />
-                  </div>
+                <div>
+                  <label
+                    htmlFor="product-slug"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Slug
+                  </label>
+                  <input
+                    id="product-slug"
+                    type="text"
+                    value={formData.slug ?? ""}
+                    onChange={(e) => handleChange("slug", e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#ff398b] focus:border-transparent"
+                    placeholder="tort-napoleon"
+                    disabled={loading}
+                  />
                 </div>
 
                 <div>

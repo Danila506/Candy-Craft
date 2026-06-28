@@ -24,16 +24,6 @@ describe('OrdersService commercial totals and stock reservations', () => {
         findMany: jest.fn(),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
-      orderStatusHistory: {
-        create: jest.fn(),
-      },
-      inventoryMovement: {
-        create: jest.fn(),
-        createMany: jest.fn(),
-      },
-      orderAddress: {
-        create: jest.fn(),
-      },
       userAddress: {
         findFirst: jest.fn().mockResolvedValue(null),
         create: jest.fn(),

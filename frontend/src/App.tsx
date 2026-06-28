@@ -10,6 +10,7 @@ import { OrderProvider } from "./admin/context/OrderContext";
 import { CheckoutProvider } from "./contexts/CheckoutContext";
 import { CategoryProvider } from "./contexts/CategoryContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 
 const CartPage = lazy(() =>
   import("./pages/CartPage").then((module) => ({ default: module.Cart })),
@@ -32,11 +33,6 @@ const RegisterPage = lazy(() =>
 const LoginPage = lazy(() =>
   import("./pages/Auth/LoginPage").then((module) => ({
     default: module.LoginPage,
-  })),
-);
-const VerifyEmailPage = lazy(() =>
-  import("./pages/Auth/VerifyEmailPage").then((module) => ({
-    default: module.VerifyEmailPage,
   })),
 );
 const AccountPage = lazy(() => import("./pages/AccountPage/AccountPage"));
@@ -139,171 +135,165 @@ function PageLoader() {
 
 function App() {
   return (
-    <AuthProvider>
-      <ProductsProvider>
-        <CartProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route element={<PublicLayout />}>
-                <Route path="/" element={<Main />} />
-                <Route
-                  path="/product/:id"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <ProductPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/cart"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <CartPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/account"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <AccountPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/delivery"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <DeliveryPaymentPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/contacts"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <ContactsPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/privacy"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <PrivacyPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/constructor"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <CakeConstructorPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/payment/result"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <PaymentResultPage />
-                    </Suspense>
-                  }
-                />
-              </Route>
-
-              <Route element={<HeaderOnlyLayout />}>
-                <Route
-                  path="/account/login"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <LoginPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/account/register"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <RegisterPage />
-                    </Suspense>
-                  }
-                />
-                <Route
-                  path="/account/verify-email"
-                  element={
-                    <Suspense fallback={<PageLoader />}>
-                      <VerifyEmailPage />
-                    </Suspense>
-                  }
-                />
-              </Route>
-
-              <Route
-                path="/checkout"
-                element={
-                  <OrderProvider>
-                    <CheckoutProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <ProductsProvider>
+          <CartProvider>
+            <BrowserRouter>
+              <Routes>
+                <Route element={<PublicLayout />}>
+                  <Route path="/" element={<Main />} />
+                  <Route
+                    path="/product/:slug"
+                    element={
                       <Suspense fallback={<PageLoader />}>
-                        <CheckoutPage />
+                        <ProductPage />
                       </Suspense>
-                    </CheckoutProvider>
-                  </OrderProvider>
-                }
-              />
+                    }
+                  />
+                  <Route
+                    path="/cart"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <CartPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/account"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <AccountPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/delivery"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <DeliveryPaymentPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/contacts"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <ContactsPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/privacy"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <PrivacyPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/constructor"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <CakeConstructorPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/payment/result"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <PaymentResultPage />
+                      </Suspense>
+                    }
+                  />
+                </Route>
 
-              <Route
-                path="/admin"
-                element={
-                  <AdminRoute>
+                <Route element={<HeaderOnlyLayout />}>
+                  <Route
+                    path="/account/login"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <LoginPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="/account/register"
+                    element={
+                      <Suspense fallback={<PageLoader />}>
+                        <RegisterPage />
+                      </Suspense>
+                    }
+                  />
+                </Route>
+
+                <Route
+                  path="/checkout"
+                  element={
                     <OrderProvider>
-                      <Suspense fallback={<PageLoader />}>
-                        <DashboardPage />
-                      </Suspense>
+                      <CheckoutProvider>
+                        <Suspense fallback={<PageLoader />}>
+                          <CheckoutPage />
+                        </Suspense>
+                      </CheckoutProvider>
                     </OrderProvider>
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/products"
-                element={
-                  <AdminRoute>
-                    <Suspense fallback={<PageLoader />}>
-                      <ProductsAdminPage />
-                    </Suspense>
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/categories"
-                element={
-                  <AdminRoute>
-                    <CategoryProvider>
+                  }
+                />
+
+                <Route
+                  path="/admin"
+                  element={
+                    <AdminRoute>
+                      <OrderProvider>
+                        <Suspense fallback={<PageLoader />}>
+                          <DashboardPage />
+                        </Suspense>
+                      </OrderProvider>
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/products"
+                  element={
+                    <AdminRoute>
                       <Suspense fallback={<PageLoader />}>
-                        <CategoriesAdminPage />
+                        <ProductsAdminPage />
                       </Suspense>
-                    </CategoryProvider>
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/orders"
-                element={
-                  <AdminRoute>
-                    <OrderProvider>
-                      <Suspense fallback={<PageLoader />}>
-                        <OrdersAdminPage />
-                      </Suspense>
-                    </OrderProvider>
-                  </AdminRoute>
-                }
-              />
-              <Route path="*" element={<NotFoundPage />} />
-            </Routes>
-          </BrowserRouter>
-        </CartProvider>
-      </ProductsProvider>
-    </AuthProvider>
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/categories"
+                  element={
+                    <AdminRoute>
+                      <CategoryProvider>
+                        <Suspense fallback={<PageLoader />}>
+                          <CategoriesAdminPage />
+                        </Suspense>
+                      </CategoryProvider>
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/orders"
+                  element={
+                    <AdminRoute>
+                      <OrderProvider>
+                        <Suspense fallback={<PageLoader />}>
+                          <OrdersAdminPage />
+                        </Suspense>
+                      </OrderProvider>
+                    </AdminRoute>
+                  }
+                />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </BrowserRouter>
+          </CartProvider>
+        </ProductsProvider>
+      </AuthProvider>
+    </LanguageProvider>
   );
 }
 

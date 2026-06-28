@@ -201,19 +201,11 @@ export class PaymentsService {
     if (clientIdempotencyKey) {
       const existingByKey = await (this.prisma as any).payment.findUnique({
         where: { idempotencyKey: clientIdempotencyKey },
-        include: {
-          attempts: {
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-          },
-        },
       });
       if (existingByKey) {
         if (existingByKey.status === 'FAILED') {
-          const lastAttempt = existingByKey.attempts?.[0];
           throw new BadGatewayException(
-            lastAttempt?.errorMessage ||
-              'Предыдущая попытка создания платежа завершилась ошибкой',
+            'Предыдущая попытка создания платежа завершилась ошибкой',
           );
         }
 
@@ -300,17 +292,8 @@ export class PaymentsService {
       },
     });
 
-    await (this.prisma as any).paymentAttempt.create({
-      data: {
-        paymentId: payment.id,
-        requestPayload,
-        responsePayload,
-        httpStatus: response.status,
-        errorMessage: response.ok ? null : 'YooKassa API error',
-      },
-    });
-
     if (!response.ok) {
+      await this.cancelOrderAndReleaseReservedStock(this.prisma, order);
       throw new BadGatewayException(
         responsePayload?.description || 'Ошибка создания платежа в YooKassa',
       );
@@ -318,24 +301,10 @@ export class PaymentsService {
 
     if (mappedStatus === 'SUCCEEDED' && (order.status as string) !== 'PAID') {
       await this.prisma.$transaction(async (tx) => {
-        await this.consumeReservedStock(
-          tx,
-          order.items,
-          order.id,
-          'Reserved stock consumed on payment success',
-        );
+        await this.consumeReservedStock(tx, order.items);
         await tx.order.update({
           where: { id: order.id },
           data: { status: 'PAID' },
-        });
-        await tx.orderStatusHistory.create({
-          data: {
-            orderId: order.id,
-            fromStatus: order.status,
-            toStatus: 'PAID',
-            reason: 'Payment succeeded (YooKassa)',
-            changedByUserId: currentUserId,
-          },
         });
       });
     }
@@ -422,10 +391,6 @@ export class PaymentsService {
     }
 
     const mappedStatus = toYooKassaStatus(verifiedPayment.status);
-    const providerEventId = providerPaymentId
-      ? `${eventType}:${providerPaymentId}`
-      : null;
-
     const payment = providerPaymentId
       ? await (this.prisma as any).payment.findFirst({
           where: {
@@ -449,34 +414,6 @@ export class PaymentsService {
         })
       : null;
 
-    if (providerEventId) {
-      await this.prisma.paymentWebhookEvent.upsert({
-        where: { providerEventId },
-        create: {
-          paymentId: payment?.id ?? null,
-          provider: 'YOOKASSA',
-          eventType,
-          providerEventId,
-          payload,
-          isProcessed: false,
-        },
-        update: {
-          payload,
-          paymentId: payment?.id ?? null,
-        },
-      });
-    } else {
-      await this.prisma.paymentWebhookEvent.create({
-        data: {
-          paymentId: payment?.id ?? null,
-          provider: 'YOOKASSA',
-          eventType,
-          payload,
-          isProcessed: false,
-        },
-      });
-    }
-
     if (!payment) return { ok: true, skipped: 'payment_not_found' };
 
     await this.prisma.$transaction(async (tx) => {
@@ -489,34 +426,22 @@ export class PaymentsService {
       });
 
       if (mappedStatus === 'SUCCEEDED' && payment.order.status !== 'PAID') {
-        await this.consumeReservedStock(
-          tx,
-          payment.order.items,
-          payment.order.id,
-          'Reserved stock consumed on payment success (webhook)',
-        );
+        await this.consumeReservedStock(tx, payment.order.items);
         await tx.order.update({
           where: { id: payment.order.id },
           data: { status: 'PAID' },
         });
-        await tx.orderStatusHistory.create({
-          data: {
-            orderId: payment.order.id,
-            fromStatus: payment.order.status,
-            toStatus: 'PAID',
-            reason: 'Payment succeeded (YooKassa webhook)',
-          },
-        });
       }
 
-      if (providerEventId) {
-        await (tx as any).paymentWebhookEvent.updateMany({
-          where: { providerEventId },
-          data: {
-            isProcessed: true,
-            processedAt: new Date(),
-            processingError: null,
-          },
+      if (
+        (mappedStatus === 'CANCELED' || mappedStatus === 'FAILED') &&
+        payment.order.status !== 'PAID' &&
+        payment.order.status !== 'CANCELED'
+      ) {
+        await this.releaseReservedStock(tx, payment.order.items);
+        await tx.order.update({
+          where: { id: payment.order.id },
+          data: { status: 'CANCELED' },
         });
       }
     });
@@ -554,8 +479,6 @@ export class PaymentsService {
   private async consumeReservedStock(
     tx: any,
     items: Array<{ productId: number | null; quantity: number }>,
-    orderId: number,
-    note: string,
   ) {
     for (const item of items) {
       if (!item.productId) continue;
@@ -576,14 +499,42 @@ export class PaymentsService {
           `Не удалось списать резерв по товару #${item.productId}`,
         );
       }
+    }
+  }
 
-      await (tx as any).inventoryMovement.create({
+  private async cancelOrderAndReleaseReservedStock(
+    prisma: PrismaService,
+    order: {
+      id: number;
+      status: string;
+      items: Array<{ productId: number | null; quantity: number }>;
+    },
+  ) {
+    if (order.status === 'PAID' || order.status === 'CANCELED') return;
+
+    await prisma.$transaction(async (tx) => {
+      await this.releaseReservedStock(tx, order.items);
+      await tx.order.update({
+        where: { id: order.id },
+        data: { status: 'CANCELED' },
+      });
+    });
+  }
+
+  private async releaseReservedStock(
+    tx: any,
+    items: Array<{ productId: number | null; quantity: number }>,
+  ) {
+    for (const item of items) {
+      if (!item.productId) continue;
+
+      await (tx as any).product.updateMany({
+        where: {
+          id: item.productId,
+          reservedQty: { gte: item.quantity },
+        },
         data: {
-          productId: item.productId,
-          orderId,
-          type: 'OUT',
-          quantity: item.quantity,
-          note,
+          reservedQty: { decrement: item.quantity },
         },
       });
     }

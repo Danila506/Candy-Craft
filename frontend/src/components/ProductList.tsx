@@ -4,15 +4,9 @@ import { Product } from "./Product";
 import { useProducts } from "../contexts/ProductContext";
 import type { CategoryType } from "../types/CategoryType";
 import { API_URL } from "../api/config";
+import { useLanguage } from "../contexts/LanguageContext";
 
-const sortOptions = [
-  { value: "popular", label: "Сначала популярные" },
-  { value: "cheap", label: "Сначала дешевле" },
-  { value: "expensive", label: "Сначала дороже" },
-  { value: "new", label: "Сначала новые" },
-] as const;
-
-type SortValue = (typeof sortOptions)[number]["value"];
+type SortValue = "popular" | "cheap" | "expensive" | "new";
 
 function ProductSkeleton() {
   return (
@@ -33,6 +27,7 @@ function ProductSkeleton() {
 
 export function ProductList() {
   const { products, loading: productsLoading } = useProducts();
+  const { t } = useLanguage();
 
   const [categories, setCategories] = useState<CategoryType[]>([]);
 
@@ -44,6 +39,16 @@ export function ProductList() {
   const [inStockOnly, setInStockOnly] = useState(false);
   const [maxPrice, setMaxPrice] = useState<number | null>(null);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+
+  const sortOptions = useMemo(
+    () => [
+      { value: "popular", label: t("catalog.sortPopular") },
+      { value: "cheap", label: t("catalog.sortCheap") },
+      { value: "expensive", label: t("catalog.sortExpensive") },
+      { value: "new", label: t("catalog.sortNew") },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     fetch(`${API_URL}/categories`)
@@ -121,7 +126,7 @@ export function ProductList() {
                     : "bg-white text-gray-700 border-rose-100 hover:border-[#ff398b]/40 hover:text-[#ff398b]"
                 }`}
               >
-                Все товары
+                {t("catalog.allProducts")}
               </button>
 
               {categories.map((category) => (
@@ -146,15 +151,15 @@ export function ProductList() {
               type="search"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Поиск по каталогу"
+              placeholder={t("catalog.searchPlaceholder")}
               className="h-10 w-full sm:w-72 rounded-xl border border-rose-100 bg-white px-3 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-4 focus:ring-[#ff398b]/15 focus:border-[#ff398b]/40"
-              aria-label="Поиск по товарам"
+              aria-label={t("catalog.searchAria")}
             />
             <select
               className="h-10 rounded-xl border border-rose-100 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-4 focus:ring-[#ff398b]/15 focus:border-[#ff398b]/40"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as SortValue)}
-              aria-label="Сортировка товаров"
+              aria-label={t("catalog.sortAria")}
             >
               {sortOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -166,7 +171,7 @@ export function ProductList() {
               onClick={() => setIsFiltersOpen(true)}
               className="lg:hidden h-10 px-4 rounded-xl border border-rose-100 bg-white text-sm inline-flex items-center justify-center gap-2 hover:border-[#ff398b]/40 hover:text-[#ff398b] transition-colors"
             >
-              <SlidersHorizontal size={16} /> Фильтры
+              <SlidersHorizontal size={16} /> {t("catalog.filters")}
             </button>
           </div>
         </div>
@@ -177,18 +182,20 @@ export function ProductList() {
         {/* Sidebar filters */}
         <aside className="hidden lg:block rounded-2xl border border-rose-100 bg-white p-4 h-fit space-y-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium text-gray-900">Фильтры</h2>
+            <h2 className="font-medium text-gray-900">
+              {t("catalog.filters")}
+            </h2>
             <button
               type="button"
               onClick={resetFilters}
               className="text-xs text-[#ff398b] hover:underline"
             >
-              Сбросить
+              {t("catalog.reset")}
             </button>
           </div>
 
           <label className="flex items-center justify-between gap-2 text-sm text-gray-700">
-            Только в наличии
+            {t("catalog.inStockOnly")}
             <input
               type="checkbox"
               checked={inStockOnly}
@@ -199,7 +206,7 @@ export function ProductList() {
 
           <div className="space-y-2">
             <p className="text-sm text-gray-700">
-              До{" "}
+              {t("catalog.upTo")}{" "}
               <span className="font-medium text-gray-900">
                 {maxPrice ?? highestPrice} ₽
               </span>
@@ -226,16 +233,16 @@ export function ProductList() {
           ) : filteredProducts.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-rose-200 bg-white px-6 py-14 text-center shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Ничего не найдено
+                {t("catalog.emptyTitle")}
               </h3>
               <p className="text-sm text-gray-600 mb-5">
-                Попробуйте изменить фильтры или сбросьте их.
+                {t("catalog.emptyDescription")}
               </p>
               <button
                 onClick={resetFilters}
                 className="px-5 py-2.5 rounded-xl bg-[#ff398b] text-white text-sm font-medium hover:bg-[#ff2a81] transition-colors shadow-sm"
               >
-                Сбросить фильтры
+                {t("catalog.resetFilters")}
               </button>
             </div>
           ) : (
@@ -264,18 +271,20 @@ export function ProductList() {
           >
             <div className="h-1.5 w-10 bg-rose-200 rounded-full mx-auto" />
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-gray-900">Фильтры</h3>
+              <h3 className="font-semibold text-gray-900">
+                {t("catalog.filters")}
+              </h3>
               <button
                 type="button"
                 onClick={resetFilters}
                 className="text-sm text-[#ff398b] hover:underline"
               >
-                Сбросить
+                {t("catalog.reset")}
               </button>
             </div>
 
             <label className="flex items-center justify-between text-sm text-gray-700">
-              Только в наличии
+              {t("catalog.inStockOnly")}
               <input
                 type="checkbox"
                 checked={inStockOnly}
@@ -286,7 +295,7 @@ export function ProductList() {
 
             <div className="space-y-2">
               <p className="text-sm text-gray-700">
-                До{" "}
+                {t("catalog.upTo")}{" "}
                 <span className="font-medium text-gray-900">
                   {maxPrice ?? highestPrice} ₽
                 </span>
@@ -305,7 +314,7 @@ export function ProductList() {
               className="w-full rounded-xl bg-[#ff398b] text-white py-2.5 text-sm font-medium hover:bg-[#ff2a81] transition-colors shadow-sm"
               onClick={() => setIsFiltersOpen(false)}
             >
-              Применить
+              {t("catalog.apply")}
             </button>
           </div>
         </div>

@@ -11,11 +11,6 @@ import { PrismaService } from '../src/prisma/prisma.service';
 import { ObservabilityService } from '../src/observability/observability.service';
 
 const prismaMock = {
-  paymentWebhookEvent: {
-    upsert: jest.fn(),
-    create: jest.fn(),
-    updateMany: jest.fn(),
-  },
   payment: {
     findFirst: jest.fn(),
     update: jest.fn(),
@@ -23,12 +18,6 @@ const prismaMock = {
   order: {
     update: jest.fn(),
     findUnique: jest.fn(),
-  },
-  orderStatusHistory: {
-    create: jest.fn(),
-  },
-  inventoryMovement: {
-    create: jest.fn(),
   },
   $transaction: jest.fn(),
 };
@@ -142,7 +131,6 @@ describe('Payments webhook (e2e)', () => {
       .expect(201);
 
     expect(response.body).toEqual({ ok: true, skipped: 'payment_not_found' });
-    expect(prismaMock.paymentWebhookEvent.upsert).toHaveBeenCalled();
   });
 
   it('should return 429 when rate limit is exceeded', async () => {
