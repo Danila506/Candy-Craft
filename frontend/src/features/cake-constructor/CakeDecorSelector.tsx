@@ -8,7 +8,7 @@ type Props = {
 };
 
 export function CakeDecorSelector({ value, onChange }: Props) {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const toggleDecor = (decorId: CakeDecorId) => {
     if (value.includes(decorId)) {
       onChange(value.filter((item) => item !== decorId));
@@ -56,7 +56,7 @@ export function CakeDecorSelector({ value, onChange }: Props) {
               )}
               {option.price > 0 && (
                 <div className="mt-2 text-xs font-bold text-slate-500">
-                  +{option.price} ₽
+                  +{formatMoney(option.price)}
                 </div>
               )}
             </button>

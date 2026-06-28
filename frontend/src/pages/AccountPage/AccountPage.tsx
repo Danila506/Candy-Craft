@@ -36,17 +36,14 @@ function cn(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
 }
 
-function formatOrderAmount(order: MyOrderDto, locale: string) {
+function formatOrderAmount(
+  order: MyOrderDto,
+  formatMoney: (amountRub: number) => string,
+) {
   if (typeof order.finalAmountMinor !== "number") return "—";
-  const currency = order.currency || "RUB";
   const amountMinor = order.finalAmountMinor;
 
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amountMinor / 100);
+  return formatMoney(amountMinor / 100);
 }
 
 function formatRuPhoneInput(input: string) {
@@ -109,7 +106,7 @@ function RequiredStar() {
 }
 
 export default function AccountPage() {
-  const { isHebrew, t } = useLanguage();
+  const { formatMoney, isHebrew, t } = useLanguage();
   const locale = isHebrew ? "he-IL" : "ru-RU";
   const navigate = useNavigate();
   const [emailError, setEmailError] = useState<string>("");
@@ -552,7 +549,7 @@ export default function AccountPage() {
                           </span>
                         </td>
                         <td className="py-3 font-semibold">
-                          {formatOrderAmount(o, locale)}
+                          {formatOrderAmount(o, formatMoney)}
                         </td>
                         <td className="py-3 text-right">
                           {/* если будет страница заказа — включишь */}

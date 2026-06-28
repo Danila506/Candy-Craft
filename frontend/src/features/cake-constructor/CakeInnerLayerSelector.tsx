@@ -20,7 +20,7 @@ function clampPercent(value: number) {
 }
 
 export function CakeInnerLayerSelector({ size, value, onChange }: Props) {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const selectedIds = new Set(value.map((part) => part.candyId));
   const percentSum = getInnerLayerPercentSum(value);
   const estimation = estimateInnerLayer(size, value);
@@ -159,7 +159,7 @@ export function CakeInnerLayerSelector({ size, value, onChange }: Props) {
           </div>
         )}
         <div className="mt-3 border-t border-slate-200 pt-2 text-right text-sm font-black text-slate-900">
-          {estimation.totalPrice.toLocaleString("ru-RU")} ₽
+          {formatMoney(estimation.totalPrice)}
         </div>
         <div className="mt-1 text-xs text-slate-500">
           {t("cake.innerPriceHint")}

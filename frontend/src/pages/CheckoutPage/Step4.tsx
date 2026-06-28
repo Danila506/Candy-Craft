@@ -4,7 +4,7 @@ import { useCheckout } from "../../contexts/CheckoutContext";
 import { useLanguage } from "../../contexts/LanguageContext";
 
 export const Step4 = () => {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const { cartItems } = useCart();
   const {
     selectedGift,
@@ -94,7 +94,7 @@ export const Step4 = () => {
                       {item.name}
                     </div>
                     <div className="text-sm text-gray-600 mt-1">
-                      {item.quantity} × {item.price.toLocaleString()} ₽
+                      {item.quantity} × {formatMoney(Number(item.price))}
                     </div>
                     {item.customConfig && (
                       <div className="mt-1 text-xs text-[#ff398b]">
@@ -108,7 +108,7 @@ export const Step4 = () => {
                     )}
                   </div>
                   <div className="font-bold text-base sm:text-lg text-[#ff398b]">
-                    {(item.price * item.quantity).toLocaleString()} ₽
+                    {formatMoney(Number(item.price) * item.quantity)}
                   </div>
                 </div>
               ))}
@@ -129,7 +129,7 @@ export const Step4 = () => {
                     </div>
                   </div>
                   <div className="font-bold text-lg text-[#ff398b]">
-                    +{selectedGift.price} ₽
+                    +{formatMoney(selectedGift.price)}
                   </div>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export const Step4 = () => {
                   </div>
                 </div>
                 <div className="text-right font-bold text-xl text-[#ff398b] pt-4 border-t border-gray-200">
-                  {selectedDelivery.price} ₽
+                  {formatMoney(selectedDelivery.price)}
                 </div>
               </div>
             )}
@@ -174,21 +174,19 @@ export const Step4 = () => {
               <div className="space-y-3">
                 <div className="flex justify-between text-gray-700">
                   <span>{t("checkout.products")}</span>
-                  <span className="font-semibold">
-                    {subtotal.toLocaleString()} ₽
-                  </span>
+                  <span className="font-semibold">{formatMoney(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-700">
                   <span>{t("checkout.delivery")}:</span>
                   <span className="font-semibold">
-                    {deliveryPrice.toLocaleString()} ₽
+                    {formatMoney(deliveryPrice)}
                   </span>
                 </div>
                 {selectedGift && (
                   <div className="flex justify-between text-gray-700">
                     <span>{t("checkout.extraOptions")}</span>
                     <span className="font-semibold">
-                      {giftPrice.toLocaleString()} ₽
+                      {formatMoney(giftPrice)}
                     </span>
                   </div>
                 )}
@@ -196,7 +194,7 @@ export const Step4 = () => {
                   <div className="flex flex-col min-[420px]:flex-row min-[420px]:justify-between gap-1 text-xl sm:text-2xl font-extrabold bg-linear-to-r from-[#ff398b] to-pink-600 bg-clip-text text-transparent">
                     <span>{t("checkout.total")}</span>
                     <span className="text-[#ff398b]">
-                      {totalAmount.toLocaleString()} ₽
+                      {formatMoney(totalAmount)}
                     </span>
                   </div>
                 </div>

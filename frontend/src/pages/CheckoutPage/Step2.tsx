@@ -12,7 +12,7 @@ const deliveryIcons: Record<number, React.ReactNode> = {
 };
 
 export const Step2 = () => {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const { selectedDelivery, setSelectedDelivery } = useCheckout();
   const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,7 +123,7 @@ export const Step2 = () => {
                       : "text-gray-700"
                   }`}
                 >
-                  {option.price} ₽
+                  {formatMoney(option.price)}
                 </span>
               </div>
             </div>

@@ -15,6 +15,8 @@ type TranslationKey = string;
 
 type Dictionary = Record<TranslationKey, string>;
 
+const RUB_TO_ILS_RATE = 0.038;
+
 const dictionaries: Record<Language, Dictionary> = {
   ru: {
     "header.deliveryNotice":
@@ -290,7 +292,7 @@ const dictionaries: Record<Language, Dictionary> = {
     "cart.discount": "Скидка",
     "cart.payTotal": "Итого к оплате",
     "cart.checkout": "Оформить заказ",
-    "cart.freeDelivery": "Бесплатная доставка от 6000 ₽",
+    "cart.freeDelivery": "Бесплатная доставка от",
     "cart.shape.round": "круг",
     "cart.shape.square": "квадрат",
     "cart.shape.heart": "сердце",
@@ -796,7 +798,7 @@ const dictionaries: Record<Language, Dictionary> = {
     "cart.discount": "הנחה",
     "cart.payTotal": "סה״כ לתשלום",
     "cart.checkout": "השלמת הזמנה",
-    "cart.freeDelivery": "משלוח חינם מעל 6000 ₽",
+    "cart.freeDelivery": "משלוח חינם מעל",
     "cart.shape.round": "עגול",
     "cart.shape.square": "מרובע",
     "cart.shape.heart": "לב",
@@ -1039,6 +1041,8 @@ const dictionaries: Record<Language, Dictionary> = {
 type LanguageContextValue = {
   language: Language;
   isHebrew: boolean;
+  currency: "RUB" | "ILS";
+  formatMoney: (amountRub: number) => string;
   toggleLanguage: () => void;
   t: (key: TranslationKey) => string;
 };
@@ -1054,6 +1058,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   });
 
   const isHebrew = language === "he";
+  const currency: "RUB" | "ILS" = isHebrew ? "ILS" : "RUB";
 
   useEffect(() => {
     document.documentElement.lang = language;
@@ -1070,9 +1075,23 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     [language],
   );
 
+  const formatMoney = useCallback(
+    (amountRub: number) => {
+      const amount = isHebrew ? amountRub * RUB_TO_ILS_RATE : amountRub;
+
+      return new Intl.NumberFormat(isHebrew ? "he-IL" : "ru-RU", {
+        style: "currency",
+        currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(amount);
+    },
+    [currency, isHebrew],
+  );
+
   const value = useMemo(
-    () => ({ language, isHebrew, toggleLanguage, t }),
-    [isHebrew, language, t, toggleLanguage],
+    () => ({ language, isHebrew, currency, formatMoney, toggleLanguage, t }),
+    [currency, formatMoney, isHebrew, language, t, toggleLanguage],
   );
 
   return (

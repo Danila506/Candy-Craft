@@ -21,7 +21,7 @@ import {
 import { useLanguage } from "../../contexts/LanguageContext";
 
 export function CakeConstructor() {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const [config, setConfig] =
     useState<CakeConstructorConfig>(defaultCakeConfig);
   const [activeStep, setActiveStep] = useState(0);
@@ -278,7 +278,7 @@ export function CakeConstructor() {
               </p>
             </div>
             <div className="text-sm font-black text-slate-950">
-              {totalPrice.toLocaleString("ru-RU")} ₽
+              {formatMoney(totalPrice)}
             </div>
           </div>
 

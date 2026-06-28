@@ -16,7 +16,7 @@ export function ProductInfo({
   isInCart,
   onAddToCart,
 }: ProductInfoProps) {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const [quantity, setQuantity] = useState(1);
 
   const increment = () => {
@@ -37,7 +37,7 @@ export function ProductInfo({
 
       <div className="mb-6">
         <span className="text-2xl font-bold text-[#ff6163]">
-          {product.price}₽
+          {formatMoney(product.price)}
         </span>
       </div>
 
@@ -80,8 +80,7 @@ export function ProductInfo({
 
           <div className="text-lg">
             <span className="font-semibold">
-              {t("productInfo.total")}{" "}
-              {(product.price * quantity).toLocaleString()}₽
+              {t("productInfo.total")} {formatMoney(product.price * quantity)}
             </span>
           </div>
         </div>

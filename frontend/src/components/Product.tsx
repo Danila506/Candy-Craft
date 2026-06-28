@@ -9,7 +9,7 @@ import { useLanguage } from "../contexts/LanguageContext";
 
 export function Product(product: ProductType) {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const userId = user?.id;
   const { isItemInCart, addToCart } = useCart();
   const {
@@ -111,7 +111,7 @@ export function Product(product: ProductType) {
                 {t("product.price")}
               </span>
               <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-900">
-                {price}₽
+                {formatMoney(price)}
               </span>
             </div>
 

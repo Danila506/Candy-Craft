@@ -22,7 +22,7 @@ export function CakeSummary({
   onQuantityChange,
   onAddToCart,
 }: Props) {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const optionLabel = (group: string, id: string, fallback: string) => {
     const translated = t(`cake.option.${group}.${id}.label`);
     return translated === `cake.option.${group}.${id}.label`
@@ -54,7 +54,9 @@ export function CakeSummary({
         </div>
         <div className="text-right">
           <div className="text-xs text-slate-300">{t("checkout.total")}</div>
-          <div className="text-3xl font-black">{totalPrice * quantity} ₽</div>
+          <div className="text-3xl font-black">
+            {formatMoney(totalPrice * quantity)}
+          </div>
         </div>
       </div>
 

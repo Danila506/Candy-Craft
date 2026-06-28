@@ -44,7 +44,7 @@ export interface GiftOption {
 }
 
 export function CheckoutPage() {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const { cartCount, refreshCart, clearCart, cartItems } = useCart();
 
   const [step, setStep] = useState(1);
@@ -404,8 +404,7 @@ export function CheckoutPage() {
                               {t("checkout.finish")}
                             </span>
                             <span className="text-sm font-normal opacity-90">
-                              {t("checkout.total")}{" "}
-                              {totalAmount.toLocaleString()} ₽
+                              {t("checkout.total")} {formatMoney(totalAmount)}
                             </span>
                           </div>
                         </>

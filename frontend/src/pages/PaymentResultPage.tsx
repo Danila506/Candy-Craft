@@ -23,7 +23,7 @@ function statusText(status: PaymentStatus, t: (key: string) => string) {
 }
 
 export function PaymentResultPage() {
-  const { isHebrew, t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const [params] = useSearchParams();
   const orderId = Number(params.get("orderId") ?? 0);
   const [loading, setLoading] = useState(true);
@@ -62,12 +62,8 @@ export function PaymentResultPage() {
 
   const amountLabel = useMemo(() => {
     if (!payment) return null;
-    return new Intl.NumberFormat(isHebrew ? "he-IL" : "ru-RU", {
-      style: "currency",
-      currency: payment.currency || "RUB",
-      maximumFractionDigits: 2,
-    }).format(payment.amountMinor / 100);
-  }, [isHebrew, payment]);
+    return formatMoney(payment.amountMinor / 100);
+  }, [formatMoney, payment]);
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-16">

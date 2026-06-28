@@ -13,7 +13,7 @@ const giftIcons: Record<number, React.ReactNode> = {
 };
 
 export const Step3 = () => {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const { selectedGift, setSelectedGift, customerNote, setCustomerNote } =
     useCheckout();
   const [giftOptions, setGiftOptions] = useState<GiftOption[]>([]);
@@ -124,7 +124,7 @@ export const Step3 = () => {
                       : "text-gray-700"
                   }`}
                 >
-                  +{option.price} ₽
+                  +{formatMoney(option.price)}
                 </span>
               </div>
             </div>

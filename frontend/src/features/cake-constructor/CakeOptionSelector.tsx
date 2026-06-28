@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import type { CakeOption } from "./cakeConstructorConfig";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 type Props<T extends string> = {
   title: string;
@@ -26,6 +27,8 @@ export function CakeOptionSelector<T extends string>({
   disabledOptions = {},
   columns = "three",
 }: Props<T>) {
+  const { formatMoney } = useLanguage();
+
   return (
     <section className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
       <div className="mb-3 flex items-center gap-3">
@@ -64,7 +67,7 @@ export function CakeOptionSelector<T extends string>({
               )}
               {option.price > 0 && (
                 <div className="mt-2 text-xs font-bold text-slate-500">
-                  +{option.price} ₽
+                  +{formatMoney(option.price)}
                 </div>
               )}
             </button>

@@ -43,7 +43,7 @@ const customOuterLayerLabels = {
 } as const;
 
 export function Cart() {
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
   const { cartItems, removeCartEntry, updateCartEntryQuantity } = useCart();
   const [busyItemId, setBusyItemId] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -324,12 +324,11 @@ export function Cart() {
                         {/* Цена */}
                         <div className="flex flex-wrap items-baseline gap-2">
                           <span className="text-xl md:text-2xl font-bold text-indigo-600">
-                            {itemTotal.toLocaleString("ru-RU")} ₽
+                            {formatMoney(itemTotal)}
                           </span>
                           {quantity > 1 && (
                             <span className="text-sm text-slate-400">
-                              {item.price.toLocaleString("ru-RU")} ₽ ×{" "}
-                              {quantity}
+                              {formatMoney(Number(item.price))} × {quantity}
                             </span>
                           )}
                         </div>
@@ -368,7 +367,7 @@ export function Cart() {
                         {t("cart.items")} ({totalItems})
                       </span>
                       <span className="font-semibold text-slate-800">
-                        {totalPrice.toLocaleString("ru-RU")} ₽
+                        {formatMoney(totalPrice)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl">
@@ -376,7 +375,7 @@ export function Cart() {
                         <Tag className="w-4 h-4" />
                         {t("cart.discount")}
                       </span>
-                      <span className="text-slate-500">0 ₽</span>
+                      <span className="text-slate-500">{formatMoney(0)}</span>
                     </div>
                     <div className="border-t border-slate-200 pt-4 mt-4">
                       <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center justify-between gap-2">
@@ -384,7 +383,7 @@ export function Cart() {
                           {t("cart.payTotal")}
                         </span>
                         <span className="text-2xl font-bold text-indigo-600">
-                          {totalPrice.toLocaleString("ru-RU")} ₽
+                          {formatMoney(totalPrice)}
                         </span>
                       </div>
                     </div>
@@ -403,7 +402,7 @@ export function Cart() {
                       <div className="flex items-center gap-2 text-emerald-700 text-sm">
                         <Sparkles className="w-4 h-4" />
                         <span className="font-medium">
-                          {t("cart.freeDelivery")}
+                          {t("cart.freeDelivery")} {formatMoney(6000)}
                         </span>
                       </div>
                     </div>
