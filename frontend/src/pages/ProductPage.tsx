@@ -6,8 +6,10 @@ import { Breadcrumb } from "../components/ui/Breadcrumb";
 import { ProductGallery } from "../components/ProductGallery";
 import { ProductInfo } from "../components/ProductInfo";
 import { useState, useEffect } from "react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export function ProductPage() {
+  const { t } = useLanguage();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { getProductById, getProductBySlug, loading } = useProducts();
@@ -35,7 +37,7 @@ export function ProductPage() {
         <div className="flex flex-col items-center justify-center min-h-[50vh]">
           <div className="animate-spin rounded-full h-12 w-12 md:h-16 md:w-16 border-t-2 border-b-2 border-[#ff398b]"></div>
           <p className="mt-4 text-gray-600 text-sm md:text-base">
-            Загрузка товара...
+            {t("productPage.loading")}
           </p>
         </div>
       </div>
@@ -47,16 +49,16 @@ export function ProductPage() {
       <div className="container py-10 md:py-20 px-4">
         <div className="text-center max-w-md mx-auto">
           <h2 className="text-xl md:text-2xl font-bold mb-3 md:mb-4">
-            Товар не найден
+            {t("productPage.notFound")}
           </h2>
           <p className="text-gray-600 text-sm md:text-base mb-6 md:mb-8">
-            Извините, запрашиваемый товар не существует или был удалён
+            {t("productPage.notFoundDescription")}
           </p>
           <button
             onClick={() => navigate("/")}
             className="bg-[#ff398b] text-white px-5 py-2.5 md:px-6 md:py-3 rounded-lg hover:bg-[#e0327a] transition-colors text-sm md:text-base w-full md:w-auto"
           >
-            Вернуться в каталог
+            {t("productPage.backCatalog")}
           </button>
         </div>
       </div>
@@ -76,8 +78,8 @@ export function ProductPage() {
       <div className="mb-4 md:mb-6">
         <Breadcrumb
           items={[
-            { text: "Главная", path: "/" },
-            { text: "Каталог", path: "/" },
+            { text: t("productPage.home"), path: "/" },
+            { text: t("header.catalog"), path: "/" },
             {
               text: product.name,
               path: `/product/${product.slug || product.id}`,
@@ -114,7 +116,7 @@ export function ProductPage() {
             onClick={() => navigate(-1)}
             className="w-full bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors"
           >
-            ← Назад
+            {t("productPage.back")}
           </button>
         </div>
       )}

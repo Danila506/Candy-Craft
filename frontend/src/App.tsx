@@ -10,7 +10,7 @@ import { OrderProvider } from "./admin/context/OrderContext";
 import { CheckoutProvider } from "./contexts/CheckoutContext";
 import { CategoryProvider } from "./contexts/CategoryContext";
 import { AuthProvider } from "./contexts/AuthContext";
-import { LanguageProvider } from "./contexts/LanguageContext";
+import { LanguageProvider, useLanguage } from "./contexts/LanguageContext";
 
 const CartPage = lazy(() =>
   import("./pages/CartPage").then((module) => ({ default: module.Cart })),
@@ -103,31 +103,35 @@ function HeaderOnlyLayout() {
 }
 
 function NotFoundPage() {
+  const { t } = useLanguage();
+
   return (
     <main className="container px-4 py-20 min-h-[60vh] flex flex-col items-center justify-center text-center">
       <p className="text-sm font-semibold text-[#ff398b]">404</p>
       <h1 className="mt-3 text-3xl font-bold text-gray-900">
-        Страница не найдена
+        {t("notFound.title")}
       </h1>
-      <p className="mt-3 max-w-md text-gray-600">
-        Проверьте адрес или вернитесь в каталог.
-      </p>
+      <p className="mt-3 max-w-md text-gray-600">{t("notFound.description")}</p>
       <Link
         to="/"
         className="mt-8 inline-flex items-center justify-center rounded-lg bg-[#ff398b] px-5 py-3 text-sm font-semibold text-white hover:bg-[#e0327a]"
       >
-        На главную
+        {t("notFound.home")}
       </Link>
     </main>
   );
 }
 
 function PageLoader() {
+  const { t } = useLanguage();
+
   return (
     <main className="container px-4 py-20 min-h-[60vh] flex items-center justify-center text-center">
       <div>
         <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-rose-100 border-t-[#ff398b]" />
-        <p className="text-sm font-semibold text-gray-600">Загружаем...</p>
+        <p className="text-sm font-semibold text-gray-600">
+          {t("common.loading")}
+        </p>
       </div>
     </main>
   );

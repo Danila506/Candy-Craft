@@ -27,7 +27,7 @@ function ProductSkeleton() {
 
 export function ProductList() {
   const { products, loading: productsLoading } = useProducts();
-  const { t } = useLanguage();
+  const { formatMoney, t } = useLanguage();
 
   const [categories, setCategories] = useState<CategoryType[]>([]);
 
@@ -208,7 +208,7 @@ export function ProductList() {
             <p className="text-sm text-gray-700">
               {t("catalog.upTo")}{" "}
               <span className="font-medium text-gray-900">
-                {maxPrice ?? highestPrice} ₽
+                {formatMoney(maxPrice ?? highestPrice)}
               </span>
             </p>
             <input
@@ -297,7 +297,7 @@ export function ProductList() {
               <p className="text-sm text-gray-700">
                 {t("catalog.upTo")}{" "}
                 <span className="font-medium text-gray-900">
-                  {maxPrice ?? highestPrice} ₽
+                  {formatMoney(maxPrice ?? highestPrice)}
                 </span>
               </p>
               <input

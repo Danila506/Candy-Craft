@@ -1,8 +1,10 @@
 import { CheckCircle, CreditCard, Package, Truck } from "lucide-react";
 import { useCart } from "../../contexts/CartContext";
 import { useCheckout } from "../../contexts/CheckoutContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export const Step4 = () => {
+  const { formatMoney, t } = useLanguage();
   const { cartItems } = useCart();
   const {
     selectedGift,
@@ -26,14 +28,14 @@ export const Step4 = () => {
       | Array<{ candyId: keyof typeof innerCandyLabels; percentage: number }>
       | undefined,
   ) => {
-    if (!innerLayer?.length) return "внутренний слой не указан";
+    if (!innerLayer?.length) return t("cart.innerMissing");
     const parts = innerLayer
       .filter((part) => part.percentage > 0)
       .map(
         (part) =>
           `${innerCandyLabels[part.candyId] ?? part.candyId} ${part.percentage}%`,
       );
-    return parts.join(", ") || "внутренний слой не указан";
+    return parts.join(", ") || t("cart.innerMissing");
   };
 
   return (
@@ -43,10 +45,10 @@ export const Step4 = () => {
           <CheckCircle className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
-          Проверьте заказ
+          {t("checkout.reviewTitle")}
         </h2>
         <p className="text-gray-600 text-base sm:text-lg">
-          Убедитесь, что всё верно перед оформлением
+          {t("checkout.reviewSubtitle")}
         </p>
       </div>
 
@@ -58,7 +60,7 @@ export const Step4 = () => {
 
         <div className="absolute -top-4 left-1/2 transform -translate-x-1/2 z-10">
           <div className="bg-linear-to-r from-[#ff398b] to-pink-500 text-white px-4 sm:px-6 py-2 rounded-full text-xs sm:text-sm font-bold shadow-lg shadow-pink-300/50">
-            🍬 Ваша коробка конфет 🍬
+            {t("checkout.yourBox")}
           </div>
         </div>
 
@@ -68,7 +70,9 @@ export const Step4 = () => {
               <div className="p-2 bg-linear-to-br from-[#ff398b] to-pink-500 rounded-xl shadow-lg shadow-pink-300/50">
                 <Package className="w-5 h-5 text-white" />
               </div>
-              <span className="text-gray-900">Содержимое заказа</span>
+              <span className="text-gray-900">
+                {t("checkout.orderContents")}
+              </span>
             </h3>
             <div className="space-y-4">
               {cartItems.map((item, index) => (
@@ -90,21 +94,21 @@ export const Step4 = () => {
                       {item.name}
                     </div>
                     <div className="text-sm text-gray-600 mt-1">
-                      {item.quantity} × {item.price.toLocaleString()} ₽
+                      {item.quantity} × {formatMoney(Number(item.price))}
                     </div>
                     {item.customConfig && (
                       <div className="mt-1 text-xs text-[#ff398b]">
                         {item.customConfig.type === "custom_cake"
-                          ? `Индивидуальный торт: ${item.customConfig.base}, ${item.customConfig.size.toUpperCase()}, ${getInnerLayerSummary(item.customConfig.innerLayer)}, ${item.customConfig.packaging}`
-                          : `Индивидуальный конфетный торт: ${item.customConfig.candies.reduce(
+                          ? `${t("checkout.customCake")}: ${item.customConfig.base}, ${item.customConfig.size.toUpperCase()}, ${getInnerLayerSummary(item.customConfig.innerLayer)}, ${item.customConfig.packaging}`
+                          : `${t("checkout.customCandyCake")}: ${item.customConfig.candies.reduce(
                               (sum, candy) => sum + candy.quantity,
                               0,
-                            )} конфет`}
+                            )} ${t("cart.candies")}`}
                       </div>
                     )}
                   </div>
                   <div className="font-bold text-base sm:text-lg text-[#ff398b]">
-                    {(item.price * item.quantity).toLocaleString()} ₽
+                    {formatMoney(Number(item.price) * item.quantity)}
                   </div>
                 </div>
               ))}
@@ -125,7 +129,7 @@ export const Step4 = () => {
                     </div>
                   </div>
                   <div className="font-bold text-lg text-[#ff398b]">
-                    +{selectedGift.price} ₽
+                    +{formatMoney(selectedGift.price)}
                   </div>
                 </div>
               </div>
@@ -137,7 +141,7 @@ export const Step4 = () => {
               <div className="p-2 bg-linear-to-br from-blue-500 to-purple-500 rounded-xl shadow-lg shadow-purple-300/50">
                 <Truck className="w-5 h-5 text-white" />
               </div>
-              <span className="text-gray-900">Доставка</span>
+              <span className="text-gray-900">{t("checkout.delivery")}</span>
             </h3>
             {selectedDelivery && (
               <div className="p-4 sm:p-5 bg-white/60 backdrop-blur-sm rounded-xl border border-pink-100/50 shadow-md mb-6">
@@ -155,7 +159,7 @@ export const Step4 = () => {
                   </div>
                 </div>
                 <div className="text-right font-bold text-xl text-[#ff398b] pt-4 border-t border-gray-200">
-                  {selectedDelivery.price} ₽
+                  {formatMoney(selectedDelivery.price)}
                 </div>
               </div>
             )}
@@ -165,34 +169,32 @@ export const Step4 = () => {
                 <div className="p-2 bg-linear-to-br from-blue-500 to-cyan-500 rounded-xl shadow-lg">
                   <CreditCard className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-gray-900">Итоговая сумма</span>
+                <span className="text-gray-900">{t("checkout.summary")}</span>
               </h4>
               <div className="space-y-3">
                 <div className="flex justify-between text-gray-700">
-                  <span>Товары:</span>
-                  <span className="font-semibold">
-                    {subtotal.toLocaleString()} ₽
-                  </span>
+                  <span>{t("checkout.products")}</span>
+                  <span className="font-semibold">{formatMoney(subtotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-700">
-                  <span>Доставка:</span>
+                  <span>{t("checkout.delivery")}:</span>
                   <span className="font-semibold">
-                    {deliveryPrice.toLocaleString()} ₽
+                    {formatMoney(deliveryPrice)}
                   </span>
                 </div>
                 {selectedGift && (
                   <div className="flex justify-between text-gray-700">
-                    <span>Доп. опции:</span>
+                    <span>{t("checkout.extraOptions")}</span>
                     <span className="font-semibold">
-                      {giftPrice.toLocaleString()} ₽
+                      {formatMoney(giftPrice)}
                     </span>
                   </div>
                 )}
                 <div className="border-t-2 border-gray-300 pt-4 mt-4">
                   <div className="flex flex-col min-[420px]:flex-row min-[420px]:justify-between gap-1 text-xl sm:text-2xl font-extrabold bg-linear-to-r from-[#ff398b] to-pink-600 bg-clip-text text-transparent">
-                    <span>Итого:</span>
+                    <span>{t("checkout.total")}</span>
                     <span className="text-[#ff398b]">
-                      {totalAmount.toLocaleString()} ₽
+                      {formatMoney(totalAmount)}
                     </span>
                   </div>
                 </div>

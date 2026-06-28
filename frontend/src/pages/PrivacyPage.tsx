@@ -1,8 +1,9 @@
 // src/pages/PrivacyPage.tsx
 import { Link } from "react-router-dom";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export function PrivacyPage() {
-  const lastUpdated = "20 июня 2026";
+  const { t } = useLanguage();
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-white">
@@ -12,79 +13,63 @@ export function PrivacyPage() {
             to="/"
             className="text-sm text-gray-500 transition-colors hover:text-gray-900"
           >
-            Вернуться в каталог
+            {t("privacy.back")}
           </Link>
         </div>
 
         <header className="mb-8">
           <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            Политика обработки персональных данных
+            {t("privacy.title")}
           </h1>
           <p className="mt-2 text-sm text-gray-500">
-            Дата обновления: {lastUpdated}
+            {t("privacy.updated")} {t("privacy.date")}
           </p>
         </header>
 
         <article className="prose prose-gray max-w-none">
-          <p>
-            Настоящая политика описывает, какие персональные данные могут
-            обрабатываться на сайте Candy Craft и для каких целей они
-            используются.
-          </p>
+          <p>{t("privacy.intro")}</p>
 
-          <h2>1. Какие данные обрабатываются</h2>
-          <p>Сайт может обрабатывать следующие данные:</p>
+          <h2>{t("privacy.section1")}</h2>
+          <p>{t("privacy.section1Text")}</p>
           <ul>
-            <li>имя и фамилию;</li>
+            <li>{t("privacy.itemName")}</li>
             <li>email;</li>
-            <li>номер телефона;</li>
-            <li>адрес доставки;</li>
-            <li>состав заказа и комментарии к заказу;</li>
-            <li>технические данные, необходимые для работы сайта.</li>
+            <li>{t("privacy.itemPhone")}</li>
+            <li>{t("privacy.itemAddress")}</li>
+            <li>{t("privacy.itemOrder")}</li>
+            <li>{t("privacy.itemTech")}</li>
           </ul>
 
-          <h2>2. Цели обработки</h2>
-          <p>Данные используются для:</p>
+          <h2>{t("privacy.section2")}</h2>
+          <p>{t("privacy.section2Text")}</p>
           <ul>
-            <li>регистрации и авторизации пользователя;</li>
-            <li>оформления и обработки заказов;</li>
-            <li>связи с пользователем по заказу или обращению;</li>
-            <li>работы корзины и личного кабинета;</li>
-            <li>обеспечения безопасности сайта.</li>
+            <li>{t("privacy.purposeAuth")}</li>
+            <li>{t("privacy.purposeOrders")}</li>
+            <li>{t("privacy.purposeContact")}</li>
+            <li>{t("privacy.purposeCart")}</li>
+            <li>{t("privacy.purposeSecurity")}</li>
           </ul>
 
-          <h2>3. Передача данных третьим лицам</h2>
-          <p>
-            Данные могут передаваться только в случаях, необходимых для работы
-            сайта и исполнения заказа, например платежному провайдеру или службе
-            доставки. Данные не продаются и не передаются для сторонней рекламы.
-          </p>
+          <h2>{t("privacy.section3")}</h2>
+          <p>{t("privacy.section3Text")}</p>
 
-          <h2>4. Cookies</h2>
-          <p>
-            Сайт использует cookies и аналогичные технические механизмы для
-            авторизации, поддержания сессии пользователя, работы корзины и
-            обеспечения безопасности.
-          </p>
+          <h2>{t("privacy.section4")}</h2>
+          <p>{t("privacy.section4Text")}</p>
 
-          <h2>5. Хранение и защита данных</h2>
-          <p>
-            Данные хранятся в информационной системе сайта и используются только
-            в объеме, необходимом для работы сервиса. Пароли пользователей не
-            хранятся в открытом виде.
-          </p>
+          <h2>{t("privacy.section5")}</h2>
+          <p>{t("privacy.section5Text")}</p>
 
-          <h2>6. Права пользователя</h2>
-          <p>Пользователь может запросить:</p>
+          <h2>{t("privacy.section6")}</h2>
+          <p>{t("privacy.section6Text")}</p>
           <ul>
-            <li>уточнение своих данных;</li>
-            <li>удаление аккаунта или отдельных данных;</li>
-            <li>информацию о целях обработки данных.</li>
+            <li>{t("privacy.rightsClarify")}</li>
+            <li>{t("privacy.rightsDelete")}</li>
+            <li>{t("privacy.rightsInfo")}</li>
           </ul>
 
-          <h2>7. Контакты</h2>
+          <h2>{t("privacy.section7")}</h2>
           <p>
-            По вопросам обработки персональных данных можно написать на email:{" "}
+            {t("privacy.section7Text")}{" "}
             <a href="mailto:belakdanila9@gmail.com">belakdanila9@gmail.com</a>
           </p>
         </article>
@@ -94,13 +79,13 @@ export function PrivacyPage() {
             to="/"
             className="inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-medium transition hover:bg-gray-50"
           >
-            Продолжить покупки
+            {t("privacy.continue")}
           </Link>
           <a
             href="mailto:belakdanila9@gmail.com"
             className="inline-flex items-center justify-center rounded-xl bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
           >
-            Написать на email
+            {t("privacy.emailCta")}
           </a>
         </div>
       </div>

@@ -2,6 +2,7 @@
 import { useState } from "react";
 import type { ProductType } from "../types/ProductType";
 import Cart from "./ui/CartIcon";
+import { useLanguage } from "../contexts/LanguageContext";
 
 interface ProductInfoProps {
   product: ProductType;
@@ -15,6 +16,7 @@ export function ProductInfo({
   isInCart,
   onAddToCart,
 }: ProductInfoProps) {
+  const { formatMoney, t } = useLanguage();
   const [quantity, setQuantity] = useState(1);
 
   const increment = () => {
@@ -35,7 +37,7 @@ export function ProductInfo({
 
       <div className="mb-6">
         <span className="text-2xl font-bold text-[#ff6163]">
-          {product.price}₽
+          {formatMoney(product.price)}
         </span>
       </div>
 
@@ -50,8 +52,8 @@ export function ProductInfo({
             className={product.inStock > 0 ? "text-green-600" : "text-red-600"}
           >
             {product.inStock > 0
-              ? `В наличии: ${product.inStock} шт`
-              : "Нет в наличии"}
+              ? `${t("product.inStock")}: ${product.inStock} ${t("productInfo.pieces")}`
+              : t("product.outOfStock")}
           </span>
         </div>
 
@@ -78,7 +80,7 @@ export function ProductInfo({
 
           <div className="text-lg">
             <span className="font-semibold">
-              Итого: {(product.price * quantity).toLocaleString()}₽
+              {t("productInfo.total")} {formatMoney(product.price * quantity)}
             </span>
           </div>
         </div>
@@ -97,24 +99,28 @@ export function ProductInfo({
       >
         <Cart size={24} />
         {isInCart
-          ? "✓ Товар в корзине"
+          ? `✓ ${t("product.inCart")}`
           : product.inStock === 0
-            ? "Нет в наличии"
-            : "Добавить в корзину"}
+            ? t("product.outOfStock")
+            : t("productInfo.add")}
       </button>
 
       <div className="text-sm text-gray-600 space-y-2">
         <div className="flex items-start">
-          <span className="w-32 shrink-0">Категория:</span>
-          <span>Конфетные торты</span>
+          <span className="w-32 shrink-0">
+            {t("productInfo.categoryLabel")}
+          </span>
+          <span>{t("productInfo.categoryValue")}</span>
         </div>
         <div className="flex items-start">
-          <span className="w-32 shrink-0">Вес:</span>
-          <span>Индивидуально по составу</span>
+          <span className="w-32 shrink-0">{t("productInfo.weightLabel")}</span>
+          <span>{t("productInfo.weightValue")}</span>
         </div>
         <div className="flex items-start">
-          <span className="w-32 shrink-0">Состав:</span>
-          <span>Конфеты, шоколад, упаковка и декоративная основа</span>
+          <span className="w-32 shrink-0">
+            {t("productInfo.compositionLabel")}
+          </span>
+          <span>{t("productInfo.compositionValue")}</span>
         </div>
       </div>
     </div>

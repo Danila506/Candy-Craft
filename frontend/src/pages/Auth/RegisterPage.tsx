@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthShell } from "./AuthShell";
 import { http, ApiError } from "../../api/http";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 type RegisterForm = {
   firstName: string;
@@ -18,28 +19,30 @@ function RequiredStar() {
   return <span className="ml-0.5 text-red-600 align-super">*</span>;
 }
 
-function validate(form: RegisterForm): FieldErrors {
+function validate(form: RegisterForm, t: (key: string) => string): FieldErrors {
   const errors: FieldErrors = {};
 
-  if (!form.firstName.trim()) errors.firstName = "Введите имя";
-  if (!form.lastName.trim()) errors.lastName = "Введите фамилию";
+  if (!form.firstName.trim()) errors.firstName = t("contact.requiredName");
+  if (!form.lastName.trim()) errors.lastName = t("auth.lastNameRequired");
 
   const email = form.email.trim().toLowerCase();
-  if (!email) errors.email = "Введите email";
+  if (!email) errors.email = t("contact.requiredEmail");
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    errors.email = "Некорректный email";
+    errors.email = t("auth.emailInvalid");
 
-  if (!form.password) errors.password = "Введите пароль";
-  else if (form.password.length < 6) errors.password = "Минимум 6 символов";
+  if (!form.password) errors.password = t("auth.passwordRequired");
+  else if (form.password.length < 6) errors.password = t("auth.passwordMin");
 
-  if (!form.confirmPassword) errors.confirmPassword = "Повторите пароль";
+  if (!form.confirmPassword)
+    errors.confirmPassword = t("auth.confirmPasswordRequired");
   else if (form.confirmPassword !== form.password)
-    errors.confirmPassword = "Пароли не совпадают";
+    errors.confirmPassword = t("auth.passwordMismatch");
 
   return errors;
 }
 
 export function RegisterPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const [form, setForm] = useState<RegisterForm>({
@@ -80,10 +83,10 @@ export function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const nextErrors = validate(form);
+    const nextErrors = validate(form, t);
     setErrors(nextErrors);
     if (!personalDataConsent) {
-      setConsentError("Необходимо согласие на обработку персональных данных");
+      setConsentError(t("contact.consentRequired"));
     }
     if (Object.keys(nextErrors).length || !personalDataConsent) return;
 
@@ -104,12 +107,12 @@ export function RegisterPage() {
 
       navigate("/account/login", {
         replace: true,
-        state: { message: "Аккаунт создан. Теперь можно войти." },
+        state: { message: t("auth.accountCreated") },
       });
     } catch (err) {
       if (err instanceof ApiError) {
         setServerError(err.message);
-      } else setServerError("Не удалось зарегистрироваться");
+      } else setServerError(t("auth.registerFallback"));
     } finally {
       setLoading(false);
     }
@@ -117,10 +120,10 @@ export function RegisterPage() {
 
   return (
     <AuthShell
-      title="Создадим аккаунт 🍰"
-      subtitle="Пара секунд — и ваш Candy Craft профиль готов."
-      bottomText="Уже есть аккаунт?"
-      bottomLinkText="Войти"
+      title={t("auth.registerTitle")}
+      subtitle={t("auth.registerSubtitle")}
+      bottomText={t("auth.hasAccount")}
+      bottomLinkText={t("auth.loginButton")}
       bottomLinkTo="/account/login"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -133,14 +136,14 @@ export function RegisterPage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="text-sm font-medium" htmlFor="firstName">
-              Имя <RequiredStar />
+              {t("auth.firstName")} <RequiredStar />
             </label>
             <input
               id="firstName"
               type="text"
               value={form.firstName}
               onChange={onChange("firstName")}
-              placeholder="как к вам обращаться 🍬"
+              placeholder={t("auth.firstNamePlaceholder")}
               className={`mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 ${
                 errors.firstName
                   ? "border-red-300 focus:ring-red-200"
@@ -155,14 +158,14 @@ export function RegisterPage() {
 
           <div>
             <label className="text-sm font-medium" htmlFor="lastName">
-              Фамилия <RequiredStar />
+              {t("auth.lastName")} <RequiredStar />
             </label>
             <input
               id="lastName"
               type="text"
               value={form.lastName}
               onChange={onChange("lastName")}
-              placeholder="для доставки 🎁"
+              placeholder={t("auth.lastNamePlaceholder")}
               className={`mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 ${
                 errors.lastName
                   ? "border-red-300 focus:ring-red-200"
@@ -185,7 +188,7 @@ export function RegisterPage() {
             type="email"
             value={form.email}
             onChange={onChange("email")}
-            placeholder="куда отправлять чек 🍫"
+            placeholder={t("auth.emailPlaceholder")}
             className={`mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 ${
               errors.email
                 ? "border-red-300 focus:ring-red-200"
@@ -200,9 +203,9 @@ export function RegisterPage() {
 
         <div>
           <label className="text-sm font-medium" htmlFor="phone">
-            Телефон{" "}
+            {t("auth.phone")}{" "}
             <span className="text-xs font-normal text-gray-400">
-              (необязательно)
+              {t("auth.optional")}
             </span>
           </label>
           <input
@@ -219,7 +222,7 @@ export function RegisterPage() {
 
         <div>
           <label className="text-sm font-medium" htmlFor="password">
-            Пароль <RequiredStar />
+            {t("auth.password")} <RequiredStar />
           </label>
           <div className="mt-1 flex rounded-lg border border-gray-200 bg-white focus-within:ring-2 focus-within:ring-gray-200">
             <input
@@ -227,7 +230,7 @@ export function RegisterPage() {
               type={showPassword ? "text" : "password"}
               value={form.password}
               onChange={onChange("password")}
-              placeholder="секретный ингредиент"
+              placeholder={t("auth.passwordPlaceholder")}
               className="w-full rounded-lg px-3 py-2 outline-none"
               autoComplete="new-password"
             />
@@ -236,7 +239,7 @@ export function RegisterPage() {
               onClick={() => setShowPassword((v) => !v)}
               className="px-3 text-sm text-gray-600"
             >
-              {showPassword ? "Скрыть" : "Показать"}
+              {showPassword ? t("auth.hide") : t("auth.show")}
             </button>
           </div>
           {errors.password && (
@@ -246,14 +249,14 @@ export function RegisterPage() {
 
         <div>
           <label className="text-sm font-medium" htmlFor="confirmPassword">
-            Повтор пароля <RequiredStar />
+            {t("auth.confirmPassword")} <RequiredStar />
           </label>
           <input
             id="confirmPassword"
             type={showPassword ? "text" : "password"}
             value={form.confirmPassword}
             onChange={onChange("confirmPassword")}
-            placeholder="ещё раз, чтобы точно 🍰"
+            placeholder={t("auth.confirmPasswordPlaceholder")}
             onPaste={(e) => e.preventDefault()} // ✅ нельзя вставить
             onDrop={(e) => e.preventDefault()}
             className={`mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 ${
@@ -281,12 +284,12 @@ export function RegisterPage() {
             className="mt-1 h-4 w-4 shrink-0 accent-amber-500"
           />
           <span>
-            Я согласен на обработку персональных данных и ознакомлен с{" "}
+            {t("auth.consentStart")}{" "}
             <Link
               to="/privacy"
               className="font-medium text-amber-700 underline"
             >
-              политикой конфиденциальности
+              {t("contact.privacyPolicy")}
             </Link>
             .
             {consentError && (
@@ -302,7 +305,7 @@ export function RegisterPage() {
           disabled={!canSubmit}
           className="w-full rounded-lg bg-amber-500 px-4 py-2.5 text-white hover:bg-amber-600 disabled:opacity-50"
         >
-          {loading ? "Создаю аккаунт..." : "Зарегистрироваться"}
+          {loading ? t("auth.registering") : t("auth.registerButton")}
         </button>
       </form>
     </AuthShell>

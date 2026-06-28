@@ -224,7 +224,7 @@ export default function ContactPage() {
                         ? "border-red-300 focus:ring-red-100"
                         : "border-gray-200 focus:ring-rose-100",
                     )}
-                    placeholder="Никита"
+                    placeholder={t("contact.namePlaceholder")}
                     autoComplete="name"
                   />
                   {errors.name && (

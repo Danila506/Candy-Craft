@@ -18,8 +18,10 @@ import {
   type CakeConstructorConfig,
   type CakeSizeId,
 } from "./cakeConstructorConfig";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export function CakeConstructor() {
+  const { formatMoney, t } = useLanguage();
   const [config, setConfig] =
     useState<CakeConstructorConfig>(defaultCakeConfig);
   const [activeStep, setActiveStep] = useState(0);
@@ -47,6 +49,36 @@ export function CakeConstructor() {
     config.innerLayer.length > 0 &&
     Math.abs(innerLayerPercentSum - 100) < 0.001;
 
+  const localizeOption = <T extends string>(
+    group: string,
+    option: { id: T; label: string; description?: string; price: number },
+  ) => {
+    const labelKey = `cake.option.${group}.${option.id}.label`;
+    const descriptionKey = `cake.option.${group}.${option.id}.description`;
+    const label = t(labelKey);
+    const description = option.description ? t(descriptionKey) : undefined;
+
+    return {
+      ...option,
+      label: label === labelKey ? option.label : label,
+      description:
+        option.description && description !== descriptionKey
+          ? description
+          : option.description,
+    };
+  };
+
+  const localizedBases = cakeOptions.bases.map((option) =>
+    localizeOption("base", option),
+  );
+  const localizedSizes = cakeOptions.sizes;
+  const localizedColors = cakeOptions.colors.map((option) =>
+    localizeOption("color", option),
+  );
+  const localizedPackaging = cakeOptions.packaging.map((option) =>
+    localizeOption("packaging", option),
+  );
+
   const updateBase = (base: CakeBaseId) => {
     setConfig((prev) => ({ ...prev, base }));
   };
@@ -57,24 +89,24 @@ export function CakeConstructor() {
 
   const steps = [
     {
-      title: "Размер",
-      caption: "Форма и габарит торта",
+      title: t("cake.stepSize"),
+      caption: t("cake.stepSizeCaption"),
     },
     {
-      title: "Наружный ряд",
-      caption: "Конфеты по борту и цвет ленты",
+      title: t("cake.stepOuter"),
+      caption: t("cake.stepOuterCaption"),
     },
     {
-      title: "Внутренний слой",
-      caption: "Конфеты внутри сборки",
+      title: t("cake.stepInner"),
+      caption: t("cake.stepInnerCaption"),
     },
     {
-      title: "Декор",
-      caption: "Детали и надпись",
+      title: t("cake.stepDecor"),
+      caption: t("cake.stepDecorCaption"),
     },
     {
-      title: "Упаковка",
-      caption: "Финальная подача",
+      title: t("cake.stepPackaging"),
+      caption: t("cake.stepPackagingCaption"),
     },
   ];
   const isLastStep = activeStep === steps.length - 1;
@@ -82,7 +114,7 @@ export function CakeConstructor() {
   const handleAddToCart = async () => {
     setSubmitError("");
     if (!user?.id) {
-      setSubmitError("Войдите в аккаунт, чтобы добавить торт в корзину");
+      setSubmitError(t("cake.loginRequired"));
       return;
     }
 
@@ -99,9 +131,7 @@ export function CakeConstructor() {
       navigate("/cart");
     } catch (error) {
       setSubmitError(
-        error instanceof ApiError
-          ? error.message
-          : "Не удалось добавить торт в корзину",
+        error instanceof ApiError ? error.message : t("cake.addError"),
       );
     } finally {
       setIsSubmitting(false);
@@ -122,16 +152,16 @@ export function CakeConstructor() {
         <div className="space-y-4">
           <CakeOptionSelector
             step={1}
-            title="Выберите размер"
-            options={cakeOptions.sizes}
+            title={t("cake.chooseSize")}
+            options={localizedSizes}
             value={config.size}
             onChange={updateSize}
             columns="two"
           />
           <CakeOptionSelector
             step={1}
-            title="Выберите форму"
-            options={cakeOptions.bases}
+            title={t("cake.chooseShape")}
+            options={localizedBases}
             value={config.base}
             onChange={updateBase}
             columns="three"
@@ -145,7 +175,7 @@ export function CakeConstructor() {
         <div className="space-y-4">
           <CakeOptionSelector
             step={2}
-            title="Наружный ряд конфет"
+            title={t("cake.outerCandies")}
             options={outerLayerOptions}
             value={config.outerLayer}
             onChange={(outerLayer) =>
@@ -155,8 +185,8 @@ export function CakeConstructor() {
           />
           <CakeOptionSelector
             step={2}
-            title="Цвет ленты и акцентов"
-            options={cakeOptions.colors}
+            title={t("cake.ribbonColor")}
+            options={localizedColors}
             value={config.color}
             onChange={(color) => setConfig((prev) => ({ ...prev, color }))}
             columns="three"
@@ -194,7 +224,7 @@ export function CakeConstructor() {
           {config.decor.includes("topper") && (
             <section className="rounded-2xl border border-rose-100 bg-white p-4 shadow-sm">
               <label className="block text-sm font-black text-slate-800">
-                Надпись
+                {t("cake.inscription")}
                 <input
                   value={config.messageText}
                   onChange={(event) =>
@@ -204,11 +234,11 @@ export function CakeConstructor() {
                     }))
                   }
                   className="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-slate-900 outline-none transition focus:border-[#ff398b]"
-                  placeholder="Например: С днём рождения"
+                  placeholder={t("cake.inscriptionPlaceholder")}
                 />
               </label>
               <div className="mt-2 text-xs font-medium text-slate-500">
-                До 40 символов, надпись попадёт в макет и заказ.
+                {t("cake.inscriptionHint")}
               </div>
             </section>
           )}
@@ -219,8 +249,8 @@ export function CakeConstructor() {
     return (
       <CakeOptionSelector
         step={5}
-        title="Упаковка"
-        options={cakeOptions.packaging}
+        title={t("cake.stepPackaging")}
+        options={localizedPackaging}
         value={config.packaging}
         onChange={(packaging) => setConfig((prev) => ({ ...prev, packaging }))}
         columns="four"
@@ -237,7 +267,8 @@ export function CakeConstructor() {
           <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <div className="text-xs font-bold uppercase tracking-[0.22em] text-rose-500">
-                Этап {activeStep + 1} из {steps.length}
+                {t("cake.stage")} {activeStep + 1} {t("checkout.of")}{" "}
+                {steps.length}
               </div>
               <h2 className="mt-1 text-2xl font-black text-slate-950">
                 {steps[activeStep].title}
@@ -247,7 +278,7 @@ export function CakeConstructor() {
               </p>
             </div>
             <div className="text-sm font-black text-slate-950">
-              {totalPrice.toLocaleString("ru-RU")} ₽
+              {formatMoney(totalPrice)}
             </div>
           </div>
 
@@ -297,12 +328,12 @@ export function CakeConstructor() {
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-5 py-3 font-black text-slate-700 transition hover:border-rose-200 hover:text-[#ff398b] disabled:cursor-not-allowed disabled:opacity-40"
           >
             <ChevronLeft className="h-5 w-5" />
-            Назад
+            {t("checkout.back")}
           </button>
 
           {isLastStep ? (
             <div className="rounded-xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700">
-              Проверьте итог и количество в блоке справа.
+              {t("cake.checkSummary")}
             </div>
           ) : (
             <button
@@ -311,7 +342,7 @@ export function CakeConstructor() {
               disabled={isNextDisabled}
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#ff398b] px-6 py-3 font-black text-white transition hover:bg-[#e0327a] disabled:cursor-not-allowed disabled:bg-slate-400"
             >
-              Далее
+              {t("cake.next")}
               <ChevronRight className="h-5 w-5" />
             </button>
           )}

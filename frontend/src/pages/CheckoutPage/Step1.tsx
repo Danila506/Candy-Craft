@@ -5,6 +5,7 @@ import { AddressAutocomplete } from "./AddressAutocomplete";
 import { API_URL } from "../../api/config";
 import { useAuth } from "../../contexts/AuthContext";
 import { http } from "../../api/http";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 type UserAddress = {
   id: number;
@@ -23,6 +24,7 @@ type UserAddress = {
 };
 
 export const Step1 = () => {
+  const { t } = useLanguage();
   const { formData, setFormData } = useCheckout();
   const { user } = useAuth();
   const [savedAddresses, setSavedAddresses] = useState<UserAddress[]>([]);
@@ -73,10 +75,10 @@ export const Step1 = () => {
           <Sparkles className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
-          Адрес доставки
+          {t("checkout.addressTitle")}
         </h2>
         <p className="text-gray-600 text-base sm:text-lg">
-          Расскажите, куда доставить сладости
+          {t("checkout.addressSubtitle")}
         </p>
       </div>
 
@@ -84,17 +86,19 @@ export const Step1 = () => {
         {savedAddresses.length > 0 && (
           <div className="md:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
-              Сохранённые адреса
+              {t("checkout.savedAddresses")}
             </label>
             <select
               value={selectedAddressId}
               onChange={(e) => handleSelectSavedAddress(e.target.value)}
               className="w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-800 focus:outline-none focus:ring-2 focus:ring-pink-200"
             >
-              <option value="">Выберите адрес</option>
+              <option value="">{t("checkout.selectAddress")}</option>
               {savedAddresses.map((address) => (
                 <option key={address.id} value={address.id}>
-                  {(address.label || "Адрес") + ": " + address.fullAddress}
+                  {(address.label || t("checkout.address")) +
+                    ": " +
+                    address.fullAddress}
                 </option>
               ))}
             </select>
@@ -107,7 +111,7 @@ export const Step1 = () => {
               <div className="p-1.5 bg-pink-100 rounded-lg group-focus-within:bg-pink-200 transition-colors">
                 <MapPin className="w-4 h-4 text-[#ff398b]" />
               </div>
-              <span>Адрес доставки</span>
+              <span>{t("checkout.addressTitle")}</span>
             </span>
           </label>
           <AddressAutocomplete

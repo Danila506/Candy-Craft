@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 type Suggestion = {
   value: string;
@@ -24,6 +25,7 @@ export function AddressAutocomplete({
   onChange: (val: string) => void;
   apiUrl: string;
 }) {
+  const { t } = useLanguage();
   const [items, setItems] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -88,14 +90,16 @@ export function AddressAutocomplete({
         }}
         onFocus={() => value.trim().length >= 3 && setOpen(true)}
         className="w-full px-5 py-4 border-2 border-gray-200 rounded-2xl focus:border-[#ff398b] focus:ring-4 focus:ring-pink-100 transition-all duration-300 bg-white/50 backdrop-blur-sm hover:border-pink-200 text-gray-900 placeholder-gray-400"
-        placeholder="Город, улица, дом"
+        placeholder={t("address.placeholder")}
         autoComplete="off"
       />
 
       {hasList && (
         <div className="absolute z-50 mt-2 w-full max-h-80 overflow-y-auto custom-scroll rounded-2xl border border-gray-200 bg-white shadow-xl">
           {loading && (
-            <div className="px-4 py-3 text-sm text-gray-500">Поиск адреса…</div>
+            <div className="px-4 py-3 text-sm text-gray-500">
+              {t("address.searching")}
+            </div>
           )}
           {!loading &&
             items.map((s, idx) => (

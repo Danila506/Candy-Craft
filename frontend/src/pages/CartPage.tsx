@@ -15,22 +15,13 @@ import {
   Sparkles,
   Tag,
 } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext";
 
-const customShapeLabels = {
-  round: "круг",
-  square: "квадрат",
-  heart: "сердце",
-} as const;
-
-const customSizeLabels = {
-  small: "малый",
-  medium: "средний",
-  large: "большой",
-  s: "S (14,5см)",
-  m: "M (19,5см)",
-  l: "L (24,5см)",
-  xl: "XL (29,5см)",
-} as const;
+type CustomShape = "round" | "square" | "heart";
+type CustomSize = "small" | "medium" | "large" | "s" | "m" | "l" | "xl";
+type CustomColor = "pink" | "gold" | "white";
+type CustomDecor = "none" | "flowers" | "bow" | "topper";
+type CustomPackaging = "standard" | "window" | "gift" | "premium-box";
 
 const customInnerCandyLabels = {
   milka: "Milka",
@@ -38,19 +29,6 @@ const customInnerCandyLabels = {
   kinder: "Kinder",
   ferrero: "Ferrero",
   merci: "Merci",
-} as const;
-
-const customColorLabels = {
-  pink: "розовый",
-  gold: "золотой",
-  white: "белый",
-} as const;
-
-const customDecorLabels = {
-  none: "без декора",
-  flowers: "цветы",
-  bow: "бант",
-  topper: "топпер с надписью",
 } as const;
 
 const customOuterLayerLabels = {
@@ -64,14 +42,8 @@ const customOuterLayerLabels = {
   milkiway: "MilkiWay",
 } as const;
 
-const customPackagingLabels = {
-  standard: "фирменная коробка",
-  window: "коробка с окном",
-  gift: "подарочная упаковка",
-  "premium-box": "премиум-бокс",
-} as const;
-
 export function Cart() {
+  const { formatMoney, t } = useLanguage();
   const { cartItems, removeCartEntry, updateCartEntryQuantity } = useCart();
   const [busyItemId, setBusyItemId] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -110,6 +82,42 @@ export function Cart() {
     return cartItems.reduce((sum, item) => sum + item.quantity, 0);
   }, [cartItems]);
 
+  const customShapeLabels: Record<CustomShape, string> = {
+    round: t("cart.shape.round"),
+    square: t("cart.shape.square"),
+    heart: t("cart.shape.heart"),
+  };
+
+  const customSizeLabels: Record<CustomSize, string> = {
+    small: t("cart.size.small"),
+    medium: t("cart.size.medium"),
+    large: t("cart.size.large"),
+    s: "S (14,5см)",
+    m: "M (19,5см)",
+    l: "L (24,5см)",
+    xl: "XL (29,5см)",
+  };
+
+  const customColorLabels: Record<CustomColor, string> = {
+    pink: t("cart.color.pink"),
+    gold: t("cart.color.gold"),
+    white: t("cart.color.white"),
+  };
+
+  const customDecorLabels: Record<CustomDecor, string> = {
+    none: t("cart.decor.none"),
+    flowers: t("cart.decor.flowers"),
+    bow: t("cart.decor.bow"),
+    topper: t("cart.decor.topper"),
+  };
+
+  const customPackagingLabels: Record<CustomPackaging, string> = {
+    standard: t("cart.packaging.standard"),
+    window: t("cart.packaging.window"),
+    gift: t("cart.packaging.gift"),
+    "premium-box": t("cart.packaging.premium"),
+  };
+
   const formatInnerLayerSummary = (
     innerLayer:
       | Array<{
@@ -119,7 +127,7 @@ export function Cart() {
       | undefined,
   ) => {
     if (!innerLayer?.length) {
-      return "внутренний слой не указан";
+      return t("cart.innerMissing");
     }
 
     const parts = innerLayer
@@ -129,30 +137,27 @@ export function Cart() {
           `${customInnerCandyLabels[part.candyId] ?? part.candyId} ${part.percentage}%`,
       );
 
-    return parts.join(", ") || "внутренний слой не указан";
+    return parts.join(", ") || t("cart.innerMissing");
   };
 
   const formatDecorSummary = (
-    decor:
-      | Array<keyof typeof customDecorLabels>
-      | keyof typeof customDecorLabels
-      | undefined,
+    decor: Array<CustomDecor> | CustomDecor | undefined,
   ) => {
     if (!decor) {
-      return "без декора";
+      return t("cart.noDecor");
     }
 
     if (!Array.isArray(decor)) {
-      return customDecorLabels[decor] ?? "без декора";
+      return customDecorLabels[decor] ?? t("cart.noDecor");
     }
 
     if (decor.length === 0) {
-      return "без декора";
+      return t("cart.noDecor");
     }
 
     const parts = decor.map((item) => customDecorLabels[item] ?? item);
 
-    return parts.join(", ") || "без декора";
+    return parts.join(", ") || t("cart.noDecor");
   };
 
   return (
@@ -170,11 +175,11 @@ export function Cart() {
           <div className="inline-flex items-center justify-center w-14 h-14 md:w-16 md:h-16 bg-linear-to-br from-indigo-200 to-purple-200 rounded-2xl mb-4 shadow-sm">
             <ShoppingCart className="w-7 h-7 md:w-8 md:h-8 text-indigo-700" />
           </div>
-          <H2 text="Корзина покупок" />
+          <H2 text={t("cart.title")} />
           <Breadcrumb
             items={[
-              { text: "Главная", path: "/" },
-              { text: "Корзина", path: "/cart" },
+              { text: t("productPage.home"), path: "/" },
+              { text: t("header.cart"), path: "/cart" },
             ]}
           />
         </div>
@@ -187,17 +192,17 @@ export function Cart() {
                 <Package className="w-12 h-12 text-slate-400" />
               </div>
               <h3 className="text-2xl font-semibold text-slate-800 mb-3">
-                Корзина пуста
+                {t("cart.emptyTitle")}
               </h3>
               <p className="text-slate-500 mb-8 leading-relaxed">
-                Добавьте товары из каталога, чтобы начать покупки
+                {t("cart.emptyDescription")}
               </p>
               <Link
                 to="/"
                 className="inline-flex items-center gap-2 px-8 py-3.5 bg-linear-to-r from-indigo-400 to-purple-400 text-white rounded-2xl font-medium text-base hover:shadow-lg hover:shadow-indigo-200/50 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
               >
                 <Sparkles className="w-5 h-5" />
-                Перейти в каталог
+                {t("cart.catalogCta")}
               </Link>
             </div>
           </div>
@@ -248,8 +253,8 @@ export function Cart() {
                           <div className="px-2.5 py-1 bg-emerald-50 rounded-lg border border-emerald-100">
                             <span className="text-xs font-medium text-emerald-700">
                               {item.isCustom
-                                ? "Индивидуальная сборка"
-                                : `Доступно: ${availableStock} шт`}
+                                ? t("cart.customBuild")
+                                : `${t("cart.available")}: ${availableStock} ${t("productInfo.pieces")}`}
                             </span>
                           </div>
                         </div>
@@ -272,19 +277,20 @@ export function Cart() {
                                 {customPackagingLabels[customConfig.packaging]},{" "}
                                 {formatDecorSummary(customConfig.decor)}
                                 {customConfig.messageText
-                                  ? `, надпись: "${customConfig.messageText}"`
+                                  ? `, ${t("cart.inscription")}: "${customConfig.messageText}"`
                                   : ""}
                               </>
                             ) : (
                               <>
                                 {customShapeLabels[customConfig.shape]},{" "}
-                                {customSizeLabels[customConfig.size]}, конфет:{" "}
+                                {customSizeLabels[customConfig.size]},{" "}
+                                {t("cart.candies")}:{" "}
                                 {customConfig.candies.reduce(
                                   (sum, candy) => sum + candy.quantity,
                                   0,
                                 )}
                                 {customConfig.inscription
-                                  ? `, надпись: "${customConfig.inscription}"`
+                                  ? `, ${t("cart.inscription")}: "${customConfig.inscription}"`
                                   : ""}
                               </>
                             )}
@@ -296,7 +302,7 @@ export function Cart() {
                             onClick={() => decrementQuantity(item)}
                             disabled={quantity <= 1 || isBusy}
                             className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
-                            title="Уменьшить"
+                            title={t("cart.decrease")}
                           >
                             <Minus className="w-4 h-4 text-slate-600" />
                           </button>
@@ -309,7 +315,7 @@ export function Cart() {
                             onClick={() => incrementQuantity(item)}
                             disabled={quantity >= availableStock || isBusy}
                             className="w-9 h-9 rounded-lg border border-slate-200 bg-white flex items-center justify-center hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200"
-                            title="Увеличить"
+                            title={t("cart.increase")}
                           >
                             <Plus className="w-4 h-4 text-slate-600" />
                           </button>
@@ -318,12 +324,11 @@ export function Cart() {
                         {/* Цена */}
                         <div className="flex flex-wrap items-baseline gap-2">
                           <span className="text-xl md:text-2xl font-bold text-indigo-600">
-                            {itemTotal.toLocaleString("ru-RU")} ₽
+                            {formatMoney(itemTotal)}
                           </span>
                           {quantity > 1 && (
                             <span className="text-sm text-slate-400">
-                              {item.price.toLocaleString("ru-RU")} ₽ ×{" "}
-                              {quantity}
+                              {formatMoney(Number(item.price))} × {quantity}
                             </span>
                           )}
                         </div>
@@ -333,7 +338,7 @@ export function Cart() {
                         <button
                           onClick={() => removeCartEntry(item)}
                           className="ml-auto p-2.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-500 hover:text-rose-600 border border-rose-100 transition-all duration-200"
-                          title="Удалить товар"
+                          title={t("cart.remove")}
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
@@ -352,33 +357,33 @@ export function Cart() {
                       <CreditCard className="w-5 h-5 text-indigo-600" />
                     </div>
                     <h3 className="text-xl font-semibold text-slate-800">
-                      Итоговая сумма
+                      {t("cart.summaryTitle")}
                     </h3>
                   </div>
 
                   <div className="space-y-3 mb-6">
                     <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl">
                       <span className="text-slate-600 font-medium">
-                        Товары ({totalItems})
+                        {t("cart.items")} ({totalItems})
                       </span>
                       <span className="font-semibold text-slate-800">
-                        {totalPrice.toLocaleString("ru-RU")} ₽
+                        {formatMoney(totalPrice)}
                       </span>
                     </div>
                     <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl">
                       <span className="text-slate-500 flex items-center gap-2">
                         <Tag className="w-4 h-4" />
-                        Скидка
+                        {t("cart.discount")}
                       </span>
-                      <span className="text-slate-500">0 ₽</span>
+                      <span className="text-slate-500">{formatMoney(0)}</span>
                     </div>
                     <div className="border-t border-slate-200 pt-4 mt-4">
                       <div className="flex flex-col min-[420px]:flex-row min-[420px]:items-center justify-between gap-2">
                         <span className="text-lg font-semibold text-slate-800">
-                          Итого к оплате
+                          {t("cart.payTotal")}
                         </span>
                         <span className="text-2xl font-bold text-indigo-600">
-                          {totalPrice.toLocaleString("ru-RU")} ₽
+                          {formatMoney(totalPrice)}
                         </span>
                       </div>
                     </div>
@@ -388,7 +393,7 @@ export function Cart() {
                     onClick={handleCheckout}
                     className="group w-full inline-flex items-center justify-center gap-2 px-6 py-4 bg-linear-to-r from-indigo-400 to-purple-400 text-white rounded-xl font-medium text-base hover:shadow-lg hover:shadow-indigo-200/50 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300"
                   >
-                    <span>Оформить заказ</span>
+                    <span>{t("cart.checkout")}</span>
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
 
@@ -397,7 +402,7 @@ export function Cart() {
                       <div className="flex items-center gap-2 text-emerald-700 text-sm">
                         <Sparkles className="w-4 h-4" />
                         <span className="font-medium">
-                          Бесплатная доставка от 6000 ₽
+                          {t("cart.freeDelivery")} {formatMoney(6000)}
                         </span>
                       </div>
                     </div>

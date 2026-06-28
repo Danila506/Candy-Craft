@@ -22,6 +22,7 @@ import { Step3 } from "./Step3";
 import { Step4 } from "./Step4";
 import { useAuth } from "../../contexts/AuthContext";
 import type { OrderCreateResponseV2 } from "../../types/OrderType";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 // Типы для оформления заказа
 export interface DeliveryOption {
@@ -43,6 +44,7 @@ export interface GiftOption {
 }
 
 export function CheckoutPage() {
+  const { formatMoney, t } = useLanguage();
   const { cartCount, refreshCart, clearCart, cartItems } = useCart();
 
   const [step, setStep] = useState(1);
@@ -74,19 +76,19 @@ export function CheckoutPage() {
   const handlePlaceOrder = async () => {
     setSubmitError("");
     if (!selectedDelivery) {
-      setSubmitError("Выберите способ доставки");
+      setSubmitError(t("checkout.selectDelivery"));
       return;
     }
     if (!userId) {
-      setSubmitError("Нужно войти в аккаунт перед оплатой");
+      setSubmitError(t("checkout.loginRequired"));
       return;
     }
     if (!cartItems.length) {
-      setSubmitError("Корзина пуста");
+      setSubmitError(t("checkout.emptyCart"));
       return;
     }
     if (!personalDataConsent) {
-      setSubmitError("Необходимо согласие на обработку персональных данных");
+      setSubmitError(t("contact.consentRequired"));
       return;
     }
 
@@ -142,11 +144,11 @@ export function CheckoutPage() {
         clearCart();
         refreshCart();
       } else {
-        setSubmitError("Платеж создан, но ссылка на оплату не получена");
+        setSubmitError(t("checkout.paymentLinkMissing"));
       }
     } catch (e) {
       setSubmitError(
-        e instanceof ApiError ? e.message : "Не удалось создать заказ/платеж",
+        e instanceof ApiError ? e.message : t("checkout.createError"),
       );
     } finally {
       setIsAnimating(false);
@@ -172,21 +174,19 @@ export function CheckoutPage() {
       </div>
 
       <h2 className="text-5xl font-extrabold bg-linear-to-r from-green-500 via-emerald-500 to-teal-500 bg-clip-text text-transparent mb-4">
-        🎉 Заказ создан!
+        {t("checkout.successTitle")}
       </h2>
       <p className="text-xl text-gray-600 mb-10 max-w-lg mx-auto leading-relaxed">
-        Ваша волшебная коробка конфет уже собирается нашими кондитерами!
+        {t("checkout.successText")}
       </p>
 
       <div className="space-y-8 max-w-2xl mx-auto">
         <div className="p-6 bg-linear-to-r from-green-50/80 via-emerald-50/80 to-teal-50/80 backdrop-blur-sm rounded-2xl border-2 border-green-200/50 shadow-xl">
           <div className="font-bold text-2xl text-green-800 mb-3">
-            Номер заказа:{" "}
+            {t("checkout.orderNumber")}{" "}
             {createdPublicOrderNumber ?? `#${createdOrderId ?? "—"}`}
           </div>
-          <p className="text-green-700 text-lg">
-            Ожидайте звонка от нашего курьера в течение 30 минут
-          </p>
+          <p className="text-green-700 text-lg">{t("checkout.courierCall")}</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
@@ -194,7 +194,9 @@ export function CheckoutPage() {
             <div className="p-3 bg-linear-to-br from-[#ff398b] to-pink-500 rounded-xl w-fit mx-auto mb-4 shadow-md">
               <Clock className="w-8 h-8 text-white" />
             </div>
-            <div className="font-bold text-gray-900 mb-2">Доставка</div>
+            <div className="font-bold text-gray-900 mb-2">
+              {t("checkout.delivery")}
+            </div>
             <div className="text-sm text-gray-600">
               {selectedDelivery?.time}
             </div>
@@ -203,16 +205,22 @@ export function CheckoutPage() {
             <div className="p-3 bg-linear-to-br from-[#ff398b] to-pink-500 rounded-xl w-fit mx-auto mb-4 shadow-md">
               <Package className="w-8 h-8 text-white" />
             </div>
-            <div className="font-bold text-gray-900 mb-2">Сборка</div>
-            <div className="text-sm text-gray-600">Начинается сейчас</div>
+            <div className="font-bold text-gray-900 mb-2">
+              {t("checkout.assembly")}
+            </div>
+            <div className="text-sm text-gray-600">
+              {t("checkout.assemblyNow")}
+            </div>
           </div>
           <div className="p-6 bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-pink-100/50 shadow-lg hover:shadow-xl transition-all hover:scale-105">
             <div className="p-3 bg-linear-to-br from-[#ff398b] to-pink-500 rounded-xl w-fit mx-auto mb-4 shadow-md">
               <MessageSquare className="w-8 h-8 text-white" />
             </div>
-            <div className="font-bold text-gray-900 mb-2">СМС уведомление</div>
+            <div className="font-bold text-gray-900 mb-2">
+              {t("checkout.sms")}
+            </div>
             <div className="text-sm text-gray-600">
-              Отправили на {formData.phone}
+              {t("checkout.sentTo")} {formData.phone}
             </div>
           </div>
         </div>
@@ -222,7 +230,7 @@ export function CheckoutPage() {
             to="/"
             className="group inline-flex items-center gap-3 px-10 py-5 bg-linear-to-r from-[#ff398b] via-pink-500 to-purple-500 text-white rounded-2xl font-bold text-lg hover:shadow-2xl hover:shadow-pink-400/50 transform hover:scale-105 active:scale-95 transition-all duration-300"
           >
-            Вернуться в магазин
+            {t("checkout.backShop")}
             <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
@@ -244,7 +252,7 @@ export function CheckoutPage() {
             className="group flex items-center gap-2 text-gray-700 hover:text-[#ff398b] transition-all duration-300 font-medium"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span>Назад к корзине</span>
+            <span>{t("checkout.backCart")}</span>
           </Link>
 
           <div className="flex w-full sm:w-auto items-center justify-center gap-1 sm:gap-2 bg-white/80 backdrop-blur-md rounded-full px-3 sm:px-6 py-2 sm:py-3 shadow-lg border border-pink-100/50 overflow-x-auto">
@@ -284,15 +292,15 @@ export function CheckoutPage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold bg-linear-to-r from-[#ff398b] to-pink-600 bg-clip-text text-transparent mb-2">
-                    Оформление заказа
+                    {t("checkout.title")}
                   </h1>
                   <p className="text-gray-600 font-medium">
-                    Шаг {step} из 4 •{" "}
+                    {t("checkout.step")} {step} {t("checkout.of")} 4 •{" "}
                     <span className="text-[#ff398b] font-semibold">
-                      {step === 1 && "Контактные данные"}
-                      {step === 2 && "Способ доставки"}
-                      {step === 3 && "Дополнительные опции"}
-                      {step === 4 && "Подтверждение"}
+                      {step === 1 && t("checkout.step1")}
+                      {step === 2 && t("checkout.step2")}
+                      {step === 3 && t("checkout.step3")}
+                      {step === 4 && t("checkout.step4")}
                     </span>
                   </p>
                 </div>
@@ -304,7 +312,9 @@ export function CheckoutPage() {
                     <span className="font-bold text-lg text-gray-900">
                       {cartCount}
                     </span>
-                    <span className="text-gray-600 text-sm">товаров</span>
+                    <span className="text-gray-600 text-sm">
+                      {t("checkout.productsCount")}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -325,7 +335,7 @@ export function CheckoutPage() {
                     className="group w-full min-[420px]:w-auto justify-center px-5 sm:px-8 py-3 sm:py-4 border-2 border-gray-300 text-gray-700 rounded-2xl font-semibold hover:border-pink-300 hover:bg-pink-50 transition-all duration-300 flex items-center gap-2"
                   >
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    Назад
+                    {t("checkout.back")}
                   </button>
                 ) : (
                   <div></div>
@@ -341,7 +351,7 @@ export function CheckoutPage() {
                         : "bg-linear-to-r from-[#ff398b] to-pink-500 text-white hover:shadow-2xl hover:shadow-pink-300/50 hover:scale-105 active:scale-95"
                     }`}
                   >
-                    Продолжить
+                    {t("checkout.continue")}
                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                 ) : (
@@ -357,13 +367,12 @@ export function CheckoutPage() {
                         className="mt-1 h-4 w-4 shrink-0 accent-[#ff398b]"
                       />
                       <span>
-                        Я согласен на обработку персональных данных для
-                        оформления заказа и ознакомлен с{" "}
+                        {t("checkout.consentStart")}{" "}
                         <Link
                           to="/privacy"
                           className="font-semibold text-[#ff398b] underline"
                         >
-                          политикой конфиденциальности
+                          {t("contact.privacyPolicy")}
                         </Link>
                         .
                       </span>
@@ -383,7 +392,7 @@ export function CheckoutPage() {
                         <>
                           <span className="flex items-center gap-3 relative z-10">
                             <RefreshCw className="w-6 h-6 animate-spin" />
-                            Оформляем...
+                            {t("checkout.processing")}
                           </span>
                           <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
                         </>
@@ -392,10 +401,10 @@ export function CheckoutPage() {
                           <div className="flex flex-col items-center gap-1 relative z-10">
                             <span className="flex items-center gap-2">
                               <Sparkles className="w-6 h-6" />
-                              Завершить заказ
+                              {t("checkout.finish")}
                             </span>
                             <span className="text-sm font-normal opacity-90">
-                              Итого: {totalAmount.toLocaleString()} ₽
+                              {t("checkout.total")} {formatMoney(totalAmount)}
                             </span>
                           </div>
                         </>

@@ -4,8 +4,10 @@ import { H2 } from "../ui/H2";
 import { useCart } from "../../contexts/CartContext";
 import { API_URL } from "../../api/config";
 import { useAuth } from "../../contexts/AuthContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export function CartBlock() {
+  const { formatMoney } = useLanguage();
   const { cartItems, refreshCart } = useCart();
   const { user } = useAuth();
   const userId = user?.id; // Убрали decrementCart
@@ -132,11 +134,11 @@ export function CartBlock() {
 
                     <div className="w-32 text-right">
                       <div className="font-bold text-lg">
-                        {itemTotal.toLocaleString("ru-RU")} руб
+                        {formatMoney(itemTotal)}
                       </div>
                       {quantity > 1 && (
                         <div className="text-sm text-gray-500">
-                          {item.price} руб × {quantity}
+                          {formatMoney(Number(item.price))} × {quantity}
                         </div>
                       )}
                     </div>
@@ -161,16 +163,16 @@ export function CartBlock() {
           <div className="space-y-2 mb-4">
             <div className="flex justify-between">
               <span>Товары ({totalItems})</span>
-              <span>{totalPrice.toLocaleString("ru-RU")} руб</span>
+              <span>{formatMoney(totalPrice)}</span>
             </div>
             <div className="flex justify-between text-gray-500">
               <span>Скидка</span>
-              <span>0 руб</span>
+              <span>{formatMoney(0)}</span>
             </div>
             <div className="border-t pt-2 mt-2">
               <div className="flex justify-between text-lg font-bold">
                 <span>Общая сумма</span>
-                <span>{totalPrice.toLocaleString("ru-RU")} руб</span>
+                <span>{formatMoney(totalPrice)}</span>
               </div>
             </div>
           </div>

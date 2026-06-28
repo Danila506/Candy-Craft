@@ -4,6 +4,7 @@ import { AuthShell } from "./AuthShell";
 import { ApiError } from "../../api/http";
 import { API_URL } from "../../api/config";
 import { useAuth } from "../../contexts/AuthContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 type LoginForm = {
   email: string;
@@ -16,21 +17,22 @@ function RequiredStar() {
   return <span className="ml-0.5 text-red-600 align-super">*</span>;
 }
 
-function validate(form: LoginForm): FieldErrors {
+function validate(form: LoginForm, t: (key: string) => string): FieldErrors {
   const errors: FieldErrors = {};
   const email = form.email.trim().toLowerCase();
 
-  if (!email) errors.email = "Введите email";
+  if (!email) errors.email = t("contact.requiredEmail");
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-    errors.email = "Некорректный email";
+    errors.email = t("auth.emailInvalid");
 
-  if (!form.password) errors.password = "Введите пароль";
-  else if (form.password.length < 6) errors.password = "Минимум 6 символов";
+  if (!form.password) errors.password = t("auth.passwordRequired");
+  else if (form.password.length < 6) errors.password = t("auth.passwordMin");
 
   return errors;
 }
 
 export function LoginPage() {
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   const location = useLocation();
@@ -61,7 +63,7 @@ export function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const nextErrors = validate(form);
+    const nextErrors = validate(form, t);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) return;
 
@@ -84,7 +86,7 @@ export function LoginPage() {
         // 401 уже пытался refresh, но тут логин — просто покажем ошибку
         setServerError(err.message);
       } else {
-        setServerError("Не удалось войти");
+        setServerError(t("auth.loginFallback"));
       }
     } finally {
       setLoading(false);
@@ -93,10 +95,10 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      title="С возвращением 🍫"
-      subtitle="Войдите, чтобы быстрее оформлять заказы и отслеживать доставку."
-      bottomText="Нет аккаунта?"
-      bottomLinkText="Зарегистрироваться"
+      title={t("auth.loginTitle")}
+      subtitle={t("auth.loginSubtitle")}
+      bottomText={t("auth.noAccount")}
+      bottomLinkText={t("auth.registerLink")}
       bottomLinkTo="/account/register"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
@@ -114,7 +116,7 @@ export function LoginPage() {
             }}
             className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 hover:bg-gray-50"
           >
-            Войти через Google
+            {t("auth.google")}
           </button>
           <div className="grid gap-2 sm:grid-cols-2">
             <button
@@ -124,7 +126,7 @@ export function LoginPage() {
               }}
               className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 hover:bg-gray-50"
             >
-              Войти через Яндекс
+              {t("auth.yandex")}
             </button>
             <button
               type="button"
@@ -133,7 +135,7 @@ export function LoginPage() {
               }}
               className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-900 hover:bg-gray-50"
             >
-              Войти через VK
+              {t("auth.vk")}
             </button>
           </div>
         </div>
@@ -147,7 +149,7 @@ export function LoginPage() {
             type="email"
             value={form.email}
             onChange={onChange("email")}
-            placeholder="куда отправлять чек 🍫"
+            placeholder={t("auth.emailPlaceholder")}
             className={`mt-1 w-full rounded-lg border px-3 py-2 outline-none focus:ring-2 ${
               errors.email
                 ? "border-red-300 focus:ring-red-200"
@@ -163,13 +165,13 @@ export function LoginPage() {
         <div>
           <div className="flex items-baseline justify-between">
             <label className="text-sm font-medium" htmlFor="password">
-              Пароль <RequiredStar />
+              {t("auth.password")} <RequiredStar />
             </label>
             <Link
               to="/account/forgot-password"
               className="text-xs text-gray-600 underline"
             >
-              Забыли пароль?
+              {t("auth.forgot")}
             </Link>
           </div>
 
@@ -179,7 +181,7 @@ export function LoginPage() {
               type={showPassword ? "text" : "password"}
               value={form.password}
               onChange={onChange("password")}
-              placeholder="секретный ингредиент"
+              placeholder={t("auth.passwordPlaceholder")}
               className="w-full rounded-lg px-3 py-2 outline-none"
               autoComplete="current-password"
             />
@@ -188,7 +190,7 @@ export function LoginPage() {
               onClick={() => setShowPassword((v) => !v)}
               className="px-3 text-sm text-gray-600"
             >
-              {showPassword ? "Скрыть" : "Показать"}
+              {showPassword ? t("auth.hide") : t("auth.show")}
             </button>
           </div>
 
@@ -202,7 +204,7 @@ export function LoginPage() {
           disabled={!canSubmit}
           className="w-full rounded-lg bg-rose-500 px-4 py-2.5 text-white hover:bg-rose-600 disabled:opacity-50"
         >
-          {loading ? "Вхожу..." : "Войти"}
+          {loading ? t("auth.loggingIn") : t("auth.loginButton")}
         </button>
       </form>
     </AuthShell>

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { http, ApiError } from "../api/http";
+import { useLanguage } from "../contexts/LanguageContext";
 
 type PaymentStatus =
   | "PENDING"
@@ -17,22 +18,12 @@ type OrderPayment = {
   createdAt: string;
 };
 
-function statusText(status: PaymentStatus) {
-  switch (status) {
-    case "SUCCEEDED":
-      return "Оплата прошла успешно";
-    case "PENDING":
-      return "Платеж создается";
-    case "WAITING_FOR_CAPTURE":
-      return "Платеж ожидает подтверждения";
-    case "CANCELED":
-      return "Платеж отменен";
-    default:
-      return "Ошибка оплаты";
-  }
+function statusText(status: PaymentStatus, t: (key: string) => string) {
+  return t(`payment.status.${status}`);
 }
 
 export function PaymentResultPage() {
+  const { formatMoney, t } = useLanguage();
   const [params] = useSearchParams();
   const orderId = Number(params.get("orderId") ?? 0);
   const [loading, setLoading] = useState(true);
@@ -44,7 +35,7 @@ export function PaymentResultPage() {
 
     async function load() {
       if (!orderId || Number.isNaN(orderId)) {
-        setError("Некорректный номер заказа");
+        setError(t("payment.invalidOrder"));
         setLoading(false);
         return;
       }
@@ -57,11 +48,7 @@ export function PaymentResultPage() {
         setPayment(list?.[0] ?? null);
       } catch (e) {
         if (!isActive) return;
-        setError(
-          e instanceof ApiError
-            ? e.message
-            : "Не удалось получить статус оплаты",
-        );
+        setError(e instanceof ApiError ? e.message : t("payment.loadError"));
       } finally {
         if (isActive) setLoading(false);
       }
@@ -71,23 +58,21 @@ export function PaymentResultPage() {
     return () => {
       isActive = false;
     };
-  }, [orderId]);
+  }, [orderId, t]);
 
   const amountLabel = useMemo(() => {
     if (!payment) return null;
-    return new Intl.NumberFormat("ru-RU", {
-      style: "currency",
-      currency: payment.currency || "RUB",
-      maximumFractionDigits: 2,
-    }).format(payment.amountMinor / 100);
-  }, [payment]);
+    return formatMoney(payment.amountMinor / 100);
+  }, [formatMoney, payment]);
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-16">
       <div className="rounded-2xl border bg-white p-8 shadow-sm">
-        <h1 className="text-2xl font-bold">Результат оплаты</h1>
+        <h1 className="text-2xl font-bold">{t("payment.title")}</h1>
 
-        {loading && <p className="mt-4 text-gray-600">Проверяем статус...</p>}
+        {loading && (
+          <p className="mt-4 text-gray-600">{t("payment.checking")}</p>
+        )}
 
         {!loading && error && (
           <div className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700">
@@ -97,18 +82,26 @@ export function PaymentResultPage() {
 
         {!loading && !error && payment && (
           <div className="mt-5 space-y-3">
-            <p className="text-lg font-medium">{statusText(payment.status)}</p>
-            <p className="text-gray-700">Заказ: #{orderId}</p>
+            <p className="text-lg font-medium">
+              {statusText(payment.status, t)}
+            </p>
+            <p className="text-gray-700">
+              {t("payment.order")} #{orderId}
+            </p>
             {amountLabel && (
-              <p className="text-gray-700">Сумма: {amountLabel}</p>
+              <p className="text-gray-700">
+                {t("payment.amount")} {amountLabel}
+              </p>
             )}
-            <p className="text-gray-700">Статус: {payment.status}</p>
+            <p className="text-gray-700">
+              {t("payment.statusLabel")} {payment.status}
+            </p>
           </div>
         )}
 
         {!loading && !error && !payment && (
           <p className="mt-4 text-gray-700">
-            Платеж пока не найден для заказа #{orderId}
+            {t("payment.notFound")} #{orderId}
           </p>
         )}
 
@@ -117,13 +110,13 @@ export function PaymentResultPage() {
             to="/account"
             className="rounded-lg bg-gray-900 px-4 py-2 text-sm text-white hover:bg-black"
           >
-            В личный кабинет
+            {t("payment.account")}
           </Link>
           <Link
             to="/"
             className="rounded-lg border px-4 py-2 text-sm hover:bg-gray-50"
           >
-            В каталог
+            {t("payment.catalog")}
           </Link>
         </div>
       </div>
