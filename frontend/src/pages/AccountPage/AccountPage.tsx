@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { http, ApiError } from "../../api/http";
 import { useAuth, type Role } from "../../contexts/AuthContext";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 type MeDto = {
   id: number;
@@ -35,12 +36,12 @@ function cn(...cls: Array<string | false | null | undefined>) {
   return cls.filter(Boolean).join(" ");
 }
 
-function formatOrderAmount(order: MyOrderDto) {
+function formatOrderAmount(order: MyOrderDto, locale: string) {
   if (typeof order.finalAmountMinor !== "number") return "—";
   const currency = order.currency || "RUB";
   const amountMinor = order.finalAmountMinor;
 
-  return new Intl.NumberFormat("ru-RU", {
+  return new Intl.NumberFormat(locale, {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
@@ -84,9 +85,9 @@ function normalizeRuPhone(input: string): string | null {
   return null;
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string, locale: string) {
   const d = new Date(iso);
-  return new Intl.DateTimeFormat("ru-RU", {
+  return new Intl.DateTimeFormat(locale, {
     year: "numeric",
     month: "short",
     day: "2-digit",
@@ -99,23 +100,8 @@ function isValidEmail(email: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 }
 
-function statusLabel(s: OrderStatus) {
-  switch (s) {
-    case "PENDING":
-      return "Создан";
-    case "PAID":
-      return "Оплачен";
-    case "PROCESSING":
-      return "Готовим";
-    case "SHIPPED":
-      return "Отправлен";
-    case "COMPLETED":
-      return "Выполнен";
-    case "CANCELED":
-      return "Отменён";
-    default:
-      return s;
-  }
+function statusLabel(s: OrderStatus, t: (key: string) => string) {
+  return t(`account.status.${s}`);
 }
 
 function RequiredStar() {
@@ -123,6 +109,8 @@ function RequiredStar() {
 }
 
 export default function AccountPage() {
+  const { isHebrew, t } = useLanguage();
+  const locale = isHebrew ? "he-IL" : "ru-RU";
   const navigate = useNavigate();
   const [emailError, setEmailError] = useState<string>("");
 
@@ -188,7 +176,7 @@ export default function AccountPage() {
           return;
         }
         setError(
-          e instanceof ApiError ? e.message : "Не удалось загрузить профиль",
+          e instanceof ApiError ? e.message : t("account.loadProfileError"),
         );
       } finally {
         if (alive) setLoadingMe(false);
@@ -199,7 +187,7 @@ export default function AccountPage() {
     return () => {
       alive = false;
     };
-  }, [navigate]);
+  }, [navigate, t]);
 
   useEffect(() => {
     let alive = true;
@@ -221,7 +209,7 @@ export default function AccountPage() {
           return;
         }
         setError(
-          e instanceof ApiError ? e.message : "Не удалось загрузить заказы",
+          e instanceof ApiError ? e.message : t("account.loadOrdersError"),
         );
       } finally {
         if (alive) setLoadingOrders(false);
@@ -232,7 +220,7 @@ export default function AccountPage() {
     return () => {
       alive = false;
     };
-  }, [tab, navigate]);
+  }, [tab, navigate, t]);
 
   const onProfileChange =
     (key: "firstName" | "lastName" | "phone" | "email") =>
@@ -254,17 +242,17 @@ export default function AccountPage() {
     const phone = rawPhone ? normalizeRuPhone(rawPhone) : undefined;
 
     if (!firstName || !lastName) {
-      setSaveMsg("Заполните имя и фамилию");
+      setSaveMsg(t("account.fillName"));
       return;
     }
 
     if (email && !isValidEmail(email)) {
-      setEmailError("Введите корректный email");
-      setSaveMsg("Проверьте email");
+      setEmailError(t("contact.invalidEmail"));
+      setSaveMsg(t("account.checkEmail"));
       return;
     }
     if (!phone) {
-      setSaveMsg("Введите телефон в формате +7 (999) 999-99-99");
+      setSaveMsg(t("account.phoneFormat"));
       return;
     }
 
@@ -287,9 +275,9 @@ export default function AccountPage() {
         email: updated.email || "",
         phone: updated.phone || "",
       });
-      setSaveMsg("Сохранено ✅");
+      setSaveMsg(`${t("account.saved")} ✅`);
     } catch (e) {
-      setSaveMsg(e instanceof ApiError ? e.message : "Не удалось сохранить");
+      setSaveMsg(e instanceof ApiError ? e.message : t("account.saveError"));
     } finally {
       setSaving(false);
     }
@@ -330,7 +318,9 @@ export default function AccountPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="inline-flex items-center gap-2">
-              <span className="text-xl font-semibold">Личный кабинет</span>
+              <span className="text-xl font-semibold">
+                {t("account.title")}
+              </span>
               <span className="rounded-full bg-rose-50 px-2 py-0.5 text-xs text-rose-700">
                 Candy Craft 🍰
               </span>
@@ -342,7 +332,8 @@ export default function AccountPage() {
             </div>
 
             <p className="mt-1 text-sm text-gray-600">
-              Привет, {me?.firstName} 👋 Здесь — профиль и ваши заказы.
+              {t("account.helloPrefix")} {me?.firstName} 👋{" "}
+              {t("account.helloSuffix")}
             </p>
           </div>
 
@@ -352,7 +343,7 @@ export default function AccountPage() {
                 to="/admin"
                 className="rounded-lg border border-gray-200 px-3 py-2 text-sm hover:bg-gray-50"
               >
-                В админку
+                {t("account.admin")}
               </Link>
             )}
 
@@ -360,7 +351,7 @@ export default function AccountPage() {
               onClick={handleLogout}
               className="rounded-lg bg-gray-900 px-3 py-2 text-sm text-white hover:bg-black"
             >
-              Выйти
+              {t("account.logout")}
             </button>
           </div>
         </div>
@@ -375,7 +366,7 @@ export default function AccountPage() {
                 : "border-gray-200 hover:bg-gray-50",
             )}
           >
-            Профиль
+            {t("account.profile")}
           </button>
           <button
             onClick={() => {
@@ -388,7 +379,7 @@ export default function AccountPage() {
                 : "border-gray-200 hover:bg-gray-50",
             )}
           >
-            Заказы
+            {t("account.orders")}
           </button>
         </div>
 
@@ -405,37 +396,37 @@ export default function AccountPage() {
             {/* Card: profile */}
             <div className="rounded-2xl border border-gray-200 p-5">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold">Данные профиля</h3>
+                <h3 className="font-semibold">{t("account.profileData")}</h3>
                 <span className="text-xs text-gray-500">
-                  Обновите контакты для уведомлений по заказам
+                  {t("account.profileHint")}
                 </span>
               </div>
 
               <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium" htmlFor="firstName">
-                    Имя <RequiredStar />
+                    {t("auth.firstName")} <RequiredStar />
                   </label>
                   <input
                     id="firstName"
                     value={profile.firstName}
                     onChange={onProfileChange("firstName")}
                     className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-rose-100"
-                    placeholder="Никита"
+                    placeholder={t("auth.firstNamePlaceholder")}
                     autoComplete="given-name"
                   />
                 </div>
 
                 <div>
                   <label className="text-sm font-medium" htmlFor="lastName">
-                    Фамилия <RequiredStar />
+                    {t("auth.lastName")} <RequiredStar />
                   </label>
                   <input
                     id="lastName"
                     value={profile.lastName}
                     onChange={onProfileChange("lastName")}
                     className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 outline-none focus:ring-2 focus:ring-rose-100"
-                    placeholder="Беляк"
+                    placeholder={t("auth.lastNamePlaceholder")}
                     autoComplete="family-name"
                   />
                 </div>
@@ -453,7 +444,7 @@ export default function AccountPage() {
                     onBlur={() => {
                       const v = profile.email.trim();
                       if (v && !isValidEmail(v)) {
-                        setEmailError("Введите корректный email");
+                        setEmailError(t("contact.invalidEmail"));
                       } else {
                         setEmailError("");
                       }
@@ -475,7 +466,7 @@ export default function AccountPage() {
 
                 <div className="sm:col-span-2">
                   <label className="text-sm font-medium" htmlFor="phone">
-                    Телефон (РФ) <RequiredStar />
+                    {t("account.phoneRu")} <RequiredStar />
                   </label>
                   <input
                     id="phone"
@@ -489,7 +480,7 @@ export default function AccountPage() {
                     maxLength={18}
                   />
                   <p className="mt-1 text-xs text-gray-500">
-                    Обязателен для связи по заказу.
+                    {t("account.phoneRequired")}
                   </p>
                 </div>
               </div>
@@ -500,7 +491,7 @@ export default function AccountPage() {
                   disabled={!canSave}
                   className="rounded-lg bg-rose-500 px-4 py-2.5 text-sm text-white hover:bg-rose-600 disabled:opacity-50"
                 >
-                  {saving ? "Сохраняю..." : "Сохранить"}
+                  {saving ? t("account.saving") : t("account.save")}
                 </button>
 
                 {saveMsg && (
@@ -514,12 +505,12 @@ export default function AccountPage() {
         {tab === "orders" && (
           <div className="mt-6 rounded-2xl border border-gray-200 p-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold">Мои заказы</h3>
+              <h3 className="font-semibold">{t("account.myOrders")}</h3>
               <Link
                 to="/"
                 className="text-sm text-amber-700 underline hover:text-amber-800"
               >
-                Сделать новый заказ 🍬
+                {t("account.newOrder")} 🍬
               </Link>
             </div>
 
@@ -531,17 +522,17 @@ export default function AccountPage() {
               </div>
             ) : orders.length === 0 ? (
               <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm text-amber-800">
-                Пока нет заказов. Самое время собрать сладкий шедевр 🍰
+                {t("account.noOrders")} 🍰
               </div>
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-140 text-left text-sm">
                   <thead className="text-gray-500">
                     <tr>
-                      <th className="py-2">№</th>
-                      <th className="py-2">Дата</th>
-                      <th className="py-2">Статус</th>
-                      <th className="py-2">Сумма</th>
+                      <th className="py-2">{t("account.number")}</th>
+                      <th className="py-2">{t("account.date")}</th>
+                      <th className="py-2">{t("account.status")}</th>
+                      <th className="py-2">{t("account.amount")}</th>
                       <th className="py-2"></th>
                     </tr>
                   </thead>
@@ -552,20 +543,22 @@ export default function AccountPage() {
                         className="border-t border-gray-100 hover:bg-gray-50"
                       >
                         <td className="py-3 font-medium">#{o.id}</td>
-                        <td className="py-3">{formatDate(o.createdAt)}</td>
+                        <td className="py-3">
+                          {formatDate(o.createdAt, locale)}
+                        </td>
                         <td className="py-3">
                           <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-700">
-                            {statusLabel(o.status)}
+                            {statusLabel(o.status, t)}
                           </span>
                         </td>
                         <td className="py-3 font-semibold">
-                          {formatOrderAmount(o)}
+                          {formatOrderAmount(o, locale)}
                         </td>
                         <td className="py-3 text-right">
                           {/* если будет страница заказа — включишь */}
                           {/* <Link to={`/account/orders/${o.id}`} className="text-rose-600 underline">Открыть</Link> */}
                           <span className="text-xs text-gray-400">
-                            скоро “детали”
+                            {t("account.detailsSoon")}
                           </span>
                         </td>
                       </tr>
@@ -574,7 +567,7 @@ export default function AccountPage() {
                 </table>
 
                 <p className="mt-3 text-xs text-gray-500">
-                  Статусы обновляются автоматически, когда заказ меняет этап.
+                  {t("account.statusAuto")}
                 </p>
               </div>
             )}

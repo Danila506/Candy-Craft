@@ -11,6 +11,7 @@ import {
   MessageCircle,
   HelpCircle,
 } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 const SectionTitle = ({
   icon,
@@ -78,6 +79,8 @@ const FAQItem = ({ q, a }: { q: string; a: React.ReactNode }) => (
 );
 
 export function DeliveryPayment() {
+  const { t } = useLanguage();
+
   return (
     <main className="min-h-screen bg-white">
       {/* HERO */}
@@ -85,19 +88,17 @@ export function DeliveryPayment() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-10 md:py-14">
           <div className="max-w-3xl">
             <div className="flex flex-wrap gap-2">
-              <Badge>Доставка</Badge>
-              <Badge>Оплата</Badge>
-              <Badge>Возврат</Badge>
+              <Badge>{t("delivery.badgeDelivery")}</Badge>
+              <Badge>{t("delivery.badgePayment")}</Badge>
+              <Badge>{t("delivery.badgeReturns")}</Badge>
             </div>
 
             <h1 className="mt-4 text-2xl md:text-4xl font-extrabold text-gray-900 tracking-tight">
-              Доставка и оплата
+              {t("delivery.title")}
             </h1>
 
             <p className="mt-3 text-sm md:text-base text-gray-600 leading-relaxed">
-              Здесь собрали все важное: сроки, способы доставки, варианты оплаты
-              и ответы на частые вопросы. Если нужна помощь — напишите нам,
-              подскажем.
+              {t("delivery.description")}
             </p>
 
             <div className="mt-6 flex flex-wrap gap-3">
@@ -105,13 +106,13 @@ export function DeliveryPayment() {
                 to="/catalog"
                 className="inline-flex items-center justify-center rounded-xl bg-[#ff398b] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#ff2a81] active:scale-95 transition"
               >
-                Перейти в каталог
+                {t("delivery.catalogCta")}
               </Link>
               <a
                 href="#faq"
                 className="inline-flex items-center justify-center rounded-xl border border-rose-100 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-rose-50 transition"
               >
-                Частые вопросы
+                {t("delivery.faqCta")}
               </a>
             </div>
           </div>
@@ -127,59 +128,60 @@ export function DeliveryPayment() {
             <div className="rounded-2xl border border-rose-100 bg-white p-6 shadow-sm">
               <SectionTitle
                 icon={<Truck className="h-5 w-5" />}
-                title="Доставка"
-                subtitle="Доставляем аккуратно, чтобы сладости приехали красивыми и целыми."
+                title={t("delivery.deliveryTitle")}
+                subtitle={t("delivery.deliverySubtitle")}
               />
 
               <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card
-                  title="Курьер по городу"
+                  title={t("delivery.cityCourier")}
                   icon={<MapPin className="h-4 w-4" />}
                 >
-                  Доставка курьером по городу и ближайшим районам. Стоимость и
-                  время зависят от адреса.
+                  {t("delivery.cityCourierText")}
                   <div className="mt-2">
                     <span className="font-semibold text-gray-900">
-                      Ориентир:
+                      {t("delivery.landmark")}
                     </span>{" "}
-                    1–3 часа или в удобный интервал.
-                  </div>
-                </Card>
-
-                <Card title="Самовывоз" icon={<Package className="h-4 w-4" />}>
-                  Можно забрать заказ самостоятельно по предварительной
-                  договоренности.
-                  <div className="mt-2">
-                    <span className="font-semibold text-gray-900">Важно:</span>{" "}
-                    подтвердим время выдачи в сообщениях.
-                  </div>
-                </Card>
-
-                <Card title="Сроки" icon={<Clock className="h-4 w-4" />}>
-                  Обычно готовим и отправляем в день заказа или на следующий —
-                  зависит от загруженности и наличия.
-                  <div className="mt-2">
-                    Для больших заказов — согласуем заранее.
+                    {t("delivery.cityCourierHint")}
                   </div>
                 </Card>
 
                 <Card
-                  title="Упаковка"
+                  title={t("delivery.pickup")}
+                  icon={<Package className="h-4 w-4" />}
+                >
+                  {t("delivery.pickupText")}
+                  <div className="mt-2">
+                    <span className="font-semibold text-gray-900">
+                      {t("delivery.important")}
+                    </span>{" "}
+                    {t("delivery.pickupHint")}
+                  </div>
+                </Card>
+
+                <Card
+                  title={t("delivery.timing")}
+                  icon={<Clock className="h-4 w-4" />}
+                >
+                  {t("delivery.timingText")}
+                  <div className="mt-2">{t("delivery.timingHint")}</div>
+                </Card>
+
+                <Card
+                  title={t("delivery.packaging")}
                   icon={<ShieldCheck className="h-4 w-4" />}
                 >
-                  Упаковываем так, чтобы ничего не помялось: фиксация внутри
-                  коробки, защитные слои, аккуратная подача.
-                  <div className="mt-2">
-                    Можно добавить открытку и пожелание.
-                  </div>
+                  {t("delivery.packagingText")}
+                  <div className="mt-2">{t("delivery.packagingHint")}</div>
                 </Card>
               </div>
 
               <div className="mt-5 rounded-2xl bg-rose-50 border border-rose-100 p-4">
                 <p className="text-sm text-gray-700">
-                  <span className="font-semibold text-gray-900">Совет:</span>{" "}
-                  если заказ на подарок к точному времени — оформляйте заранее,
-                  чтобы мы закрепили слот доставки.
+                  <span className="font-semibold text-gray-900">
+                    {t("delivery.tip")}
+                  </span>{" "}
+                  {t("delivery.tipText")}
                 </p>
               </div>
             </div>
@@ -188,39 +190,41 @@ export function DeliveryPayment() {
             <div className="rounded-2xl border border-rose-100 bg-white p-6 shadow-sm">
               <SectionTitle
                 icon={<CreditCard className="h-5 w-5" />}
-                title="Оплата"
-                subtitle="Выберите удобный способ оплаты — быстро и безопасно."
+                title={t("delivery.paymentTitle")}
+                subtitle={t("delivery.paymentSubtitle")}
               />
 
               <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card
-                  title="Картой онлайн"
+                  title={t("delivery.cardOnline")}
                   icon={<CreditCard className="h-4 w-4" />}
                 >
-                  Оплата банковской картой через безопасный платежный сервис
-                  (при наличии в проекте).
+                  {t("delivery.cardOnlineText")}
                   <div className="mt-2">
-                    <span className="font-semibold text-gray-900">Плюс:</span>{" "}
-                    быстрее подтверждение заказа.
+                    <span className="font-semibold text-gray-900">
+                      {t("delivery.plus")}
+                    </span>{" "}
+                    {t("delivery.cardOnlineHint")}
                   </div>
                 </Card>
 
-                <Card title="Перевод" icon={<Banknote className="h-4 w-4" />}>
-                  Перевод на карту/счет. Реквизиты отправим после оформления.
+                <Card
+                  title={t("delivery.transfer")}
+                  icon={<Banknote className="h-4 w-4" />}
+                >
+                  {t("delivery.transferText")}
                   <div className="mt-2">
-                    <span className="font-semibold text-gray-900">Важно:</span>{" "}
-                    сохраните чек до получения.
+                    <span className="font-semibold text-gray-900">
+                      {t("delivery.important")}
+                    </span>{" "}
+                    {t("delivery.transferHint")}
                   </div>
                 </Card>
               </div>
 
               <div className="mt-5 rounded-2xl bg-white border border-rose-100 p-4">
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  Для некоторых товаров/дат можем попросить{" "}
-                  <span className="font-semibold text-gray-900">
-                    предоплату
-                  </span>{" "}
-                  — это фиксирует бронь и время доставки.
+                  {t("delivery.prepaymentText")}
                 </p>
               </div>
             </div>
@@ -229,21 +233,13 @@ export function DeliveryPayment() {
             <div className="rounded-2xl border border-rose-100 bg-white p-6 shadow-sm">
               <SectionTitle
                 icon={<ShieldCheck className="h-5 w-5" />}
-                title="Возврат и замена"
-                subtitle="Сладости — товар деликатный, но мы решаем вопросы по-человечески."
+                title={t("delivery.returnsTitle")}
+                subtitle={t("delivery.returnsSubtitle")}
               />
 
               <div className="mt-4 text-sm text-gray-600 leading-relaxed space-y-2">
-                <p>
-                  Если вы получили заказ с проблемой (повреждение, ошибка в
-                  позиции), напишите нам в течение{" "}
-                  <span className="font-semibold text-gray-900">2 часов</span>{" "}
-                  после получения и приложите фото.
-                </p>
-                <p>
-                  Мы предложим замену/компенсацию в зависимости от ситуации. Для
-                  заказов на самовывоз — проверяйте заказ при получении.
-                </p>
+                <p>{t("delivery.returnsText1")}</p>
+                <p>{t("delivery.returnsText2")}</p>
               </div>
             </div>
           </div>
@@ -253,7 +249,7 @@ export function DeliveryPayment() {
             <div className="sticky top-6 space-y-4">
               <div className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
                 <h3 className="text-base font-semibold text-gray-900">
-                  Как заказать
+                  {t("delivery.howToOrder")}
                 </h3>
 
                 <ol className="mt-3 space-y-3 text-sm text-gray-600">
@@ -261,25 +257,25 @@ export function DeliveryPayment() {
                     <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 border border-rose-100 text-[#ff398b] text-xs font-bold">
                       1
                     </span>
-                    <span>Выберите товары и добавьте в корзину.</span>
+                    <span>{t("delivery.step1")}</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 border border-rose-100 text-[#ff398b] text-xs font-bold">
                       2
                     </span>
-                    <span>Оформите заказ и укажите адрес/время.</span>
+                    <span>{t("delivery.step2")}</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 border border-rose-100 text-[#ff398b] text-xs font-bold">
                       3
                     </span>
-                    <span>Оплатите удобным способом.</span>
+                    <span>{t("delivery.step3")}</span>
                   </li>
                   <li className="flex gap-3">
                     <span className="mt-0.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-rose-50 border border-rose-100 text-[#ff398b] text-xs font-bold">
                       4
                     </span>
-                    <span>Получите заказ — красиво и вовремя.</span>
+                    <span>{t("delivery.step4")}</span>
                   </li>
                 </ol>
 
@@ -288,39 +284,38 @@ export function DeliveryPayment() {
                     to="/cart"
                     className="inline-flex items-center justify-center rounded-xl bg-[#ff398b] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#ff2a81] active:scale-95 transition"
                   >
-                    Перейти в корзину
+                    {t("delivery.cartCta")}
                   </Link>
                   <Link
                     to="/contacts"
                     className="inline-flex items-center justify-center rounded-xl border border-rose-100 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-rose-50 transition"
                   >
-                    Контакты
+                    {t("header.contacts")}
                   </Link>
                 </div>
               </div>
 
               <div className="rounded-2xl border border-rose-100 bg-white p-5 shadow-sm">
                 <h3 className="text-base font-semibold text-gray-900">
-                  Нужна помощь?
+                  {t("delivery.helpTitle")}
                 </h3>
                 <p className="mt-2 text-sm text-gray-600">
-                  Напишите нам — ответим быстро и поможем оформить заказ.
+                  {t("delivery.helpText")}
                 </p>
 
                 <div className="mt-4 space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-gray-700">
                     <Phone className="h-4 w-4 text-[#ff398b]" />
-                    <span>Телефон: +7 (999) 000-00-00</span>
+                    <span>{t("delivery.phoneLine")}</span>
                   </div>
                   <div className="flex items-center gap-2 text-gray-700">
                     <MessageCircle className="h-4 w-4 text-[#ff398b]" />
-                    <span>WhatsApp/Telegram: @candycraft</span>
+                    <span>{t("delivery.messengerLine")}</span>
                   </div>
                 </div>
 
                 <div className="mt-4 rounded-2xl bg-rose-50 border border-rose-100 p-3 text-xs text-gray-700">
-                  Сроки и стоимость доставки могут меняться в праздничные дни —
-                  уточним при оформлении.
+                  {t("delivery.holidayNote")}
                 </div>
               </div>
             </div>
@@ -331,47 +326,15 @@ export function DeliveryPayment() {
         <div id="faq" className="mt-10 md:mt-12">
           <SectionTitle
             icon={<HelpCircle className="h-5 w-5" />}
-            title="Частые вопросы"
-            subtitle="Собрали ответы на самые популярные вопросы по доставке и оплате."
+            title={t("delivery.faqTitle")}
+            subtitle={t("delivery.faqSubtitle")}
           />
 
           <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FAQItem
-              q="Можно ли доставить в определенное время?"
-              a={
-                <>
-                  Да. Укажите желаемый интервал при оформлении — мы подтвердим,
-                  если слот свободен. В праздники лучше оформлять заранее.
-                </>
-              }
-            />
-            <FAQItem
-              q="Можно ли изменить адрес после оформления?"
-              a={
-                <>
-                  Можно, если заказ ещё не передан курьеру. Напишите нам как
-                  можно быстрее — скорректируем.
-                </>
-              }
-            />
-            <FAQItem
-              q="Есть ли доставка в другие города?"
-              a={
-                <>
-                  Пока работаем в пределах города/районов. Если нужно —
-                  напишите, иногда можем согласовать индивидуально.
-                </>
-              }
-            />
-            <FAQItem
-              q="Как работает предоплата?"
-              a={
-                <>
-                  Предоплата фиксирует заказ и время доставки, особенно на
-                  популярные даты. Реквизиты пришлём после оформления.
-                </>
-              }
-            />
+            <FAQItem q={t("delivery.faq1q")} a={t("delivery.faq1a")} />
+            <FAQItem q={t("delivery.faq2q")} a={t("delivery.faq2a")} />
+            <FAQItem q={t("delivery.faq3q")} a={t("delivery.faq3a")} />
+            <FAQItem q={t("delivery.faq4q")} a={t("delivery.faq4a")} />
           </div>
         </div>
       </section>

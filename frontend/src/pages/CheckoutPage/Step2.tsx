@@ -3,6 +3,7 @@ import { Clock, Truck, Zap } from "lucide-react";
 import { type DeliveryOption } from "./CheckoutPage";
 import { useCheckout } from "../../contexts/CheckoutContext";
 import { getCheckoutOptions } from "../../api/checkoutOptions";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const deliveryIcons: Record<number, React.ReactNode> = {
   1: <Zap className="w-5 h-5" />,
@@ -11,6 +12,7 @@ const deliveryIcons: Record<number, React.ReactNode> = {
 };
 
 export const Step2 = () => {
+  const { t } = useLanguage();
   const { selectedDelivery, setSelectedDelivery } = useCheckout();
   const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +39,7 @@ export const Step2 = () => {
       })
       .catch(() => {
         if (!cancelled) {
-          setLoadError("Не удалось загрузить способы доставки");
+          setLoadError(t("checkout.deliveryLoadError"));
         }
       })
       .finally(() => {
@@ -47,7 +49,7 @@ export const Step2 = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -56,10 +58,10 @@ export const Step2 = () => {
           <Truck className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
-          Способ доставки
+          {t("checkout.deliveryMethodTitle")}
         </h2>
         <p className="text-gray-600 text-base sm:text-lg">
-          Как быстро хотите получить сладости?
+          {t("checkout.deliveryMethodSubtitle")}
         </p>
       </div>
 

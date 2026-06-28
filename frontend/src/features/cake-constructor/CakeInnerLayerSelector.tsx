@@ -6,6 +6,7 @@ import {
   type CakeInnerLayerPart,
   type CakeSizeId,
 } from "./cakeConstructorConfig";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 type Props = {
   size: CakeSizeId;
@@ -19,6 +20,7 @@ function clampPercent(value: number) {
 }
 
 export function CakeInnerLayerSelector({ size, value, onChange }: Props) {
+  const { t } = useLanguage();
   const selectedIds = new Set(value.map((part) => part.candyId));
   const percentSum = getInnerLayerPercentSum(value);
   const estimation = estimateInnerLayer(size, value);
@@ -50,7 +52,9 @@ export function CakeInnerLayerSelector({ size, value, onChange }: Props) {
         <span className="grid h-7 w-7 place-items-center rounded-full bg-[#ff398b] text-sm font-black text-white">
           3
         </span>
-        <h2 className="text-base font-black text-slate-900">Внутренний слой</h2>
+        <h2 className="text-base font-black text-slate-900">
+          {t("cake.stepInner")}
+        </h2>
       </div>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-5">
@@ -75,12 +79,10 @@ export function CakeInnerLayerSelector({ size, value, onChange }: Props) {
 
       <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
         <div className="mb-2 text-sm font-black text-slate-900">
-          Выбранные конфеты и проценты
+          {t("cake.selectedCandies")}
         </div>
         {value.length === 0 ? (
-          <div className="text-sm text-slate-500">
-            Выберите хотя бы одну конфету.
-          </div>
+          <div className="text-sm text-slate-500">{t("cake.pickCandy")}</div>
         ) : (
           <div className="space-y-2">
             {value.map((part) => {
@@ -121,7 +123,7 @@ export function CakeInnerLayerSelector({ size, value, onChange }: Props) {
 
       <div className="mt-3 flex items-center justify-between rounded-xl border border-rose-100 bg-rose-50 px-3 py-2">
         <span className="text-sm font-black text-slate-800">
-          Сумма процентов
+          {t("cake.percentSum")}
         </span>
         <span
           className={`text-sm font-black ${
@@ -134,16 +136,18 @@ export function CakeInnerLayerSelector({ size, value, onChange }: Props) {
 
       {!isValidSum && (
         <div className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
-          Сумма процентов должна быть ровно 100%. Иначе перейти дальше нельзя.
+          {t("cake.percentError")}
         </div>
       )}
 
       <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3">
         <div className="mb-2 text-sm font-black text-slate-900">
-          Стоимость внутреннего слоя
+          {t("cake.innerLayerPrice")}
         </div>
         {estimation.items.length === 0 ? (
-          <div className="text-sm text-slate-500">Состав пока не задан.</div>
+          <div className="text-sm text-slate-500">
+            {t("cake.compositionEmpty")}
+          </div>
         ) : (
           <div className="space-y-1 text-sm text-slate-700">
             {estimation.items.map((item) => (
@@ -158,7 +162,7 @@ export function CakeInnerLayerSelector({ size, value, onChange }: Props) {
           {estimation.totalPrice.toLocaleString("ru-RU")} ₽
         </div>
         <div className="mt-1 text-xs text-slate-500">
-          Стоимость рассчитана по выбранным процентам и размеру торта.
+          {t("cake.innerPriceHint")}
         </div>
       </div>
     </section>

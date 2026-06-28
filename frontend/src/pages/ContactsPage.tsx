@@ -1,13 +1,16 @@
 import { Mail, Phone, MapPin, Clock, MessageCircle } from "lucide-react";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export function ContactsPage() {
+  const { t } = useLanguage();
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10">
       <div className="mb-8">
-        <h1 className="text-3xl font-semibold tracking-tight">Contacts</h1>
-        <p className="mt-2 text-gray-600">
-          Свяжитесь с нами удобным способом. Мы обычно отвечаем быстро.
-        </p>
+        <h1 className="text-3xl font-semibold tracking-tight">
+          {t("contacts.title")}
+        </h1>
+        <p className="mt-2 text-gray-600">{t("contacts.description")}</p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -17,7 +20,7 @@ export function ContactsPage() {
             <div className="flex items-start gap-3">
               <Phone className="mt-1" size={20} />
               <div>
-                <div className="text-sm text-gray-500">Phone</div>
+                <div className="text-sm text-gray-500">{t("footer.phone")}</div>
                 <a
                   className="text-base font-medium hover:underline"
                   href="tel:+79990000000"
@@ -25,7 +28,7 @@ export function ContactsPage() {
                   +7 999 000-00-00
                 </a>
                 <div className="mt-1 text-sm text-gray-500">
-                  WhatsApp / Calls
+                  {t("contacts.phoneNote")}
                 </div>
               </div>
             </div>
@@ -43,7 +46,7 @@ export function ContactsPage() {
                   hello@candycraft.com
                 </a>
                 <div className="mt-1 text-sm text-gray-500">
-                  Для заказов и вопросов
+                  {t("contacts.emailNote")}
                 </div>
               </div>
             </div>
@@ -53,10 +56,14 @@ export function ContactsPage() {
             <div className="flex items-start gap-3">
               <MapPin className="mt-1" size={20} />
               <div>
-                <div className="text-sm text-gray-500">Location</div>
-                <div className="text-base font-medium">Москва, Россия</div>
+                <div className="text-sm text-gray-500">
+                  {t("contacts.location")}
+                </div>
+                <div className="text-base font-medium">
+                  {t("contacts.locationValue")}
+                </div>
                 <div className="mt-1 text-sm text-gray-500">
-                  Самовывоз по договорённости
+                  {t("contacts.pickupNote")}
                 </div>
               </div>
             </div>
@@ -66,10 +73,14 @@ export function ContactsPage() {
             <div className="flex items-start gap-3">
               <Clock className="mt-1" size={20} />
               <div>
-                <div className="text-sm text-gray-500">Working hours</div>
-                <div className="text-base font-medium">Пн–Пт: 10:00–19:00</div>
+                <div className="text-sm text-gray-500">
+                  {t("contacts.hours")}
+                </div>
+                <div className="text-base font-medium">
+                  {t("contacts.weekdays")}
+                </div>
                 <div className="mt-1 text-sm text-gray-500">
-                  Сб–Вс: 11:00–16:00
+                  {t("contacts.weekend")}
                 </div>
               </div>
             </div>
@@ -79,22 +90,22 @@ export function ContactsPage() {
         {/* Правая колонка: текст + карта */}
         <section className="grid gap-6 lg:col-span-2">
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold">How to order</h2>
+            <h2 className="text-xl font-semibold">
+              {t("contacts.howToOrder")}
+            </h2>
             <ul className="mt-3 list-disc space-y-2 pl-5 text-gray-700">
-              <li>Напишите нам в WhatsApp / Telegram или на email.</li>
-              <li>
-                Укажите дату, формат набора, бюджет и пожелания по шоколаду.
-              </li>
-              <li>Подтверждаем детали и время получения/доставки.</li>
+              <li>{t("contacts.orderStep1")}</li>
+              <li>{t("contacts.orderStep2")}</li>
+              <li>{t("contacts.orderStep3")}</li>
             </ul>
 
             <div className="mt-6 rounded-xl bg-gray-50 p-4">
               <div className="flex items-start gap-3">
                 <MessageCircle className="mt-1" size={18} />
                 <div>
-                  <div className="font-medium">Fast contact</div>
+                  <div className="font-medium">{t("contacts.fastContact")}</div>
                   <div className="text-sm text-gray-600">
-                    Выберите удобный канал связи, отвечаем в течение дня.
+                    {t("contacts.fastContactText")}
                   </div>
                   <div className="mt-3 flex flex-wrap gap-3">
                     <a
@@ -122,14 +133,13 @@ export function ContactsPage() {
           </div>
 
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-semibold">Map</h2>
+            <h2 className="text-xl font-semibold">{t("contacts.map")}</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Москва и область. Точный адрес и детали проезда отправим после
-              подтверждения заказа.
+              {t("contacts.mapText")}
             </p>
 
             <div className="mt-4 flex h-72 items-center justify-center rounded-2xl bg-gray-100 text-gray-500">
-              Схема проезда
+              {t("contacts.route")}
             </div>
           </div>
         </section>

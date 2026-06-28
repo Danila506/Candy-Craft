@@ -3,6 +3,7 @@ import { Gift, Heart, MessageSquare, Sparkles, Star } from "lucide-react";
 import type { GiftOption } from "./CheckoutPage";
 import { useCheckout } from "../../contexts/CheckoutContext";
 import { getCheckoutOptions } from "../../api/checkoutOptions";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 const giftIcons: Record<number, React.ReactNode> = {
   1: <Gift className="w-5 h-5" />,
@@ -12,6 +13,7 @@ const giftIcons: Record<number, React.ReactNode> = {
 };
 
 export const Step3 = () => {
+  const { t } = useLanguage();
   const { selectedGift, setSelectedGift, customerNote, setCustomerNote } =
     useCheckout();
   const [giftOptions, setGiftOptions] = useState<GiftOption[]>([]);
@@ -37,7 +39,7 @@ export const Step3 = () => {
       })
       .catch(() => {
         if (!cancelled) {
-          setLoadError("Не удалось загрузить дополнительные опции");
+          setLoadError(t("checkout.optionsLoadError"));
         }
       })
       .finally(() => {
@@ -47,7 +49,7 @@ export const Step3 = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [t]);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -56,10 +58,10 @@ export const Step3 = () => {
           <Gift className="w-7 h-7 sm:w-10 sm:h-10 text-white" />
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
-          Дополнительные опции
+          {t("checkout.optionsTitle")}
         </h2>
         <p className="text-gray-600 text-base sm:text-lg">
-          Добавьте магии в вашу коробку сладостей
+          {t("checkout.optionsSubtitle")}
         </p>
       </div>
 
@@ -136,14 +138,14 @@ export const Step3 = () => {
             <div className="p-1.5 bg-pink-100 rounded-lg group-focus-within:bg-pink-200 transition-colors">
               <MessageSquare className="w-4 h-4 text-[#ff398b]" />
             </div>
-            <span>Ваши пожелания к заказу</span>
+            <span>{t("checkout.noteLabel")}</span>
           </span>
         </label>
         <textarea
           value={customerNote}
           onChange={(e) => setCustomerNote(e.target.value)}
           className="w-full px-4 sm:px-5 py-3 sm:py-4 border-2 border-gray-200 rounded-2xl focus:border-[#ff398b] focus:ring-4 focus:ring-pink-100 transition-all duration-300 h-32 bg-white/50 backdrop-blur-sm hover:border-pink-200 text-gray-900 placeholder-gray-400 resize-none"
-          placeholder="Напишите здесь ваши пожелания, аллергии, особые указания..."
+          placeholder={t("checkout.notePlaceholder")}
         />
       </div>
     </div>

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 export function AuthShell({
   title,
@@ -16,6 +17,8 @@ export function AuthShell({
   bottomLinkText: string;
   bottomLinkTo: string;
 }) {
+  const { t } = useLanguage();
+
   return (
     <section className="pt-20 px-4 bg-linear-to-b from-rose-50 via-white to-amber-50 min-h-[calc(100vh-80px)]">
       <div className="mx-auto w-full max-w-lg">
@@ -26,7 +29,9 @@ export function AuthShell({
             <span className="text-sm font-semibold tracking-wide uppercase">
               Candy Craft
             </span>
-            <span className="text-xs text-gray-400">sweet account</span>
+            <span className="text-xs text-gray-400">
+              {t("auth.shellAccount")}
+            </span>
           </div>
 
           <h1 className="text-2xl font-semibold">{title}</h1>
@@ -43,14 +48,12 @@ export function AuthShell({
 
           {/* Benefits */}
           <ul className="mt-6 space-y-2 text-sm text-gray-600">
-            <li>✅ Быстрое оформление заказа</li>
-            <li>✅ История “сладких” покупок</li>
-            <li>✅ Повтор заказа в 1 клик</li>
+            <li>{t("auth.benefitFast")}</li>
+            <li>{t("auth.benefitHistory")}</li>
+            <li>{t("auth.benefitRepeat")}</li>
           </ul>
 
-          <p className="mt-6 text-[11px] text-gray-500">
-            Candy Craft — торты из любимых шоколадок. 🍫🍰
-          </p>
+          <p className="mt-6 text-[11px] text-gray-500">{t("auth.tagline")}</p>
         </div>
       </div>
     </section>
