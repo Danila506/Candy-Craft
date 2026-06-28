@@ -55,6 +55,7 @@ export function CheckoutPage() {
   const [createdPublicOrderNumber, setCreatedPublicOrderNumber] = useState<
     string | null
   >(null);
+  const [personalDataConsent, setPersonalDataConsent] = useState(false);
   const orderIdempotencyKeyRef = useRef<string | null>(null);
   const { user } = useAuth();
   const userId = user?.id;
@@ -82,6 +83,10 @@ export function CheckoutPage() {
     }
     if (!cartItems.length) {
       setSubmitError("Корзина пуста");
+      return;
+    }
+    if (!personalDataConsent) {
+      setSubmitError("Необходимо согласие на обработку персональных данных");
       return;
     }
 
@@ -340,37 +345,63 @@ export function CheckoutPage() {
                     <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </button>
                 ) : (
-                  <button
-                    onClick={handlePlaceOrder}
-                    disabled={isAnimating || !selectedDelivery}
-                    className={`group relative w-full min-[420px]:w-auto px-6 sm:px-12 py-4 sm:py-5 rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 overflow-hidden ${
-                      isAnimating || !selectedDelivery
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-linear-to-r from-[#ff398b] via-pink-500 to-purple-500 text-white hover:shadow-2xl hover:shadow-pink-400/50 hover:scale-105 active:scale-95"
-                    }`}
-                  >
-                    {isAnimating ? (
-                      <>
-                        <span className="flex items-center gap-3 relative z-10">
-                          <RefreshCw className="w-6 h-6 animate-spin" />
-                          Оформляем...
-                        </span>
-                        <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex flex-col items-center gap-1 relative z-10">
-                          <span className="flex items-center gap-2">
-                            <Sparkles className="w-6 h-6" />
-                            Завершить заказ
+                  <div className="w-full min-[420px]:w-auto">
+                    <label className="mb-3 flex max-w-md items-start gap-3 rounded-xl border border-pink-100 bg-white/80 px-3 py-3 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={personalDataConsent}
+                        onChange={(e) => {
+                          setPersonalDataConsent(e.target.checked);
+                          setSubmitError("");
+                        }}
+                        className="mt-1 h-4 w-4 shrink-0 accent-[#ff398b]"
+                      />
+                      <span>
+                        Я согласен на обработку персональных данных для
+                        оформления заказа и ознакомлен с{" "}
+                        <Link
+                          to="/privacy"
+                          className="font-semibold text-[#ff398b] underline"
+                        >
+                          политикой конфиденциальности
+                        </Link>
+                        .
+                      </span>
+                    </label>
+                    <button
+                      onClick={handlePlaceOrder}
+                      disabled={
+                        isAnimating || !selectedDelivery || !personalDataConsent
+                      }
+                      className={`group relative w-full px-6 sm:px-12 py-4 sm:py-5 rounded-2xl font-bold text-base sm:text-lg transition-all duration-300 overflow-hidden ${
+                        isAnimating || !selectedDelivery || !personalDataConsent
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-linear-to-r from-[#ff398b] via-pink-500 to-purple-500 text-white hover:shadow-2xl hover:shadow-pink-400/50 hover:scale-105 active:scale-95"
+                      }`}
+                    >
+                      {isAnimating ? (
+                        <>
+                          <span className="flex items-center gap-3 relative z-10">
+                            <RefreshCw className="w-6 h-6 animate-spin" />
+                            Оформляем...
                           </span>
-                          <span className="text-sm font-normal opacity-90">
-                            Итого: {totalAmount.toLocaleString()} ₽
-                          </span>
-                        </div>
-                      </>
-                    )}
-                  </button>
+                          <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="flex flex-col items-center gap-1 relative z-10">
+                            <span className="flex items-center gap-2">
+                              <Sparkles className="w-6 h-6" />
+                              Завершить заказ
+                            </span>
+                            <span className="text-sm font-normal opacity-90">
+                              Итого: {totalAmount.toLocaleString()} ₽
+                            </span>
+                          </div>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 )}
               </div>
               {submitError && (

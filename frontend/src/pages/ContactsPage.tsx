@@ -76,7 +76,7 @@ export function ContactsPage() {
           </div>
         </section>
 
-        {/* Правая колонка: текст + карта-заглушка */}
+        {/* Правая колонка: текст + карта */}
         <section className="grid gap-6 lg:col-span-2">
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold">How to order</h2>
@@ -94,7 +94,7 @@ export function ContactsPage() {
                 <div>
                   <div className="font-medium">Fast contact</div>
                   <div className="text-sm text-gray-600">
-                    Заменишь ссылку на свой WhatsApp/Instagram позже.
+                    Выберите удобный канал связи, отвечаем в течение дня.
                   </div>
                   <div className="mt-3 flex flex-wrap gap-3">
                     <a
@@ -124,11 +124,12 @@ export function ContactsPage() {
           <div className="rounded-2xl border bg-white p-6 shadow-sm">
             <h2 className="text-xl font-semibold">Map</h2>
             <p className="mt-2 text-sm text-gray-600">
-              Тут можно вставить Google Maps iframe или картинку. Пока заглушка.
+              Москва и область. Точный адрес и детали проезда отправим после
+              подтверждения заказа.
             </p>
 
             <div className="mt-4 flex h-72 items-center justify-center rounded-2xl bg-gray-100 text-gray-500">
-              Map placeholder
+              Схема проезда
             </div>
           </div>
         </section>

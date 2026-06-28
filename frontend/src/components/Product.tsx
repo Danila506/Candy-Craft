@@ -5,9 +5,11 @@ import type { ProductType } from "../types/ProductType";
 import { Link } from "react-router-dom";
 import { ShoppingCart, CheckCircle, ImageOff } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export function Product(product: ProductType) {
   const { user } = useAuth();
+  const { t } = useLanguage();
   const userId = user?.id;
   const { isItemInCart, addToCart } = useCart();
   const {
@@ -16,6 +18,7 @@ export function Product(product: ProductType) {
     description,
     price,
     id,
+    slug,
     inStock,
     reservedQty,
     category,
@@ -39,13 +42,13 @@ export function Product(product: ProductType) {
   return (
     <li className="list-none ">
       <div className="group flex h-full flex-col bg-white rounded-2xl shadow-sm border border-rose-100 overflow-hidden hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-        <Link to={`/product/${id}`} className="block flex-1">
+        <Link to={`/product/${slug || id}`} className="block flex-1">
           {/* IMAGE */}
           <div className="relative overflow-hidden bg-linear-to-br from-rose-100 via-pink-100 to-rose-50 aspect-square">
             {imageBroken ? (
               <div className="absolute inset-0 flex flex-col items-center justify-center text-rose-300 gap-2">
                 <ImageOff className="w-8 h-8" />
-                <span className="text-xs">Нет фото</span>
+                <span className="text-xs">{t("product.noPhoto")}</span>
               </div>
             ) : (
               <img
@@ -60,7 +63,7 @@ export function Product(product: ProductType) {
             {/* BADGES */}
             <div className="absolute top-2 left-2 sm:top-3 sm:left-3 flex max-w-[calc(100%-1rem)] flex-col gap-1.5 sm:gap-2 z-10">
               <span className="inline-flex max-w-full items-center rounded-full border border-rose-100 bg-white/85 px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-medium text-gray-700 backdrop-blur truncate">
-                {category?.name ?? "Категория"}
+                {category?.name ?? t("product.category")}
               </span>
 
               <span
@@ -71,15 +74,17 @@ export function Product(product: ProductType) {
                 }`}
               >
                 {isOutOfStock
-                  ? "Нет в наличии"
-                  : `В наличии: ${availableStock}`}
+                  ? t("product.outOfStock")
+                  : `${t("product.inStock")}: ${availableStock}`}
               </span>
             </div>
 
             {isInCart && (
               <div className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-white/90 text-[#ff398b] text-[11px] sm:text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full border border-rose-100 flex items-center gap-1 z-10 shadow-sm backdrop-blur">
                 <CheckCircle className="w-3.5 h-3.5" />
-                <span className="hidden min-[360px]:inline">В корзине</span>
+                <span className="hidden min-[360px]:inline">
+                  {t("product.inCart")}
+                </span>
               </div>
             )}
 
@@ -102,7 +107,9 @@ export function Product(product: ProductType) {
         <div className="mt-auto border-t border-rose-100 bg-white px-3 sm:px-4 py-3 sm:py-3.5">
           <div className="flex flex-col min-[360px]:flex-row min-[360px]:items-center justify-between gap-3">
             <div className="flex flex-col">
-              <span className="text-[11px] text-gray-500">Цена</span>
+              <span className="text-[11px] text-gray-500">
+                {t("product.price")}
+              </span>
               <span className="text-base sm:text-lg md:text-xl font-semibold text-gray-900">
                 {price}₽
               </span>
@@ -120,10 +127,10 @@ export function Product(product: ProductType) {
               }`}
               aria-label={
                 isInCart
-                  ? "Товар уже в корзине"
+                  ? t("product.alreadyInCartAria")
                   : isOutOfStock
-                    ? "Товара нет в наличии"
-                    : `Добавить ${name} в корзину`
+                    ? t("product.outOfStockAria")
+                    : `${t("product.addToCartPrefix")} ${name} ${t("product.addToCartSuffix")}`
               }
             >
               {isInCart ? (
@@ -133,10 +140,10 @@ export function Product(product: ProductType) {
               )}
 
               {isInCart
-                ? "В корзине"
+                ? t("product.inCart")
                 : isOutOfStock
-                  ? "Нет в наличии"
-                  : "В корзину"}
+                  ? t("product.outOfStock")
+                  : t("product.addToCart")}
             </button>
           </div>
         </div>

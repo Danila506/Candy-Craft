@@ -2,120 +2,105 @@
 import { Link } from "react-router-dom";
 
 export function PrivacyPage() {
-  const lastUpdated = "February 6, 2026"; // поменяй на свою дату
+  const lastUpdated = "20 июня 2026";
 
   return (
     <main className="min-h-[calc(100vh-120px)] bg-white">
-      <div className="max-w-3xl mx-auto px-4 py-10">
-        {/* Breadcrumb / back */}
+      <div className="mx-auto max-w-3xl px-4 py-10">
         <div className="mb-6">
           <Link
             to="/"
-            className="text-sm text-gray-500 hover:text-gray-900 transition-colors"
+            className="text-sm text-gray-500 transition-colors hover:text-gray-900"
           >
-            ← Back to shop
+            Вернуться в каталог
           </Link>
         </div>
 
-        {/* Title */}
         <header className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Privacy Policy
+          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
+            Политика обработки персональных данных
           </h1>
-          <p className="text-sm text-gray-500 mt-2">
-            Last updated: {lastUpdated}
+          <p className="mt-2 text-sm text-gray-500">
+            Дата обновления: {lastUpdated}
           </p>
         </header>
 
-        {/* Content */}
         <article className="prose prose-gray max-w-none">
           <p>
-            CandyCraft respects your privacy and is committed to protecting your
-            personal data.
+            Настоящая политика описывает, какие персональные данные могут
+            обрабатываться на сайте Candy Craft и для каких целей они
+            используются.
           </p>
 
-          <h2>1. Information We Collect</h2>
-          <p>We may collect the following personal information:</p>
+          <h2>1. Какие данные обрабатываются</h2>
+          <p>Сайт может обрабатывать следующие данные:</p>
           <ul>
-            <li>First and last name</li>
-            <li>Email address</li>
-            <li>Phone number</li>
-            <li>Delivery address</li>
-            <li>Order details</li>
+            <li>имя и фамилию;</li>
+            <li>email;</li>
+            <li>номер телефона;</li>
+            <li>адрес доставки;</li>
+            <li>состав заказа и комментарии к заказу;</li>
+            <li>технические данные, необходимые для работы сайта.</li>
           </ul>
 
-          <h2>2. How We Use Information</h2>
-          <p>We use personal data only for:</p>
+          <h2>2. Цели обработки</h2>
+          <p>Данные используются для:</p>
           <ul>
-            <li>Processing and delivering orders</li>
-            <li>Contacting customers regarding orders</li>
-            <li>Improving our service</li>
+            <li>регистрации и авторизации пользователя;</li>
+            <li>оформления и обработки заказов;</li>
+            <li>связи с пользователем по заказу или обращению;</li>
+            <li>работы корзины и личного кабинета;</li>
+            <li>обеспечения безопасности сайта.</li>
           </ul>
-          <p>We do not sell or rent personal data to third parties.</p>
 
-          <h2>3. Sharing of Data</h2>
+          <h2>3. Передача данных третьим лицам</h2>
           <p>
-            Information may be shared only when necessary to fulfill an order,
-            for example:
+            Данные могут передаваться только в случаях, необходимых для работы
+            сайта и исполнения заказа, например платежному провайдеру или службе
+            доставки. Данные не продаются и не передаются для сторонней рекламы.
           </p>
-          <ul>
-            <li>Delivery services</li>
-            <li>Payment providers</li>
-          </ul>
 
           <h2>4. Cookies</h2>
-          <p>We use cookies for:</p>
+          <p>
+            Сайт использует cookies и аналогичные технические механизмы для
+            авторизации, поддержания сессии пользователя, работы корзины и
+            обеспечения безопасности.
+          </p>
+
+          <h2>5. Хранение и защита данных</h2>
+          <p>
+            Данные хранятся в информационной системе сайта и используются только
+            в объеме, необходимом для работы сервиса. Пароли пользователей не
+            хранятся в открытом виде.
+          </p>
+
+          <h2>6. Права пользователя</h2>
+          <p>Пользователь может запросить:</p>
           <ul>
-            <li>User authentication</li>
-            <li>Shopping cart functionality</li>
-            <li>Basic website operation</li>
+            <li>уточнение своих данных;</li>
+            <li>удаление аккаунта или отдельных данных;</li>
+            <li>информацию о целях обработки данных.</li>
           </ul>
 
-          <h2>5. Data Storage</h2>
+          <h2>7. Контакты</h2>
           <p>
-            Your data is stored securely and accessed only when necessary to
-            provide services.
-          </p>
-
-          <h2>6. User Rights</h2>
-          <p>You may request:</p>
-          <ul>
-            <li>Access to your data</li>
-            <li>Correction of your data</li>
-            <li>Deletion of your account</li>
-          </ul>
-          <p>
-            To make a request, contact us at:{" "}
-            <a href="mailto:your@email.com">your@email.com</a>
-          </p>
-
-          <h2>7. Changes</h2>
-          <p>
-            We may update this Privacy Policy from time to time. Updates will be
-            posted on this page.
-          </p>
-
-          <h2>Contact</h2>
-          <p>
-            CandyCraft
-            <br />
-            Email: <a href="mailto:your@email.com">your@email.com</a>
+            По вопросам обработки персональных данных можно написать на email:{" "}
+            <a href="mailto:belakdanila9@gmail.com">belakdanila9@gmail.com</a>
           </p>
         </article>
 
-        {/* Bottom actions */}
-        <div className="mt-10 flex flex-col sm:flex-row gap-3">
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-medium hover:bg-gray-50 transition"
+            className="inline-flex items-center justify-center rounded-xl border px-4 py-2.5 text-sm font-medium transition hover:bg-gray-50"
           >
-            Continue shopping
+            Продолжить покупки
           </Link>
           <a
             href="mailto:belakdanila9@gmail.com"
-            className="inline-flex items-center justify-center rounded-xl bg-black text-white px-4 py-2.5 text-sm font-medium hover:opacity-90 transition"
+            className="inline-flex items-center justify-center rounded-xl bg-black px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90"
           >
-            Contact us
+            Написать на email
           </a>
         </div>
       </div>

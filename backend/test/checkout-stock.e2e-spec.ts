@@ -44,7 +44,6 @@ describe('Checkout stock flow (e2e)', () => {
   const runId = `checkout-${Date.now()}`;
   const userEmail = `${runId}@example.test`;
   const categoryName = `${runId}-category`;
-  const productSku = `${runId}-sku`;
   const productSlug = `${runId}-product`;
   const providerPaymentId = `pay_${runId}`;
 
@@ -70,7 +69,7 @@ describe('Checkout stock flow (e2e)', () => {
     });
     const userIds = users.map((user) => user.id);
     const products = await prisma.product.findMany({
-      where: { sku: productSku },
+      where: { slug: productSlug },
       select: { id: true },
     });
     const productIds = products.map((product) => product.id);
@@ -102,30 +101,12 @@ describe('Checkout stock flow (e2e)', () => {
     const cartIds = carts.map((cart) => cart.id);
 
     if (paymentIds.length) {
-      await (prisma as any).paymentWebhookEvent.deleteMany({
-        where: { paymentId: { in: paymentIds } },
-      });
-      await (prisma as any).paymentAttempt.deleteMany({
-        where: { paymentId: { in: paymentIds } },
-      });
       await (prisma as any).payment.deleteMany({
         where: { id: { in: paymentIds } },
       });
     }
-    await (prisma as any).paymentWebhookEvent.deleteMany({
-      where: { providerEventId: `payment.succeeded:${providerPaymentId}` },
-    });
 
     if (orderIds.length) {
-      await prisma.inventoryMovement.deleteMany({
-        where: { orderId: { in: orderIds } },
-      });
-      await prisma.orderStatusHistory.deleteMany({
-        where: { orderId: { in: orderIds } },
-      });
-      await (prisma as any).orderAddress.deleteMany({
-        where: { orderId: { in: orderIds } },
-      });
       await prisma.orderItem.deleteMany({
         where: { orderId: { in: orderIds } },
       });
@@ -151,9 +132,6 @@ describe('Checkout stock flow (e2e)', () => {
       });
     }
     if (productIds.length) {
-      await prisma.inventoryMovement.deleteMany({
-        where: { productId: { in: productIds } },
-      });
       await prisma.product.deleteMany({
         where: { id: { in: productIds } },
       });
@@ -242,7 +220,6 @@ describe('Checkout stock flow (e2e)', () => {
     });
     const product = await prisma.product.create({
       data: {
-        sku: productSku,
         slug: productSlug,
         name: 'E2E Candy Box',
         description: 'E2E product',
@@ -303,18 +280,6 @@ describe('Checkout stock flow (e2e)', () => {
     await expect(
       prisma.product.findUniqueOrThrow({ where: { id: product.id } }),
     ).resolves.toMatchObject({ inStock: 5, reservedQty: 2 });
-    await expect(
-      prisma.inventoryMovement.findMany({
-        where: { orderId: orderResponse.body.id },
-        orderBy: { id: 'asc' },
-      }),
-    ).resolves.toEqual([
-      expect.objectContaining({
-        productId: product.id,
-        type: 'RESERVE',
-        quantity: 2,
-      }),
-    ]);
 
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
@@ -370,24 +335,5 @@ describe('Checkout stock flow (e2e)', () => {
     await expect(
       prisma.product.findUniqueOrThrow({ where: { id: product.id } }),
     ).resolves.toMatchObject({ inStock: 3, reservedQty: 0 });
-    await expect(
-      prisma.inventoryMovement.findMany({
-        where: { orderId: orderResponse.body.id },
-        orderBy: { id: 'asc' },
-      }),
-    ).resolves.toEqual([
-      expect.objectContaining({ type: 'RESERVE', quantity: 2 }),
-      expect.objectContaining({ type: 'OUT', quantity: 2 }),
-    ]);
-    await expect(
-      (prisma as any).paymentWebhookEvent.findUniqueOrThrow({
-        where: {
-          providerEventId: `payment.succeeded:${providerPaymentId}`,
-        },
-      }),
-    ).resolves.toMatchObject({
-      isProcessed: true,
-      processingError: null,
-    });
   });
 });

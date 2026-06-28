@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthShell } from "./AuthShell";
 import { http, ApiError } from "../../api/http";
 
@@ -55,6 +55,8 @@ export function RegisterPage() {
   const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [personalDataConsent, setPersonalDataConsent] = useState(false);
+  const [consentError, setConsentError] = useState("");
 
   const canSubmit = useMemo(() => {
     if (loading) return false;
@@ -63,9 +65,10 @@ export function RegisterPage() {
       form.lastName.trim() &&
       form.email.trim() &&
       form.password &&
-      form.confirmPassword
+      form.confirmPassword &&
+      personalDataConsent
     );
-  }, [form, loading]);
+  }, [form, loading, personalDataConsent]);
 
   const onChange =
     (key: keyof RegisterForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,26 +82,34 @@ export function RegisterPage() {
 
     const nextErrors = validate(form);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length) return;
+    if (!personalDataConsent) {
+      setConsentError("Необходимо согласие на обработку персональных данных");
+    }
+    if (Object.keys(nextErrors).length || !personalDataConsent) return;
 
     setLoading(true);
     setServerError("");
+
+    const email = form.email.trim().toLowerCase();
 
     try {
       await http.post("/auth/register", {
         firstName: form.firstName.trim(),
         lastName: form.lastName.trim(),
-        email: form.email.trim().toLowerCase(),
+        email,
         phone: form.phone?.trim() || undefined,
         password: form.password,
         confirmPassword: form.confirmPassword,
       });
 
-      // после регистрации — на логин
-      navigate("/account/login", { replace: true });
+      navigate("/account/login", {
+        replace: true,
+        state: { message: "Аккаунт создан. Теперь можно войти." },
+      });
     } catch (err) {
-      if (err instanceof ApiError) setServerError(err.message);
-      else setServerError("Не удалось зарегистрироваться");
+      if (err instanceof ApiError) {
+        setServerError(err.message);
+      } else setServerError("Не удалось зарегистрироваться");
     } finally {
       setLoading(false);
     }
@@ -258,6 +269,33 @@ export function RegisterPage() {
             </p>
           )}
         </div>
+
+        <label className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-700">
+          <input
+            type="checkbox"
+            checked={personalDataConsent}
+            onChange={(e) => {
+              setPersonalDataConsent(e.target.checked);
+              setConsentError("");
+            }}
+            className="mt-1 h-4 w-4 shrink-0 accent-amber-500"
+          />
+          <span>
+            Я согласен на обработку персональных данных и ознакомлен с{" "}
+            <Link
+              to="/privacy"
+              className="font-medium text-amber-700 underline"
+            >
+              политикой конфиденциальности
+            </Link>
+            .
+            {consentError && (
+              <span className="mt-1 block text-xs text-red-600">
+                {consentError}
+              </span>
+            )}
+          </span>
+        </label>
 
         <button
           type="submit"

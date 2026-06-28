@@ -79,6 +79,12 @@ export class ProductsController {
     return this.products.findByCategory(categoryId);
   }
 
+  @Get('slug/:slug')
+  @ApiOperation({ summary: 'Получить товар по slug' })
+  findBySlug(@Param('slug') slug: string): Promise<Product> {
+    return this.products.findBySlug(slug);
+  }
+
   // //! Поиск товара по id
   @Get(':id')
   findById(@Param('id', ParseIntPipe) id: number): Promise<Product> {

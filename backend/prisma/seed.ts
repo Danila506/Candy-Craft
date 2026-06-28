@@ -88,18 +88,16 @@ async function main() {
 
   for (const item of productFixtures) {
     const baseSlug = slugify(item.name);
-    const baseSku = `SKU-${baseSlug}`.toUpperCase();
 
     const existing = await prisma.product.findFirst({
       where: { name: item.name, categoryId: item.categoryId },
-      select: { id: true, slug: true, sku: true },
+      select: { id: true, slug: true },
     });
 
     if (existing) {
       await prisma.product.update({
         where: { id: existing.id },
         data: {
-          sku: existing.sku || `${baseSku}-${existing.id}`,
           slug: existing.slug || `${baseSlug}-${existing.id}`,
           description: item.description,
           price: item.price,
@@ -113,7 +111,6 @@ async function main() {
     await prisma.product.create({
       data: {
         ...item,
-        sku: `${baseSku}-${item.categoryId}`,
         slug: `${baseSlug}-${item.categoryId}`,
       },
     });

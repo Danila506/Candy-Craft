@@ -4,10 +4,12 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
 import { Search, ShoppingCart, User, Menu, X } from "lucide-react";
+import { useLanguage } from "../../contexts/LanguageContext";
 
 function Header() {
   const { cartCount } = useCart();
   const { user } = useAuth();
+  const { isHebrew, toggleLanguage, t } = useLanguage();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const profileLink = user ? "/account" : "/account/login";
@@ -19,7 +21,7 @@ function Header() {
     <header className="sticky top-0 z-50 border-b border-rose-100 bg-white/85 backdrop-blur">
       {/* top bar */}
       <div className="bg-linear-to-r from-rose-50 via-pink-50 to-rose-50 text-center text-xs text-gray-700 py-2 px-4 border-b border-rose-100">
-        Доставка по Биробиджану • Заказы на сегодня до 18:00
+        {t("header.deliveryNotice")}
       </div>
 
       <div className="container mx-auto px-3 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between gap-2 sm:gap-4">
@@ -27,7 +29,9 @@ function Header() {
           <button
             className="lg:hidden p-2 rounded-xl border border-rose-100 text-gray-700 hover:bg-rose-50"
             onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-            aria-label={isMobileMenuOpen ? "Закрыть меню" : "Открыть меню"}
+            aria-label={
+              isMobileMenuOpen ? t("header.closeMenu") : t("header.openMenu")
+            }
           >
             {isMobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
           </button>
@@ -35,7 +39,7 @@ function Header() {
           <Link
             to="/"
             className="inline-flex items-center"
-            aria-label="CandyCraft — на главную"
+            aria-label={t("header.homeLabel")}
           >
             <img
               src="/logo-1024.png"
@@ -51,16 +55,16 @@ function Header() {
 
         <nav className="hidden lg:flex items-center gap-6 text-sm">
           <NavLink to="/" className={navClass}>
-            Каталог
+            {t("header.catalog")}
           </NavLink>
           <NavLink to="/constructor" className={navClass}>
-            Конструктор
+            {t("header.constructor")}
           </NavLink>
           <NavLink to="/delivery" className={navClass}>
-            Доставка и оплата
+            {t("header.delivery")}
           </NavLink>
           <NavLink to="/contacts" className={navClass}>
-            Контакты
+            {t("header.contacts")}
           </NavLink>
         </nav>
 
@@ -68,7 +72,7 @@ function Header() {
           <li>
             <button
               className="p-2 rounded-xl text-gray-700 hover:bg-rose-50 focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b]"
-              aria-label="Поиск"
+              aria-label={t("header.search")}
               type="button"
             >
               <Search size={20} />
@@ -78,7 +82,7 @@ function Header() {
             <Link
               to={profileLink}
               className="p-2 rounded-xl text-gray-700 hover:bg-rose-50 inline-flex focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b]"
-              aria-label="Аккаунт"
+              aria-label={t("header.account")}
             >
               <User size={20} />
             </Link>
@@ -87,7 +91,7 @@ function Header() {
             <Link
               to="/cart"
               className="relative p-2 rounded-xl text-gray-700 hover:bg-rose-50 inline-flex focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b]"
-              aria-label="Корзина"
+              aria-label={t("header.cart")}
             >
               <ShoppingCart size={20} />
               {cartCount > 0 && (
@@ -96,6 +100,16 @@ function Header() {
                 </span>
               )}
             </Link>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={toggleLanguage}
+              className="min-w-11 rounded-xl border border-rose-100 px-2.5 py-2 text-xs font-semibold text-gray-700 hover:border-[#ff398b]/40 hover:bg-rose-50 hover:text-[#ff398b] focus-visible:outline focus-visible:outline-offset-2 focus-visible:outline-[#ff398b]"
+              aria-label={t("header.language")}
+            >
+              {isHebrew ? "RU" : "HE"}
+            </button>
           </li>
         </ul>
       </div>
@@ -109,7 +123,7 @@ function Header() {
                 to="/constructor"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Конструктор
+                {t("header.constructor")}
               </Link>
             </li>
             <li>
@@ -118,7 +132,7 @@ function Header() {
                 to="/"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Каталог
+                {t("header.catalog")}
               </Link>
             </li>
             <li>
@@ -127,7 +141,7 @@ function Header() {
                 to="/delivery"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Доставка и оплата
+                {t("header.delivery")}
               </Link>
             </li>
             <li>
@@ -136,7 +150,7 @@ function Header() {
                 to="/contacts"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
-                Контакты
+                {t("header.contacts")}
               </Link>
             </li>
           </ul>

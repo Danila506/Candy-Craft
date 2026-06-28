@@ -154,7 +154,10 @@ export class AuthService {
         },
       });
 
-      return user;
+      return {
+        ...user,
+        message: 'Аккаунт создан. Теперь можно войти.',
+      };
     } catch (e) {
       // уникальность email/phone
       if (
@@ -162,8 +165,9 @@ export class AuthService {
         e.code === 'P2002'
       ) {
         const target = (e.meta?.target as string[] | undefined) ?? [];
-        if (target.includes('email'))
+        if (target.includes('email')) {
           throw new ConflictException('Email уже используется');
+        }
         if (target.includes('phone'))
           throw new ConflictException('Телефон уже используется');
         throw new ConflictException('Пользователь уже существует');
@@ -374,10 +378,15 @@ export class AuthService {
         if (byEmail[providerIdKey] !== profile.providerId) {
           await this.prisma.user.update({
             where: { id: byEmail.id },
-            data: { [providerIdKey]: profile.providerId } as any,
+            data: {
+              [providerIdKey]: profile.providerId,
+            } as any,
           });
         }
-        user = { ...byEmail, [providerIdKey]: profile.providerId };
+        user = {
+          ...byEmail,
+          [providerIdKey]: profile.providerId,
+        };
       } else {
         const passwordHash = await argon2.hash(randomBytes(32).toString('hex'));
         user = await this.prisma.user.create({
@@ -570,7 +579,7 @@ export class AuthService {
   async updateMe(userId: number, dto: UpdateProfileDto) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, email: true },
+      select: { id: true, email: true, firstName: true },
     });
 
     if (!user) throw new UnauthorizedException('User not found');
@@ -594,12 +603,16 @@ export class AuthService {
     }
 
     try {
-      return await this.prisma.user.update({
+      const updated = await this.prisma.user.update({
         where: { id: userId },
         data: {
           ...(firstName !== undefined ? { firstName } : {}),
           ...(lastName !== undefined ? { lastName } : {}),
-          ...(email !== undefined ? { email } : {}),
+          ...(email !== undefined
+            ? {
+                email,
+              }
+            : {}),
           ...(dto.phone !== undefined ? { phone } : {}),
         },
         select: {
@@ -611,6 +624,8 @@ export class AuthService {
           role: true,
         },
       });
+
+      return updated;
     } catch (e) {
       if (
         e instanceof Prisma.PrismaClientKnownRequestError &&

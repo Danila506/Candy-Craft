@@ -15,7 +15,6 @@ vi.mock("canvas-confetti", () => ({
 
 const product = {
   id: 10,
-  sku: "cake-10",
   slug: "berry-cake",
   name: "Berry cake",
   description: "Fresh cake",

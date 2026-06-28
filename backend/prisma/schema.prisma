@@ -35,10 +35,9 @@ model User {
 
   cart Cart?
 
-  orders        Order[]
-  addresses     UserAddress[]
-  orderStatusChanges OrderStatusHistory[] @relation("OrderStatusChangedBy")
-  refreshTokens RefreshToken[]
+  orders             Order[]
+  addresses          UserAddress[]
+  refreshTokens      RefreshToken[]
 
   @@map("users")
 }
@@ -79,23 +78,23 @@ model Cart {
 
   // Связи
   user  User       @relation(fields: [userId], references: [id])
-  items CartItem[] // было cart_items
+  items CartItem[]
 
   @@map("carts")
 }
 
 model CartItem {
-  id        Int @id @default(autoincrement())
-  cartId    Int @map("cart_id")
-  productId Int? @map("product_id")
-  quantity  Int @default(1)
+  id               Int     @id @default(autoincrement())
+  cartId           Int     @map("cart_id")
+  productId        Int?    @map("product_id")
+  quantity         Int     @default(1)
   customName       String? @map("custom_name")
   customConfig     Json?   @map("custom_config")
   customPreviewUrl String? @map("custom_preview_url")
   customPrice      Int?    @map("custom_price")
 
   // Связи
-  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  cart    Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
@@ -105,56 +104,29 @@ model CartItem {
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  sku         String   @unique
-  slug        String   @unique
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
   name        String
   description String
   price       Int
-  isActive    Boolean  @default(true) @map("is_active")
+  isActive    Boolean   @default(true) @map("is_active")
   deletedAt   DateTime? @map("deleted_at")
-  inStock     Int      @default(0) @map("in_stock")
-  reservedQty Int      @default(0) @map("reserved_qty")
+  inStock     Int       @default(0) @map("in_stock")
+  reservedQty Int       @default(0) @map("reserved_qty")
   imageUrl    String
   categoryId  Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   // Связи
   cartItems  CartItem[]
-  category   Category    @relation(fields: [categoryId], references: [id])
+  category   Category   @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
-  inventoryMovements InventoryMovement[]
 
   @@index([name, categoryId])
   @@index([isActive, deletedAt])
   @@index([inStock, reservedQty])
   @@map("products")
-}
-
-enum InventoryMovementType {
-  RESERVE
-  RELEASE
-  OUT
-  IN
-  ADJUSTMENT
-}
-
-model InventoryMovement {
-  id        Int                   @id @default(autoincrement())
-  productId Int                   @map("product_id")
-  orderId   Int?                  @map("order_id")
-  type      InventoryMovementType
-  quantity  Int
-  note      String?
-  createdAt DateTime              @default(now()) @map("created_at")
-
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  order   Order?  @relation(fields: [orderId], references: [id], onDelete: SetNull)
-
-  @@index([productId, createdAt])
-  @@index([orderId])
-  @@map("inventory_movements")
 }
 
 model Category {
@@ -186,15 +158,12 @@ model Order {
   updatedAt          DateTime    @updatedAt @map("updated_at")
 
   // Связи
-  user  User        @relation(fields: [userId], references: [id])
-  items OrderItem[]
-  orderAddress OrderAddress?
-  payments Payment[]
-  statusHistory OrderStatusHistory[]
-  inventoryMovements InventoryMovement[]
+  user               User                 @relation(fields: [userId], references: [id])
+  items              OrderItem[]
+  payments           Payment[]
 
-  @@index([userId])
   @@unique([userId, idempotencyKey])
+  @@index([userId])
   @@map("orders")
 }
 
@@ -224,91 +193,11 @@ model Payment {
   createdAt         DateTime        @default(now()) @map("created_at")
   updatedAt         DateTime        @updatedAt @map("updated_at")
 
-  order         Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  attempts      PaymentAttempt[]
-  webhookEvents PaymentWebhookEvent[]
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   @@index([orderId])
   @@index([status])
   @@map("payments")
-}
-
-model PaymentAttempt {
-  id              Int      @id @default(autoincrement())
-  paymentId       Int      @map("payment_id")
-  requestPayload  Json?    @map("request_payload")
-  responsePayload Json?    @map("response_payload")
-  httpStatus      Int?     @map("http_status")
-  errorMessage    String?  @map("error_message")
-  createdAt       DateTime @default(now()) @map("created_at")
-
-  payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
-
-  @@index([paymentId])
-  @@map("payment_attempts")
-}
-
-model PaymentWebhookEvent {
-  id              Int             @id @default(autoincrement())
-  paymentId       Int?            @map("payment_id")
-  provider        PaymentProvider
-  eventType       String          @map("event_type")
-  providerEventId String?         @unique @map("provider_event_id")
-  payload         Json
-  isProcessed     Boolean         @default(false) @map("is_processed")
-  processingError String?         @map("processing_error")
-  receivedAt      DateTime        @default(now()) @map("received_at")
-  processedAt     DateTime?       @map("processed_at")
-
-  payment Payment? @relation(fields: [paymentId], references: [id], onDelete: SetNull)
-
-  @@index([paymentId])
-  @@index([eventType])
-  @@index([receivedAt])
-  @@map("payment_webhook_events")
-}
-
-model OrderAddress {
-  id             Int      @id @default(autoincrement())
-  orderId        Int      @unique @map("order_id")
-  country        String   @default("Россия")
-  city           String?
-  street         String?
-  house          String?
-  apartment      String?
-  entrance       String?
-  floor          String?
-  intercom       String?
-  postalCode     String?  @map("postal_code")
-  comment        String?
-  recipientName  String?  @map("recipient_name")
-  recipientPhone String?  @map("recipient_phone")
-  fullAddress    String   @map("full_address")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-
-  @@index([city])
-  @@map("order_addresses")
-}
-
-model OrderStatusHistory {
-  id              Int         @id @default(autoincrement())
-  orderId         Int         @map("order_id")
-  fromStatus      OrderStatus? @map("from_status")
-  toStatus        OrderStatus  @map("to_status")
-  reason          String?
-  changedByUserId Int?        @map("changed_by_user_id")
-  createdAt       DateTime    @default(now()) @map("created_at")
-
-  order     Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  changedBy User? @relation("OrderStatusChangedBy", fields: [changedByUserId], references: [id], onDelete: SetNull)
-
-  @@index([orderId])
-  @@index([createdAt])
-  @@index([changedByUserId])
-  @@map("order_status_history")
 }
 
 enum OrderStatus {
@@ -326,8 +215,8 @@ model OrderItem {
   productId   Int?   @map("product_id")
   productName String @map("product_name")
 
-  quantity Int @default(1)
-  price    Int
+  quantity         Int     @default(1)
+  price            Int
   customConfig     Json?   @map("custom_config")
   customPreviewUrl String? @map("custom_preview_url")
 

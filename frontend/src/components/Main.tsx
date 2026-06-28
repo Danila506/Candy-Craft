@@ -3,9 +3,11 @@ import { useNavigate } from "react-router-dom";
 import { XCircle } from "lucide-react";
 import { ProductList } from "./ProductList";
 import ContactForm from "./ContactForm";
+import { useLanguage } from "../contexts/LanguageContext";
 
 export function Main() {
   const { showAuthWarn, setShowAuthWarn } = useCart();
+  const { t } = useLanguage();
   const navigate = useNavigate();
 
   return (
@@ -29,11 +31,11 @@ export function Main() {
               </div>
 
               <h3 className="text-lg font-semibold text-gray-900">
-                Вы не авторизованы
+                {t("authWarn.title")}
               </h3>
 
               <p className="mt-2 text-sm text-gray-600">
-                Авторизуйтесь, чтобы добавлять товары в корзину
+                {t("authWarn.description")}
               </p>
 
               <div className="mt-6 flex gap-3 w-full">
@@ -41,7 +43,7 @@ export function Main() {
                   onClick={() => setShowAuthWarn(false)}
                   className="flex-1 py-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 transition"
                 >
-                  Закрыть
+                  {t("authWarn.close")}
                 </button>
 
                 <button
@@ -51,7 +53,7 @@ export function Main() {
                   }}
                   className="flex-1 py-2 rounded-xl bg-[#ff398b] text-white font-semibold hover:bg-[#ff2a81] transition active:scale-95"
                 >
-                  Войти
+                  {t("authWarn.login")}
                 </button>
               </div>
             </div>

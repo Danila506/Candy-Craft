@@ -36,7 +36,6 @@ export class UserService {
             product: {
               select: {
                 id: true,
-                sku: true,
                 slug: true,
                 name: true,
                 description: true,

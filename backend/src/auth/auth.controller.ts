@@ -113,6 +113,7 @@ export class AuthController {
   create(@Body() createUserDto: CreateUserDto) {
     return this.auth.register(createUserDto);
   }
+
   @Post('login')
   @UseGuards(RateLimitGuard)
   @RateLimit({

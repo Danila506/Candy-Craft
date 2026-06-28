@@ -15,6 +15,7 @@ interface ProductsContextType {
   loading: boolean;
   error: string | null;
   getProductById: (id: number) => ProductType | undefined;
+  getProductBySlug: (slug: string) => ProductType | undefined;
   getProductsByCategory: (categoryId: number) => ProductType[];
   refreshProducts: () => Promise<void>;
   deleteProduct: (id: number) => void;
@@ -134,6 +135,10 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
     return products.find((product) => product.id === id);
   };
 
+  const getProductBySlug = (slug: string): ProductType | undefined => {
+    return products.find((product) => product.slug === slug);
+  };
+
   // Получить товары по категории
   const getProductsByCategory = (categoryId: number): ProductType[] => {
     return products.filter((product) => product.categoryId === categoryId);
@@ -144,6 +149,7 @@ export const ProductsProvider: React.FC<{ children: ReactNode }> = ({
     loading,
     error,
     getProductById,
+    getProductBySlug,
     getProductsByCategory,
     refreshProducts: fetchProducts,
     deleteProduct,

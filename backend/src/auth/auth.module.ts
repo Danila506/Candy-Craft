@@ -11,6 +11,13 @@ import type { StringValue } from 'ms';
 import { RateLimitGuard } from 'src/security/rate-limit.guard';
 import { SimpleRateLimitStore } from 'src/security/simple-rate-limit.store';
 
+const googleOAuthProviders =
+  process.env.GOOGLE_CLIENT_ID &&
+  process.env.GOOGLE_CLIENT_SECRET &&
+  process.env.GOOGLE_CALLBACK_URL
+    ? [GoogleStrategy]
+    : [];
+
 @Module({
   imports: [
     PassportModule,
@@ -29,7 +36,7 @@ import { SimpleRateLimitStore } from 'src/security/simple-rate-limit.store';
     AuthService,
     PrismaService,
     JwtStrategy,
-    GoogleStrategy,
+    ...googleOAuthProviders,
     RateLimitGuard,
     SimpleRateLimitStore,
   ],

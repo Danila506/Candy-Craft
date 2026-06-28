@@ -87,23 +87,11 @@ export class OrdersController {
     return this.ordersService.findOrders(id);
   }
 
-  @Get(':id/history')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(Role.ADMIN)
-  findStatusHistory(@Param('id') id: string) {
-    return this.ordersService.getStatusHistory(+id);
-  }
-
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
-  update(
-    @Param('id') id: string,
-    @Req() req: Request,
-    @Body() updateOrderDto: UpdateOrderDto,
-  ) {
-    const changedByUserId = (req as any).user?.userId as number | undefined;
-    return this.ordersService.update(+id, updateOrderDto, changedByUserId);
+  update(@Param('id') id: string, @Body() updateOrderDto: UpdateOrderDto) {
+    return this.ordersService.update(+id, updateOrderDto);
   }
 
   @Delete(':id')

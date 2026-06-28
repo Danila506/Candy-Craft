@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { http, ApiError } from "../api/http";
+import { useLanguage } from "../contexts/LanguageContext";
 
 type ContactDto = {
   name: string;
@@ -17,6 +19,7 @@ function isValidEmail(email: string) {
 }
 
 export default function ContactPage() {
+  const { t } = useLanguage();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -30,6 +33,8 @@ export default function ContactPage() {
 
   const [status, setStatus] = useState<"idle" | "loading" | "success">("idle");
   const [serverError, setServerError] = useState<string>("");
+  const [personalDataConsent, setPersonalDataConsent] = useState(false);
+  const [consentError, setConsentError] = useState("");
 
   const setField =
     (key: keyof typeof form) =>
@@ -47,18 +52,21 @@ export default function ContactPage() {
     const message = form.message.trim();
     const phone = form.phone.trim();
 
-    if (!name) e.name = "Введите имя";
-    if (!email) e.email = "Введите email";
-    else if (!isValidEmail(email)) e.email = "Введите корректный email";
-    if (!message) e.message = "Напишите сообщение";
+    if (!name) e.name = t("contact.requiredName");
+    if (!email) e.email = t("contact.requiredEmail");
+    else if (!isValidEmail(email)) e.email = t("contact.invalidEmail");
+    if (!message) e.message = t("contact.requiredMessage");
 
     // телефон опциональный — но если ввели, делаем мягкую проверку на длину
     if (phone && phone.replace(/[^\d]/g, "").length < 7) {
-      e.phone = "Похоже, телефон слишком короткий";
+      e.phone = t("contact.shortPhone");
     }
 
     setErrors(e);
-    return Object.keys(e).length === 0;
+    if (!personalDataConsent) {
+      setConsentError(t("contact.consentRequired"));
+    }
+    return Object.keys(e).length === 0 && personalDataConsent;
   };
 
   const canSubmit = useMemo(() => {
@@ -68,8 +76,8 @@ export default function ContactPage() {
     const message = form.message.trim();
     if (!name || !email || !message) return false;
     if (!isValidEmail(email)) return false;
-    return true;
-  }, [form, status]);
+    return personalDataConsent;
+  }, [form, status, personalDataConsent]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,13 +98,12 @@ export default function ContactPage() {
 
       setStatus("success");
       setForm({ name: "", email: "", phone: "", message: "" });
+      setPersonalDataConsent(false);
       setErrors({});
     } catch (err) {
       setStatus("idle");
       setServerError(
-        err instanceof ApiError
-          ? err.message
-          : "Не удалось отправить сообщение. Попробуйте ещё раз.",
+        err instanceof ApiError ? err.message : t("contact.defaultServerError"),
       );
     }
   };
@@ -113,65 +120,61 @@ export default function ContactPage() {
             <div className="relative">
               <div className="inline-flex items-center gap-2">
                 <h1 className="text-xl sm:text-2xl font-semibold">
-                  Свяжитесь с нами
+                  {t("contact.title")}
                 </h1>
                 <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs text-rose-700">
-                  Candy Craft 🍰
+                  {t("contact.badge")}
                 </span>
               </div>
 
               <p className="mt-2 text-sm text-gray-600">
-                Вопрос, индивидуальный заказ или сотрудничество — напишите,
-                ответим быстро 💬
+                {t("contact.description")}
               </p>
 
               <div className="mt-6 space-y-3 text-sm">
                 <div className="flex items-start gap-3 rounded-xl bg-white/70 border border-gray-100 p-3">
                   <span className="mt-0.5">📍</span>
                   <div>
-                    <div className="text-gray-500">Локация</div>
-                    <div className="font-medium">Россия</div>
+                    <div className="text-gray-500">{t("contact.location")}</div>
+                    <div className="font-medium">
+                      {t("contact.locationValue")}
+                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3 rounded-xl bg-white/70 border border-gray-100 p-3">
                   <span className="mt-0.5">📞</span>
                   <div>
-                    <div className="text-gray-500">Телефон</div>
+                    <div className="text-gray-500">{t("contact.phone")}</div>
                     <div className="font-medium">+7 999 123-45-67</div>
-                    <div className="text-xs text-gray-500">
-                      (замени на свой)
-                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3 rounded-xl bg-white/70 border border-gray-100 p-3">
                   <span className="mt-0.5">✉️</span>
                   <div>
-                    <div className="text-gray-500">Email</div>
+                    <div className="text-gray-500">{t("contact.email")}</div>
                     <div className="font-medium">hello@candycraft.ru</div>
-                    <div className="text-xs text-gray-500">
-                      (замени на свой)
-                    </div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3 rounded-xl bg-white/70 border border-gray-100 p-3">
                   <span className="mt-0.5">📷</span>
                   <div>
-                    <div className="text-gray-500">Instagram</div>
-                    <div className="font-medium">@candycraft</div>
-                    <div className="text-xs text-gray-500">
-                      (замени на свой)
+                    <div className="text-gray-500">
+                      {t("contact.instagram")}
                     </div>
+                    <div className="font-medium">@candycraft</div>
                   </div>
                 </div>
               </div>
 
               <div className="mt-6 rounded-xl bg-white/70 border border-gray-100 p-4">
-                <div className="text-sm font-medium">Время ответа</div>
+                <div className="text-sm font-medium">
+                  {t("contact.responseTime")}
+                </div>
                 <p className="mt-1 text-sm text-gray-600">
-                  Обычно отвечаем в течение 24 часов.
+                  {t("contact.responseTimeDescription")}
                 </p>
               </div>
             </div>
@@ -182,10 +185,10 @@ export default function ContactPage() {
             {status === "success" ? (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
                 <div className="text-lg font-semibold text-emerald-800">
-                  Спасибо! Сообщение отправлено ✅
+                  {t("contact.successTitle")}
                 </div>
                 <p className="mt-2 text-sm text-emerald-800/80">
-                  Мы свяжемся с вами как можно скорее.
+                  {t("contact.successDescription")}
                 </p>
 
                 <button
@@ -193,14 +196,15 @@ export default function ContactPage() {
                   onClick={() => setStatus("idle")}
                   className="mt-5 rounded-lg bg-gray-900 px-4 py-2.5 text-sm text-white hover:bg-black"
                 >
-                  Отправить ещё одно
+                  {t("contact.sendAnother")}
                 </button>
               </div>
             ) : (
               <form onSubmit={onSubmit} className="space-y-4">
                 <div>
                   <label className="text-sm font-medium" htmlFor="name">
-                    Ваше имя <span className="text-red-600">*</span>
+                    {t("contact.nameLabel")}{" "}
+                    <span className="text-red-600">*</span>
                   </label>
                   <input
                     id="name"
@@ -208,7 +212,10 @@ export default function ContactPage() {
                     onChange={setField("name")}
                     onBlur={() => {
                       if (!form.name.trim()) {
-                        setErrors((p) => ({ ...p, name: "Введите имя" }));
+                        setErrors((p) => ({
+                          ...p,
+                          name: t("contact.requiredName"),
+                        }));
                       }
                     }}
                     className={cn(
@@ -227,7 +234,8 @@ export default function ContactPage() {
 
                 <div>
                   <label className="text-sm font-medium" htmlFor="email">
-                    Email <span className="text-red-600">*</span>
+                    {t("contact.emailLabel")}{" "}
+                    <span className="text-red-600">*</span>
                   </label>
                   <input
                     id="email"
@@ -237,11 +245,14 @@ export default function ContactPage() {
                     onBlur={() => {
                       const v = form.email.trim();
                       if (!v)
-                        setErrors((p) => ({ ...p, email: "Введите email" }));
+                        setErrors((p) => ({
+                          ...p,
+                          email: t("contact.requiredEmail"),
+                        }));
                       else if (!isValidEmail(v))
                         setErrors((p) => ({
                           ...p,
-                          email: "Введите корректный email",
+                          email: t("contact.invalidEmail"),
                         }));
                     }}
                     className={cn(
@@ -260,7 +271,7 @@ export default function ContactPage() {
 
                 <div>
                   <label className="text-sm font-medium" htmlFor="phone">
-                    Телефон (опционально)
+                    {t("contact.phoneLabel")}
                   </label>
                   <input
                     id="phone"
@@ -273,7 +284,7 @@ export default function ContactPage() {
                       if (form.phone.trim() && digits.length < 7) {
                         setErrors((p) => ({
                           ...p,
-                          phone: "Похоже, телефон слишком короткий",
+                          phone: t("contact.shortPhone"),
                         }));
                       }
                     }}
@@ -293,7 +304,8 @@ export default function ContactPage() {
 
                 <div>
                   <label className="text-sm font-medium" htmlFor="message">
-                    Сообщение <span className="text-red-600">*</span>
+                    {t("contact.messageLabel")}{" "}
+                    <span className="text-red-600">*</span>
                   </label>
                   <textarea
                     id="message"
@@ -304,7 +316,7 @@ export default function ContactPage() {
                       if (!form.message.trim()) {
                         setErrors((p) => ({
                           ...p,
-                          message: "Напишите сообщение",
+                          message: t("contact.requiredMessage"),
                         }));
                       }
                     }}
@@ -314,7 +326,7 @@ export default function ContactPage() {
                         ? "border-red-300 focus:ring-red-100"
                         : "border-gray-200 focus:ring-rose-100",
                     )}
-                    placeholder="Например: хочу торт на день рождения, 19.5 см, на 25 человек…"
+                    placeholder={t("contact.messagePlaceholder")}
                   />
                   {errors.message && (
                     <p className="mt-1 text-xs text-red-600">
@@ -329,17 +341,45 @@ export default function ContactPage() {
                   </div>
                 )}
 
+                <label className="flex items-start gap-3 rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={personalDataConsent}
+                    onChange={(e) => {
+                      setPersonalDataConsent(e.target.checked);
+                      setConsentError("");
+                    }}
+                    className="mt-1 h-4 w-4 shrink-0 accent-rose-500"
+                  />
+                  <span>
+                    {t("contact.consentStart")}{" "}
+                    <Link
+                      to="/privacy"
+                      className="font-medium text-rose-700 underline"
+                    >
+                      {t("contact.privacyPolicy")}
+                    </Link>
+                    .
+                    {consentError && (
+                      <span className="mt-1 block text-xs text-red-600">
+                        {consentError}
+                      </span>
+                    )}
+                  </span>
+                </label>
+
                 <button
                   type="submit"
                   disabled={!canSubmit}
                   className="w-full rounded-lg bg-rose-500 px-4 py-3 text-sm font-medium text-white hover:bg-rose-600 disabled:opacity-50"
                 >
-                  {status === "loading" ? "Отправляю..." : "Отправить 🍰"}
+                  {status === "loading"
+                    ? t("contact.submitting")
+                    : t("contact.submit")}
                 </button>
 
                 <p className="text-xs text-gray-500">
-                  Нажимая “Отправить”, вы соглашаетесь на обработку данных для
-                  ответа на запрос.
+                  {t("contact.dataNotice")}
                 </p>
               </form>
             )}
